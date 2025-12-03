@@ -1,0 +1,131 @@
+{
+  "project_info": {
+    "project_number": "943871668803",
+    "firebase_url": "https://traviaapp-default-rtdb.firebaseio.com",
+    "project_id": "traviaapp",
+    "storage_bucket": "traviaapp.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:943871668803:android:cde97bb6ad725889a9daf6",
+        "android_client_info": {
+          "package_name": "com.Travia.admin"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "943871668803-1sa7vl0dcnqbf42va36mtujpvhfuup22.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.Travia.admin",
+            "certificate_hash": "6d251ee6784c1e66f76bbedf9ae8a16e8a67e869"
+          }
+        },
+        {
+          "client_id": "943871668803-eoaqe158acnt9mqvpi62ua914rfctu1t.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.Travia.admin",
+            "certificate_hash": "9bbb3186b2189ef16d8f272bdab59362c395cbb4"
+          }
+        },
+        {
+          "client_id": "943871668803-gr5f8fdqf9flmj8ditbp8c8hp4jmtcbb.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.Travia.admin",
+            "certificate_hash": "132a496c3929b691b73bbdf26cb1b36ba709461d"
+          }
+        },
+        {
+          "client_id": "943871668803-j4ft3br7rkf8qvp799up4eqltfmlgnuk.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCKvtwvbVgLYgBSyFmvmIU5K9QOSIb_SJY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "943871668803-j4ft3br7rkf8qvp799up4eqltfmlgnuk.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "943871668803-8o5s5oaon1piav117uj2g3og7faav8i6.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.Travia.rides"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:943871668803:android:20cb7481b6d8e3aba9daf6",
+        "android_client_info": {
+          "package_name": "com.travia"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "943871668803-0tgq7j2pfp28rd6dr2cd5e4rn6nidukr.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.travia",
+            "certificate_hash": "6d251ee6784c1e66f76bbedf9ae8a16e8a67e869"
+          }
+        },
+        {
+          "client_id": "943871668803-h2mrh9bja2dcca7tv6pvu8i43dm0reg1.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.travia",
+            "certificate_hash": "9bbb3186b2189ef16d8f272bdab59362c395cbb4"
+          }
+        },
+        {
+          "client_id": "943871668803-re4ltsguqn387oddqoafgdkd9cb4a75e.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.travia",
+            "certificate_hash": "132a496c3929b691b73bbdf26cb1b36ba709461d"
+          }
+        },
+        {
+          "client_id": "943871668803-j4ft3br7rkf8qvp799up4eqltfmlgnuk.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCKvtwvbVgLYgBSyFmvmIU5K9QOSIb_SJY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "943871668803-j4ft3br7rkf8qvp799up4eqltfmlgnuk.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "943871668803-8o5s5oaon1piav117uj2g3og7faav8i6.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.Travia.rides"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
