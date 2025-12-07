@@ -432,51 +432,26 @@ class _Termsconditions11WidgetState extends State<Termsconditions11Widget> {
                           children: [
                             Text(
                               '•',
-                              style: FlutterFlowTheme.of(context)
-                                  .bodyMedium
-                                  .override(
-                                    font: GoogleFonts.inter(
-                                      fontWeight: FlutterFlowTheme.of(context)
-                                          .bodyMedium
-                                          .fontWeight,
-                                      fontStyle: FlutterFlowTheme.of(context)
-                                          .bodyMedium
-                                          .fontStyle,
-                                    ),
-                                    color: Colors.white,
-                                    letterSpacing: 0.0,
-                                    fontWeight: FlutterFlowTheme.of(context)
-                                        .bodyMedium
-                                        .fontWeight,
-                                    fontStyle: FlutterFlowTheme.of(context)
-                                        .bodyMedium
-                                        .fontStyle,
-                                  ),
+                              style: FlutterFlowTheme.of(context).bodyMedium.override(
+                                font: GoogleFonts.inter(),
+                                color: Colors.white,
+                              ),
                             ),
-                            Text(
-                              'Verify the identity of the other party before proceeding with any exchange.',
-                              style: FlutterFlowTheme.of(context)
-                                  .bodyMedium
-                                  .override(
-                                    font: GoogleFonts.inter(
-                                      fontWeight: FlutterFlowTheme.of(context)
-                                          .bodyMedium
-                                          .fontWeight,
-                                      fontStyle: FlutterFlowTheme.of(context)
-                                          .bodyMedium
-                                          .fontStyle,
-                                    ),
-                                    color: Colors.white,
-                                    letterSpacing: 0.0,
-                                    fontWeight: FlutterFlowTheme.of(context)
-                                        .bodyMedium
-                                        .fontWeight,
-                                    fontStyle: FlutterFlowTheme.of(context)
-                                        .bodyMedium
-                                        .fontStyle,
-                                  ),
+                            SizedBox(width: 8.0),
+                            // ✅ ELLIPSIS + RESPONSIVE WIDTH
+                            Expanded(
+                              child: Text(
+                                'Verify the identity of the other party before proceeding with any exchange.',
+                                style: FlutterFlowTheme.of(context).bodyMedium.override(
+                                  font: GoogleFonts.inter(),
+                                  color: Colors.white,
+                                  lineHeight: 1.5
+                                ),
+                                overflow: TextOverflow.ellipsis,  // ✅ TRUNCATES LONG TEXT
+                                maxLines: 2,                     // ✅ MAX 2 LINES
+                              ),
                             ),
-                          ].divide(SizedBox(width: 8.0)),
+                          ],
                         ),
                         Row(
                           mainAxisSize: MainAxisSize.max,
@@ -484,51 +459,27 @@ class _Termsconditions11WidgetState extends State<Termsconditions11Widget> {
                           children: [
                             Text(
                               '•',
-                              style: FlutterFlowTheme.of(context)
-                                  .bodyMedium
-                                  .override(
-                                    font: GoogleFonts.inter(
-                                      fontWeight: FlutterFlowTheme.of(context)
-                                          .bodyMedium
-                                          .fontWeight,
-                                      fontStyle: FlutterFlowTheme.of(context)
-                                          .bodyMedium
-                                          .fontStyle,
-                                    ),
-                                    color: Colors.white,
-                                    letterSpacing: 0.0,
-                                    fontWeight: FlutterFlowTheme.of(context)
-                                        .bodyMedium
-                                        .fontWeight,
-                                    fontStyle: FlutterFlowTheme.of(context)
-                                        .bodyMedium
-                                        .fontStyle,
-                                  ),
+                              style: FlutterFlowTheme.of(context).bodyMedium.override(
+                                font: GoogleFonts.inter(),
+                                color: Colors.white,
+                              ),
                             ),
-                            Text(
-                              'Ensure all contents are legal, safe, and compliant with local, state, and national laws.',
-                              style: FlutterFlowTheme.of(context)
-                                  .bodyMedium
-                                  .override(
-                                    font: GoogleFonts.inter(
-                                      fontWeight: FlutterFlowTheme.of(context)
-                                          .bodyMedium
-                                          .fontWeight,
-                                      fontStyle: FlutterFlowTheme.of(context)
-                                          .bodyMedium
-                                          .fontStyle,
-                                    ),
-                                    color: Colors.white,
-                                    letterSpacing: 0.0,
-                                    fontWeight: FlutterFlowTheme.of(context)
-                                        .bodyMedium
-                                        .fontWeight,
-                                    fontStyle: FlutterFlowTheme.of(context)
-                                        .bodyMedium
-                                        .fontStyle,
-                                  ),
+                            SizedBox(width: 8.0),
+                            // ✅ ELLIPSIS + RESPONSIVE WIDTH
+                            Expanded(
+                              child: Text(
+                                'Ensure all contents are legal, safe, and compliant with local, state, and national laws.',
+                                style: FlutterFlowTheme.of(context).bodyMedium.override(
+                                  font: GoogleFonts.inter(),
+                                  color: Colors.white,
+                                    lineHeight: 1.5
+
+                                ),
+                                overflow: TextOverflow.ellipsis,  // ✅ TRUNCATES LONG TEXT
+                                maxLines: 2,                     // ✅ MAX 2 LINES
+                              ),
                             ),
-                          ].divide(SizedBox(width: 8.0)),
+                          ],
                         ),
                         Column(
                           mainAxisSize: MainAxisSize.max,

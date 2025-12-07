@@ -1,6 +1,8 @@
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:google_places_flutter/google_places_flutter.dart';
+import 'package:google_places_flutter/model/prediction.dart';
 
 import '/auth/firebase_auth/auth_util.dart';
 import '/backend/backend.dart';
@@ -65,13 +67,23 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
       vsync: this,
       length: 3,
       initialIndex: 0,
-    )..addListener(() => safeSetState(() {}));
+    )..addListener(() => safeSetState(() {
+          // ✅ RESET TO DEFAULT HOME WIDGET (date rides)
+          _model.isSearchActive = false;
+          _model.searchStartLocation = null;
+          _model.searchEndLocation = null;
+          _model.startLocationTextController.clear();
+          _model.endLocationTextController.clear();
+        }));
 
     // Text Controllers
-    _model.startLocationTextController ??= TextEditingController();
+
+    // Initialize the controllers
+    _model.startLocationTextController = TextEditingController();
+    _model.endLocationTextController = TextEditingController();
     _model.startLocationFocusNode ??= FocusNode();
 
-    _model.endLocationTextController ??= TextEditingController();
+    // _model.endLocationTextController ??= TextEditingController();
     _model.endLocationFocusNode ??= FocusNode();
 
     // Animations
@@ -141,17 +153,38 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
     // -------------------------------
     // Ask Location Permission & Fetch Location
     // -------------------------------
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      bool hasPermission = await handleLocationPermission();
+    // WidgetsBinding.instance.addPostFrameCallback((_) async {
+    //   bool hasPermission = await handleLocationPermission();
+    //
+    //   if (hasPermission) {
+    //     String loc = await getCurrentLocation();
+    //     if (loc.isNotEmpty) {
+    //       _model.startLocationTextController.text = loc;
+    //     }
+    //   } else {
+    //     // Optional: show a message if permission denied
+    //     print("Location permission denied");
+    //   }
+    // });
 
-      if (hasPermission) {
-        String loc = await getCurrentLocation();
-        if (loc.isNotEmpty) {
-          _model.startLocationTextController.text = loc;
-        }
-      } else {
-        // Optional: show a message if permission denied
-        print("Location permission denied");
+    _model.endLocationTextController.addListener(() {
+      if (_model.endLocationTextController.text.isEmpty) {
+        safeSetState(() {
+          _model.isSearchActive = false;
+          _model.searchStartLocation = null;
+          _model.searchEndLocation = null;
+          _model.endLocationTextController.clear(); // Clear start too
+        });
+      }
+    });
+    _model.startLocationTextController.addListener(() {
+      if (_model.startLocationTextController.text.isEmpty) {
+        safeSetState(() {
+          _model.isSearchActive = false;
+          _model.searchStartLocation = null;
+          _model.searchEndLocation = null;
+          _model.startLocationTextController.clear(); // Clear start too
+        });
       }
     });
   }
@@ -182,17 +215,19 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
     return true;
   }
 
-  Future<String> getCurrentLocation() async {
-    Position pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
-
-    // Optionally convert to human readable address using geocoding
-    List<Placemark> places = await placemarkFromCoordinates(pos.latitude, pos.longitude);
-
-    return "${places.first.locality}, ${places.first.country}";
-  }
+  // Future<String> getCurrentLocation() async {
+  //   Position pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+  //
+  //   // Optionally convert to human readable address using geocoding
+  //   List<Placemark> places = await placemarkFromCoordinates(pos.latitude, pos.longitude);
+  //
+  //   return "${places.first.locality}, ${places.first.country}";
+  // }
 
   @override
   void dispose() {
+    _model.startLocationTextController.dispose();
+    _model.endLocationTextController.dispose();
     _model.dispose();
 
     super.dispose();
@@ -209,8 +244,7 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
         key: scaffoldKey,
         backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
         drawer: Drawer(
-            width: MediaQuery.of(context).size.width * 0.88,
-
+          width: MediaQuery.of(context).size.width * 0.88,
           elevation: 16.0,
           child: wrapWithModel(
             model: _model.sidebarMenuModel,
@@ -230,8 +264,9 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
               size: 27.0,
             ),
             onPressed: () async {
-              scaffoldKey.currentState!.openDrawer();
-            },
+              if (scaffoldKey.currentState != null) {
+                scaffoldKey.currentState!.openDrawer();
+              }            },
           ),
           title: Padding(
             padding: EdgeInsets.all(5.0),
@@ -254,29 +289,25 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     InkWell(
-                      splashColor: Colors.transparent,
-                      focusColor: Colors.transparent,
-                      hoverColor: Colors.transparent,
-                      highlightColor: Colors.transparent,
-                      onTap: () async {
-                        context.pushNamed(PlansWidget.routeName);
-                      },
-                      child: CircleAvatar(
-
-                        radius: 20, // adjust size
-                        backgroundColor: Color(0xFF283B5E), // circle color
-                        child: Padding(
-                          padding: const EdgeInsets.only(right:2),
-                          child: Icon(
-                            FontAwesomeIcons.crown,
-                            color: Colors.white, // icon color
-                            size: 18.0,
+                        splashColor: Colors.transparent,
+                        focusColor: Colors.transparent,
+                        hoverColor: Colors.transparent,
+                        highlightColor: Colors.transparent,
+                        onTap: () async {
+                          context.pushNamed(PlansWidget.routeName);
+                        },
+                        child: CircleAvatar(
+                          radius: 20, // adjust size
+                          backgroundColor: Color(0xFF283B5E), // circle color
+                          child: Padding(
+                            padding: const EdgeInsets.only(right: 2),
+                            child: Icon(
+                              FontAwesomeIcons.crown,
+                              color: Colors.white, // icon color
+                              size: 18.0,
+                            ),
                           ),
-                        ),
-                      )
-
-                    ),
-
+                        )),
                     Padding(
                       padding: EdgeInsetsDirectional.fromSTEB(10.0, 0.0, 0.0, 0.0),
                       child: Container(
@@ -358,7 +389,7 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                     child: Column(
                       children: [
                         Align(
-                          alignment: Alignment(0.0, 0),
+                          alignment: Alignment(0.0,0),
                           child: TabBar(
                             labelColor: FlutterFlowTheme.of(context).primaryText,
                             unselectedLabelColor: FlutterFlowTheme.of(context).secondaryText,
@@ -413,303 +444,150 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                                         mainAxisSize: MainAxisSize.max,
                                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                         children: [
+                                          // AIzaSyDZkxRpoy0BOIAPwMaMIvAd5xpCe
                                           Expanded(
                                             child: Container(
-                                              height: 40.0,
+                                              height: 45,
                                               decoration: BoxDecoration(
-                                                color: Color(0xFFF4F4F4),
-                                                borderRadius: BorderRadius.circular(20.0),
-                                              ),
-                                              child: Container(
-                                                width: 100.0,
-                                                child: TextFormField(
-                                                  controller: _model.startLocationTextController,
-                                                  focusNode: _model.startLocationFocusNode,
-                                                  decoration: InputDecoration(
-                                                    isDense: true,
-                                                    hintText: 'Start From...',
-                                                    filled: true,
-                                                    fillColor: Color(0xFFFBFAFA),
-
-                                                    // Adjust padding to prevent text from being cut
-                                                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-
-                                                    // Location icon inside field
-                                                    suffixIcon: InkWell(
-                                                      onTap: () async {
-                                                        final pos = await getCurrentLocation();
-                                                        _model.startLocationTextController.text = pos;
-                                                      },
-                                                      child: Icon(
-                                                        Icons.my_location,
-                                                        size: 24,
-                                                        color: FlutterFlowTheme.of(context).tertiary,
-                                                      ),
-                                                    ),
-
-                                                    enabledBorder: OutlineInputBorder(
-                                                      borderSide: BorderSide(color: FlutterFlowTheme.of(context).tertiary, width: 1.0),
-                                                      borderRadius: BorderRadius.circular(20.0),
-                                                    ),
-                                                    focusedBorder: OutlineInputBorder(
-                                                      borderSide: BorderSide(
-                                                        color: FlutterFlowTheme.of(context).primary,
-                                                        width: 1.0,
-                                                      ),
-                                                      borderRadius: BorderRadius.circular(20.0),
-                                                    ),
-                                                  ),
-                                                  style: FlutterFlowTheme.of(context).bodyMedium.copyWith(fontSize: 15),
-                                                  cursorColor: FlutterFlowTheme.of(context).primaryText,
+                                                color: FlutterFlowTheme.of(context).alternate,
+                                                borderRadius: BorderRadius.circular(12),
+                                                border: Border.all(
+                                                  color: const Color(0xFFE69A6A),
+                                                  width: 1,
                                                 ),
+                                              ),
+                                              child: GooglePlaceAutoCompleteTextField(
+                                                focusNode: _model.startLocationFocusNode,
+                                                textEditingController: _model.startLocationTextController,
+                                                googleAPIKey: "AIzaSyDZkxRpoy0BOIAPwMaMIvAd5xpCe-6ZYvs",
+                                                inputDecoration: const InputDecoration(
+                                                  hintText: 'Start From...',
+                                                  isDense: false,
+                                                  filled: false,
+                                                  contentPadding: EdgeInsets.symmetric(
+                                                    horizontal: 14,
+                                                    vertical: 14,
+                                                  ),
 
-                                                // child: TextFormField(
-                                                //   controller: _model
-                                                //       .startLocationTextController,
-                                                //   focusNode: _model
-                                                //       .startLocationFocusNode,
-                                                //   autofocus: false,
-                                                //   obscureText: false,
-                                                //   decoration:
-                                                //   InputDecoration(
-                                                //     isDense: true,
-                                                //     labelStyle:
-                                                //     FlutterFlowTheme.of(
-                                                //         context)
-                                                //         .labelMedium
-                                                //         .override(
-                                                //       font: GoogleFonts
-                                                //           .inter(
-                                                //         fontWeight: FlutterFlowTheme.of(
-                                                //             context)
-                                                //             .labelMedium
-                                                //             .fontWeight,
-                                                //         fontStyle: FlutterFlowTheme.of(
-                                                //             context)
-                                                //             .labelMedium
-                                                //             .fontStyle,
-                                                //       ),
-                                                //       color: Colors
-                                                //           .black,
-                                                //       letterSpacing:
-                                                //       0.0,
-                                                //       fontWeight: FlutterFlowTheme.of(
-                                                //           context)
-                                                //           .labelMedium
-                                                //           .fontWeight,
-                                                //       fontStyle: FlutterFlowTheme.of(
-                                                //           context)
-                                                //           .labelMedium
-                                                //           .fontStyle,
-                                                //     ),
-                                                //     hintText:
-                                                //     'Start From...',
-                                                //     hintStyle:
-                                                //     FlutterFlowTheme.of(
-                                                //         context)
-                                                //         .labelMedium
-                                                //         .override(
-                                                //       font: GoogleFonts
-                                                //           .inter(
-                                                //         fontWeight: FlutterFlowTheme.of(
-                                                //             context)
-                                                //             .labelMedium
-                                                //             .fontWeight,
-                                                //         fontStyle: FlutterFlowTheme.of(
-                                                //             context)
-                                                //             .labelMedium
-                                                //             .fontStyle,
-                                                //       ),
-                                                //       fontSize:
-                                                //       15.0,
-                                                //       letterSpacing:
-                                                //       0.0,
-                                                //       fontWeight: FlutterFlowTheme.of(
-                                                //           context)
-                                                //           .labelMedium
-                                                //           .fontWeight,
-                                                //       fontStyle: FlutterFlowTheme.of(
-                                                //           context)
-                                                //           .labelMedium
-                                                //           .fontStyle,
-                                                //     ),
-                                                //     enabledBorder:
-                                                //     OutlineInputBorder(
-                                                //       borderSide:
-                                                //       BorderSide(
-                                                //         color: Color(
-                                                //             0xFF4DABF7),
-                                                //         width: 1.0,
-                                                //       ),
-                                                //       borderRadius:
-                                                //       BorderRadius
-                                                //           .circular(
-                                                //           20.0),
-                                                //     ),
-                                                //     focusedBorder:
-                                                //     OutlineInputBorder(
-                                                //       borderSide:
-                                                //       BorderSide(
-                                                //         color: FlutterFlowTheme
-                                                //             .of(context)
-                                                //             .primary,
-                                                //         width: 1.0,
-                                                //       ),
-                                                //       borderRadius:
-                                                //       BorderRadius
-                                                //           .circular(
-                                                //           20.0),
-                                                //     ),
-                                                //     errorBorder:
-                                                //     OutlineInputBorder(
-                                                //       borderSide:
-                                                //       BorderSide(
-                                                //         color: FlutterFlowTheme
-                                                //             .of(context)
-                                                //             .error,
-                                                //         width: 1.0,
-                                                //       ),
-                                                //       borderRadius:
-                                                //       BorderRadius
-                                                //           .circular(
-                                                //           20.0),
-                                                //     ),
-                                                //     focusedErrorBorder:
-                                                //     OutlineInputBorder(
-                                                //       borderSide:
-                                                //       BorderSide(
-                                                //         color: FlutterFlowTheme
-                                                //             .of(context)
-                                                //             .error,
-                                                //         width: 1.0,
-                                                //       ),
-                                                //       borderRadius:
-                                                //       BorderRadius
-                                                //           .circular(
-                                                //           20.0),
-                                                //     ),
-                                                //     filled: true,
-                                                //     fillColor:
-                                                //     Color(0xFFFBFAFA),
-                                                //   ),
-                                                //   style:
-                                                //   FlutterFlowTheme.of(
-                                                //       context)
-                                                //       .bodyMedium
-                                                //       .override(
-                                                //     font:
-                                                //     GoogleFonts
-                                                //         .inter(
-                                                //       fontWeight: FlutterFlowTheme.of(
-                                                //           context)
-                                                //           .bodyMedium
-                                                //           .fontWeight,
-                                                //       fontStyle: FlutterFlowTheme.of(
-                                                //           context)
-                                                //           .bodyMedium
-                                                //           .fontStyle,
-                                                //     ),
-                                                //     letterSpacing:
-                                                //     0.0,
-                                                //     fontWeight: FlutterFlowTheme.of(
-                                                //         context)
-                                                //         .bodyMedium
-                                                //         .fontWeight,
-                                                //     fontStyle: FlutterFlowTheme.of(
-                                                //         context)
-                                                //         .bodyMedium
-                                                //         .fontStyle,
-                                                //   ),
-                                                //   cursorColor:
-                                                //   FlutterFlowTheme.of(
-                                                //       context)
-                                                //       .primaryText,
-                                                //   validator: _model
-                                                //       .startLocationTextControllerValidator
-                                                //       .asValidator(
-                                                //       context),
-                                                // ),
+                                                  // ✅ NO INNER BORDER
+                                                  border: InputBorder.none,
+                                                  enabledBorder: InputBorder.none,
+                                                  focusedBorder: InputBorder.none,
+                                                  disabledBorder: InputBorder.none,
+                                                  errorBorder: InputBorder.none,
+                                                  focusedErrorBorder: InputBorder.none,
+                                                ),
+                                                textStyle: FlutterFlowTheme.of(context).bodyMedium.copyWith(fontSize: 14),
+                                                debounceTime: 600,
+                                                countries: ["in"],
+                                                isLatLngRequired: false,
+                                                itemClick: (prediction) {
+                                                  _model.startLocationTextController.text = prediction.description ?? "";
+                                                  _model.startLocationTextController.selection = TextSelection.fromPosition(
+                                                    TextPosition(
+                                                      offset: prediction.description?.length ?? 0,
+                                                    ),
+                                                  );
+                                                },
+                                                itemBuilder: (context, index, prediction) {
+                                                  return Container(
+                                                    padding: const EdgeInsets.symmetric(
+                                                      horizontal: 14,
+                                                      vertical: 10,
+                                                    ),
+                                                    child: Row(
+                                                      children: [
+                                                        Icon(
+                                                          Icons.location_on,
+                                                          size: 18,
+                                                          color: FlutterFlowTheme.of(context).tertiary,
+                                                        ),
+                                                        const SizedBox(width: 8),
+                                                        Expanded(
+                                                          child: Text(
+                                                            prediction.description ?? "",
+                                                            style: FlutterFlowTheme.of(context).bodyMedium.copyWith(fontSize: 13),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  );
+                                                },
+                                                seperatedBuilder: const Divider(height: 1),
+                                                isCrossBtnShown: true,
                                               ),
                                             ),
                                           ),
                                           Expanded(
                                             child: Container(
-                                              height: 40.0,
+                                              height: 45,
                                               decoration: BoxDecoration(
                                                 color: FlutterFlowTheme.of(context).alternate,
-                                                borderRadius: BorderRadius.circular(20.0),
-                                              ),
-                                              child: Container(
-                                                width: 50.0,
-                                                child: TextFormField(
-                                                  controller: _model.endLocationTextController,
-                                                  focusNode: _model.endLocationFocusNode,
-                                                  autofocus: false,
-                                                  obscureText: false,
-                                                  decoration: InputDecoration(
-                                                    isDense: true,
-                                                    labelStyle: FlutterFlowTheme.of(context).labelMedium.override(
-                                                          font: GoogleFonts.inter(
-                                                            fontWeight: FlutterFlowTheme.of(context).labelMedium.fontWeight,
-                                                            fontStyle: FlutterFlowTheme.of(context).labelMedium.fontStyle,
-                                                          ),
-                                                          letterSpacing: 0.0,
-                                                          fontWeight: FlutterFlowTheme.of(context).labelMedium.fontWeight,
-                                                          fontStyle: FlutterFlowTheme.of(context).labelMedium.fontStyle,
-                                                        ),
-                                                    hintText: 'End to...',
-                                                    hintStyle: FlutterFlowTheme.of(context).labelMedium.override(
-                                                          font: GoogleFonts.inter(
-                                                            fontWeight: FlutterFlowTheme.of(context).labelMedium.fontWeight,
-                                                            fontStyle: FlutterFlowTheme.of(context).labelMedium.fontStyle,
-                                                          ),
-                                                          letterSpacing: 0.0,
-                                                          fontWeight: FlutterFlowTheme.of(context).labelMedium.fontWeight,
-                                                          fontStyle: FlutterFlowTheme.of(context).labelMedium.fontStyle,
-                                                        ),
-                                                    enabledBorder: OutlineInputBorder(
-                                                      borderSide: BorderSide(
-                                                        color: FlutterFlowTheme.of(context).tertiary,
-                                                        width: 1.0,
-                                                      ),
-                                                      borderRadius: BorderRadius.circular(20.0),
-                                                    ),
-                                                    focusedBorder: OutlineInputBorder(
-                                                      borderSide: BorderSide(
-                                                        color: FlutterFlowTheme.of(context).primary,
-                                                        width: 1.0,
-                                                      ),
-                                                      borderRadius: BorderRadius.circular(20.0),
-                                                    ),
-                                                    errorBorder: OutlineInputBorder(
-                                                      borderSide: BorderSide(
-                                                        color: FlutterFlowTheme.of(context).error,
-                                                        width: 1.0,
-                                                      ),
-                                                      borderRadius: BorderRadius.circular(20.0),
-                                                    ),
-                                                    focusedErrorBorder: OutlineInputBorder(
-                                                      borderSide: BorderSide(
-                                                        color: FlutterFlowTheme.of(context).error,
-                                                        width: 1.0,
-                                                      ),
-                                                      borderRadius: BorderRadius.circular(20.0),
-                                                    ),
-                                                    filled: true,
-                                                    fillColor: Color(0xFFFBFAFA),
-                                                  ),
-                                                  style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                        font: GoogleFonts.inter(
-                                                          fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
-                                                          fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                        ),
-                                                        letterSpacing: 0.0,
-                                                        fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
-                                                        fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                      ),
-                                                  cursorColor: FlutterFlowTheme.of(context).primaryText,
-                                                  validator: _model.endLocationTextControllerValidator.asValidator(context),
+                                                borderRadius: BorderRadius.circular(12),
+                                                border: Border.all(
+                                                  color: const Color(0xFFE69A6A),
+                                                  width: 1,
                                                 ),
+                                              ),
+                                              child: GooglePlaceAutoCompleteTextField(
+                                                focusNode: _model.endLocationFocusNode,
+                                                textEditingController: _model.endLocationTextController,
+                                                googleAPIKey: "AIzaSyDZkxRpoy0BOIAPwMaMIvAd5xpCe-6ZYvs",
+                                                inputDecoration: const InputDecoration(
+                                                  hintText: 'End To...',
+                                                  isDense: false,
+                                                  filled: false,
+                                                  contentPadding: EdgeInsets.symmetric(
+                                                    horizontal: 14,
+                                                    vertical: 14,
+                                                  ),
+
+                                                  // ✅ NO INNER BORDER
+                                                  border: InputBorder.none,
+                                                  enabledBorder: InputBorder.none,
+                                                  focusedBorder: InputBorder.none,
+                                                  disabledBorder: InputBorder.none,
+                                                  errorBorder: InputBorder.none,
+                                                  focusedErrorBorder: InputBorder.none,
+                                                ),
+                                                textStyle: FlutterFlowTheme.of(context).bodyMedium.copyWith(fontSize: 14),
+                                                debounceTime: 600,
+                                                countries: ["in"],
+                                                isLatLngRequired: false,
+                                                itemClick: (prediction) {
+                                                  _model.endLocationTextController.text = prediction.description ?? "";
+                                                  _model.endLocationTextController.selection = TextSelection.fromPosition(
+                                                    TextPosition(
+                                                      offset: prediction.description?.length ?? 0,
+                                                    ),
+                                                  );
+                                                },
+                                                itemBuilder: (context, index, prediction) {
+                                                  return Container(
+                                                    padding: const EdgeInsets.symmetric(
+                                                      horizontal: 14,
+                                                      vertical: 10,
+                                                    ),
+                                                    child: Row(
+                                                      children: [
+                                                        Icon(
+                                                          Icons.location_on,
+                                                          size: 18,
+                                                          color: FlutterFlowTheme.of(context).tertiary,
+                                                        ),
+                                                        const SizedBox(width: 8),
+                                                        Expanded(
+                                                          child: Text(
+                                                            prediction.description ?? "",
+                                                            style: FlutterFlowTheme.of(context).bodyMedium.copyWith(fontSize: 13),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  );
+                                                },
+                                                seperatedBuilder: const Divider(height: 1),
+                                                isCrossBtnShown: true,
                                               ),
                                             ),
                                           ),
@@ -718,40 +596,243 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                                             focusColor: Colors.transparent,
                                             hoverColor: Colors.transparent,
                                             highlightColor: Colors.transparent,
+                                            // onTap: () async {
+                                            //   if ((_model.startLocationTextController.text != null && _model.startLocationTextController.text != '') &&
+                                            //       (_model.endLocationTextController.text != null && _model.endLocationTextController.text != '')) {
+                                            //     context.pushNamed(
+                                            //       SearchRideWidget.routeName,
+                                            //       queryParameters: {
+                                            //         'query1': serializeParam(
+                                            //           _model.startLocationTextController.text,
+                                            //           ParamType.String,
+                                            //         ),
+                                            //         'query2': serializeParam(
+                                            //           _model.endLocationTextController.text,
+                                            //           ParamType.String,
+                                            //         ),
+                                            //       }.withoutNulls,
+                                            //     );
+                                            //   } else {
+                                            //     await showDialog(
+                                            //       context: context,
+                                            //       builder: (alertDialogContext) {
+                                            //         return AlertDialog(
+                                            //           title: Text('Attention Required '),
+                                            //           content: Text('Please fill ride start and end location'),
+                                            //           actions: [
+                                            //             TextButton(
+                                            //               onPressed: () => Navigator.pop(alertDialogContext),
+                                            //               child: Text('Ok'),
+                                            //             ),
+                                            //           ],
+                                            //         );
+                                            //       },
+                                            //     );
+                                            //   }
+                                            // },
+                                            /// original
                                             onTap: () async {
-                                              if ((_model.startLocationTextController.text != null && _model.startLocationTextController.text != '') &&
-                                                  (_model.endLocationTextController.text != null && _model.endLocationTextController.text != '')) {
-                                                context.pushNamed(
-                                                  SearchRideWidget.routeName,
-                                                  queryParameters: {
-                                                    'query1': serializeParam(
-                                                      _model.startLocationTextController.text,
-                                                      ParamType.String,
-                                                    ),
-                                                    'query2': serializeParam(
-                                                      _model.endLocationTextController.text,
-                                                      ParamType.String,
-                                                    ),
-                                                  }.withoutNulls,
-                                                );
+                                              // Existing FlutterFlow null / empty checks (kept, but NAVIGATION COMMENTED)
+                                              if (_model.startLocationTextController.text != null && _model.startLocationTextController.text != '' && _model.endLocationTextController.text != null && _model.endLocationTextController.text != '') {
+                                                // Old navigation – now disabled but preserved
+                                                /*
+    context.pushNamed(
+      SearchRideWidget.routeName,
+      queryParameters: {
+        'query1': serializeParam(
+          model.startLocationTextController.text,
+          ParamType.String,
+        ),
+        'query2': serializeParam(
+          model.endLocationTextController.text,
+          ParamType.String,
+        ),
+      }.withoutNulls,
+    );
+    */
+                                                // context.pushNamed(
+                                                //         SearchRideWidget.routeName,
+                                                //         queryParameters: {
+                                                //           'query1': serializeParam(
+                                                //             "Aligarh",                                                            // _model.startLocationTextController.text,
+                                                //             ParamType.String,
+                                                //           ),
+                                                //           'query2': serializeParam(
+                                                //             "Faridabad",
+                                                //             // _model.endLocationTextController.text,
+                                                //             ParamType.String,
+                                                //           ),
+                                                //         }.withoutNulls,
+                                                //       );
                                               } else {
                                                 await showDialog(
                                                   context: context,
                                                   builder: (alertDialogContext) {
                                                     return AlertDialog(
-                                                      title: Text('Attention Required '),
-                                                      content: Text('Please fill ride start and end location'),
+                                                      title: const Text('Attention Required'),
+                                                      content: const Text('Please fill ride start and end location'),
                                                       actions: [
                                                         TextButton(
                                                           onPressed: () => Navigator.pop(alertDialogContext),
-                                                          child: Text('Ok'),
+                                                          child: const Text('Ok'),
                                                         ),
                                                       ],
                                                     );
                                                   },
                                                 );
                                               }
+
+                                              // NEW logic (kept exactly, this actually drives the feature)
+                                              final start = _model.startLocationTextController.text.trim();
+                                              final end = _model.endLocationTextController.text.trim();
+
+                                              debugPrint('START LOCATION: $start');
+                                              debugPrint('END LOCATION: $end');
+
+                                              if (start.isEmpty || end.isEmpty) {
+                                                await showDialog(
+                                                  context: context,
+                                                  builder: (context) {
+                                                    return AlertDialog(
+                                                      title: const Text('Attention Required'),
+                                                      content: const Text('Please fill ride start and end location'),
+                                                      actions: [
+                                                        TextButton(
+                                                          onPressed: () => Navigator.pop(context),
+                                                          child: const Text('Ok'),
+                                                        ),
+                                                      ],
+                                                    );
+                                                  },
+                                                );
+                                                return;
+                                              }
+
+                                              if (start.toLowerCase() == end.toLowerCase()) {
+                                                await showDialog(
+                                                  context: context,
+                                                  builder: (context) {
+                                                    return AlertDialog(
+                                                      title: const Text('Invalid Route'),
+                                                      content: const Text('Start and end location cannot be the same'),
+                                                      actions: [
+                                                        TextButton(
+                                                          onPressed: () => Navigator.pop(context),
+                                                          child: const Text('Ok'),
+                                                        ),
+                                                      ],
+                                                    );
+                                                  },
+                                                );
+                                                return;
+                                              }
+
+                                              // VALID CASE: update HomeWidget search state
+                                              setState(() {
+                                                // _model.searchStartLocation = "Aligarh";
+                                                _model.searchStartLocation = start;
+                                                // _model.searchEndLocation = "Faridabad";
+                                                _model.searchEndLocation = end;
+                                                _model.isSearchActive = true;
+                                              });
+
+                                              // Any other old navigation lines in valid case should also be commented, same style as above.
                                             },
+
+/*
+                                            onTap: () async {
+                                              // Existing FlutterFlow null / empty checks (kept, but NAVIGATION COMMENTED)
+                                              if (_model.startLocationTextController.text != null && _model.startLocationTextController.text != '' && _model.endLocationTextController.text != null && _model.endLocationTextController.text != '') {
+                                                // Old navigation – now disabled but preserved
+                                                */
+/*
+    context.pushNamed(
+      SearchRideWidget.routeName,
+      queryParameters: {
+        'query1': serializeParam(
+          _model.startLocationTextController.text,
+          ParamType.String,
+        ),
+        'query2': serializeParam(
+          _model.endLocationTextController.text,
+          ParamType.String,
+        ),
+      }.withoutNulls,
+    );
+    */ /*
+
+                                              } else {
+                                                await showDialog(
+                                                  context: context,
+                                                  builder: (alertDialogContext) {
+                                                    return AlertDialog(
+                                                      title: const Text('Attention Required'),
+                                                      content: const Text('Please fill ride start and end location'),
+                                                      actions: [
+                                                        TextButton(
+                                                          onPressed: () => Navigator.pop(alertDialogContext),
+                                                          child: const Text('Ok'),
+                                                        ),
+                                                      ],
+                                                    );
+                                                  },
+                                                );
+                                              }
+
+                                              // ✅ STATIC TESTING: Aligarh → Faridabad
+                                              final start = "Aligarh";
+                                              final end = "Faridabad";
+
+                                              debugPrint('START LOCATION: $start');
+                                              debugPrint('END LOCATION: $end');
+
+                                              if (start.isEmpty || end.isEmpty) {
+                                                await showDialog(
+                                                  context: context,
+                                                  builder: (context) {
+                                                    return AlertDialog(
+                                                      title: const Text('Attention Required'),
+                                                      content: const Text('Please fill ride start and end location'),
+                                                      actions: [
+                                                        TextButton(
+                                                          onPressed: () => Navigator.pop(context),
+                                                          child: const Text('Ok'),
+                                                        ),
+                                                      ],
+                                                    );
+                                                  },
+                                                );
+                                                return;
+                                              }
+
+                                              if (start.toLowerCase() == end.toLowerCase()) {
+                                                await showDialog(
+                                                  context: context,
+                                                  builder: (context) {
+                                                    return AlertDialog(
+                                                      title: const Text('Invalid Route'),
+                                                      content: const Text('Start and end location cannot be the same'),
+                                                      actions: [
+                                                        TextButton(
+                                                          onPressed: () => Navigator.pop(context),
+                                                          child: const Text('Ok'),
+                                                        ),
+                                                      ],
+                                                    );
+                                                  },
+                                                );
+                                                return;
+                                              }
+
+                                              // VALID CASE: update HomeWidget search state with static values
+                                              setState(() {
+                                                _model.searchStartLocation = "Aligarh";
+                                                _model.searchEndLocation = "Faridabad";
+                                                _model.isSearchActive = true;
+                                              });
+                                            },
+*/
+
                                             child: Container(
                                               width: 40.0,
                                               height: 40.0,
@@ -954,12 +1035,40 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                                                               crossAxisAlignment: CrossAxisAlignment.start,
                                                               children: [
                                                                 StreamBuilder<List<RidesNewRecord>>(
-                                                                  stream: queryRidesNewRecord(
-                                                                    queryBuilder: (ridesNewRecord) => ridesNewRecord.where(
-                                                                      'pickupTime',
-                                                                      isEqualTo: _model.pageState,
-                                                                    ),
-                                                                  ),
+                                                                  // stream: queryRidesNewRecord(
+                                                                  //   queryBuilder: (ridesNewRecord) =>
+                                                                  //       ridesNewRecord.where(
+                                                                  //         'pickupTime',
+                                                                  //         isEqualTo: _model.pageState,
+                                                                  //       ),
+                                                                  // ),
+                                                                  stream: () {
+                                                                    if (_model.isSearchActive && _model.searchStartLocation != null && _model.searchEndLocation != null) {
+                                                                      // ✅ SEARCH MODE: rides matching start OR end location
+                                                                      return queryRidesNewRecord(
+                                                                        queryBuilder: (ridesNewRecord) => ridesNewRecord.where(
+                                                                          Filter.and(
+                                                                            Filter(
+                                                                              'RideStartLocation',
+                                                                              isEqualTo: _model.searchStartLocation,
+                                                                            ),
+                                                                            Filter(
+                                                                              'RideEndLocation',
+                                                                              isEqualTo: _model.searchEndLocation,
+                                                                            ),
+                                                                          ),
+                                                                        ),
+                                                                      );
+                                                                    } else {
+                                                                      // NORMAL MODE: original date filter
+                                                                      return queryRidesNewRecord(
+                                                                        queryBuilder: (ridesNewRecord) => ridesNewRecord.where(
+                                                                          'pickupTime',
+                                                                          isEqualTo: _model.pageState,
+                                                                        ),
+                                                                      );
+                                                                    }
+                                                                  }(),
                                                                   builder: (context, snapshot) {
                                                                     // Customize what your widget looks like when it's loading.
                                                                     if (!snapshot.hasData) {
@@ -975,72 +1084,91 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                                                                       );
                                                                     }
                                                                     List<RidesNewRecord> listViewRidesNewRecordList = snapshot.data!;
+                                                                    // ✅ DEBUG PRINT 2: Show ALL ride data
+                                                                    for (int i = 0; i < listViewRidesNewRecordList.length; i++) {
+                                                                      final ride = listViewRidesNewRecordList[i];
+                                                                      print("🚗 RIDE $i:");
+                                                                      print("   RideStartLocation: '${ride.rideStartLocation}'");
+                                                                      print("   RideEndLocation: '${ride.rideEndLocation}'");
+                                                                      print("   creatorID: ${ride.creatorID}");
+                                                                      print("   travelTime: ${ride.travelTime}");
+                                                                      print("   modeOfTransport: '${ride.modeOfTransport}'");
+                                                                    }
                                                                     if (listViewRidesNewRecordList.isEmpty) {
+                                                                      print("⏳ LOADING...");
                                                                       return NoRideToShowUserWidget();
                                                                     }
 
-                                                                    return ListView.separated(
-                                                                      padding: EdgeInsets.zero,
-                                                                      primary: false,
-                                                                      shrinkWrap: true,
-                                                                      scrollDirection: Axis.vertical,
-                                                                      itemCount: listViewRidesNewRecordList.length,
-                                                                      separatorBuilder: (_, __) => SizedBox(height: 10.0),
-                                                                      itemBuilder: (context, listViewIndex) {
-                                                                        final listViewRidesNewRecord = listViewRidesNewRecordList[listViewIndex];
-                                                                        return Stack(
-                                                                          children: [
-                                                                            InkWell(
-                                                                              splashColor: Colors.transparent,
-                                                                              focusColor: Colors.transparent,
-                                                                              hoverColor: Colors.transparent,
-                                                                              highlightColor: Colors.transparent,
-                                                                              onTap: () async {
-                                                                                context.pushNamed(
-                                                                                  RideDetailsCustomerWidget.routeName,
-                                                                                  queryParameters: {
-                                                                                    'rideDetails': serializeParam(
-                                                                                      listViewRidesNewRecord.reference,
-                                                                                      ParamType.DocumentReference,
-                                                                                    ),
-                                                                                  }.withoutNulls,
-                                                                                );
-                                                                              },
-                                                                              child: Material(
-                                                                                color: Colors.transparent,
-                                                                                elevation: 10.0,
-                                                                                shape: RoundedRectangleBorder(
-                                                                                  borderRadius: BorderRadius.circular(12.0),
-                                                                                ),
-                                                                                child: ClipRRect(
-                                                                                  borderRadius: BorderRadius.circular(12.0),
-                                                                                  child: Container(
-                                                                                    width: double.infinity,
-                                                                                    decoration: BoxDecoration(
-                                                                                      color: FlutterFlowTheme.of(context).primaryBackground,
-                                                                                      boxShadow: [
-                                                                                        BoxShadow(
-                                                                                          blurRadius: 4.0,
-                                                                                          color: Color(0x1A000000),
-                                                                                          offset: Offset(
-                                                                                            0.0,
-                                                                                            2.0,
-                                                                                          ),
-                                                                                        )
-                                                                                      ],
-                                                                                      borderRadius: BorderRadius.circular(12.0),
-                                                                                      border: Border.all(
-                                                                                        color: FlutterFlowTheme.of(context).tertiary,
+                                                                    if (_model.isSearchActive) {
+                                                                      // ✅ DEBUG PRINT 1: Query parameters
+                                                                      print("🔍 SEARCH QUERY1 IN HOME_WIDGET: '${_model.searchStartLocation}'");
+                                                                      print("🔍 SEARCH QUERY2 IN HOME_WIDGET: '${_model.searchEndLocation}'");
+
+                                                                      return ListView.separated(
+                                                                        padding: EdgeInsets.zero,
+                                                                        primary: false,
+                                                                        shrinkWrap: true,
+                                                                        scrollDirection: Axis.vertical,
+                                                                        itemCount: listViewRidesNewRecordList.length,
+                                                                        separatorBuilder: (_, __) => SizedBox(height: 10.0),
+                                                                        itemBuilder: (context, index) {
+                                                                          final ride = listViewRidesNewRecordList[index];
+                                                                          return Stack(
+                                                                            children: [
+                                                                              InkWell(
+                                                                                splashColor: Colors.transparent,
+                                                                                focusColor: Colors.transparent,
+                                                                                hoverColor: Colors.transparent,
+                                                                                highlightColor: Colors.transparent,
+                                                                                onTap: () async {
+                                                                                  context.pushNamed(
+                                                                                    RideDetailsCustomerWidget.routeName,
+                                                                                    queryParameters: {
+                                                                                      'rideDetails': serializeParam(
+                                                                                        ride.reference,
+                                                                                        ParamType.DocumentReference,
                                                                                       ),
-                                                                                    ),
-                                                                                    alignment: AlignmentDirectional(1.0, 0.0),
-                                                                                    child: Padding(
-                                                                                      padding: EdgeInsetsDirectional.fromSTEB(10.0, 10.0, 5.0, 10.0),
-                                                                                      child: SizedBox(
+                                                                                    }.withoutNulls,
+                                                                                  );
+                                                                                },
+                                                                                child: Material(
+                                                                                  color: Colors.transparent,
+                                                                                  elevation: 10.0,
+                                                                                  shape: RoundedRectangleBorder(
+                                                                                    borderRadius: BorderRadius.circular(12.0),
+                                                                                  ),
+                                                                                  child: ClipRRect(
+                                                                                    borderRadius: BorderRadius.circular(12.0),
+                                                                                    child: Container(
+                                                                                      width: double.infinity,
+                                                                                      // constraints: BoxConstraints(
+                                                                                      //   minHeight: 155.0,  // Min card height
+                                                                                      //   maxHeight: 155.0,  // Max card height
+                                                                                      // ),
+                                                                                      decoration: BoxDecoration(
+                                                                                        color: FlutterFlowTheme.of(context).primaryBackground,
+                                                                                        boxShadow: [
+                                                                                          BoxShadow(
+                                                                                            blurRadius: 4.0,
+                                                                                            color: Color(0x1A000000),
+                                                                                            offset: Offset(
+                                                                                              0.0,
+                                                                                              2.0,
+                                                                                            ),
+                                                                                          )
+                                                                                        ],
+                                                                                        borderRadius: BorderRadius.circular(12.0),
+                                                                                        border: Border.all(
+                                                                                          color: FlutterFlowTheme.of(context).tertiary,
+                                                                                        ),
+                                                                                      ),
+                                                                                      alignment: AlignmentDirectional(1.0, 0.0),
+                                                                                      child: Padding(
+                                                                                        padding: EdgeInsetsDirectional.fromSTEB(10.0, 10.0, 5.0, 10.0),
                                                                                         child: Column(
-                                                                                          mainAxisSize: MainAxisSize.min,
-                                                                                          mainAxisAlignment: MainAxisAlignment.center,
-                                                                                          crossAxisAlignment: CrossAxisAlignment.center,
+                                                                                          mainAxisSize: MainAxisSize.min,  // Takes only needed space
+                                                                                          mainAxisAlignment: MainAxisAlignment.start,  // Top alignment
+                                                                                          crossAxisAlignment: CrossAxisAlignment.start,  // Left alignment
                                                                                           children: [
                                                                                             Row(
                                                                                               mainAxisSize: MainAxisSize.max,
@@ -1065,7 +1193,7 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                                                                                                         child: Padding(
                                                                                                           padding: EdgeInsetsDirectional.fromSTEB(15.0, 5.0, 10.0, 5.0),
                                                                                                           child: Text(
-                                                                                                            listViewRidesNewRecord.rideStartLocation,
+                                                                                                            ride.rideStartLocation,
                                                                                                             style: FlutterFlowTheme.of(context).bodyMedium.override(
                                                                                                                   font: GoogleFonts.inter(
                                                                                                                     fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
@@ -1095,7 +1223,7 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                                                                                                   child: Row(
                                                                                                     mainAxisSize: MainAxisSize.max,
                                                                                                     children: [
-                                                                                                      if (listViewRidesNewRecord.modeOfTransport == 'Bike')
+                                                                                                      if (ride.modeOfTransport == 'Bike')
                                                                                                         Padding(
                                                                                                           padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
                                                                                                           child: Icon(
@@ -1104,7 +1232,7 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                                                                                                             size: 20.0,
                                                                                                           ),
                                                                                                         ),
-                                                                                                      if (listViewRidesNewRecord.modeOfTransport == 'Train')
+                                                                                                      if (ride.modeOfTransport == 'Train')
                                                                                                         Padding(
                                                                                                           padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
                                                                                                           child: Icon(
@@ -1113,7 +1241,7 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                                                                                                             size: 20.0,
                                                                                                           ),
                                                                                                         ),
-                                                                                                      if (listViewRidesNewRecord.modeOfTransport == 'Car')
+                                                                                                      if (ride.modeOfTransport == 'Car')
                                                                                                         Padding(
                                                                                                           padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
                                                                                                           child: FaIcon(
@@ -1122,7 +1250,7 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                                                                                                             size: 15.0,
                                                                                                           ),
                                                                                                         ),
-                                                                                                      if (listViewRidesNewRecord.modeOfTransport == 'Bus')
+                                                                                                      if (ride.modeOfTransport == 'Bus')
                                                                                                         FaIcon(
                                                                                                           FontAwesomeIcons.bus,
                                                                                                           color: Color(0xFF919191),
@@ -1131,7 +1259,7 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                                                                                                       Align(
                                                                                                         alignment: AlignmentDirectional(0.0, 0.0),
                                                                                                         child: Text(
-                                                                                                          '${dateTimeFormat("jm", listViewRidesNewRecord.pickupTime)} । ${dateTimeFormat("yMMMd", listViewRidesNewRecord.pickupTime)}',
+                                                                                                          ride.travelTime.isNotEmpty ? ride.travelTime : 'No time',
                                                                                                           style: FlutterFlowTheme.of(context).labelMedium.override(
                                                                                                                 font: GoogleFonts.inter(
                                                                                                                   fontWeight: FlutterFlowTheme.of(context).labelMedium.fontWeight,
@@ -1171,7 +1299,7 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                                                                                                       child: Padding(
                                                                                                         padding: EdgeInsetsDirectional.fromSTEB(15.0, 5.0, 10.0, 5.0),
                                                                                                         child: Text(
-                                                                                                          listViewRidesNewRecord.rideEndLocation,
+                                                                                                          ride.rideEndLocation,
                                                                                                           style: FlutterFlowTheme.of(context).bodyMedium.override(
                                                                                                                 font: GoogleFonts.inter(
                                                                                                                   fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
@@ -1189,11 +1317,11 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                                                                                                 ),
                                                                                               ].divide(SizedBox(width: 5.0)),
                                                                                             ),
-                                                                                            if (listViewRidesNewRecord.creatorID != null)
+                                                                                            if (ride.creatorID != null)
                                                                                               Padding(
                                                                                                 padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
                                                                                                 child: StreamBuilder<UsersRecord>(
-                                                                                                  stream: UsersRecord.getDocument(listViewRidesNewRecord.creatorID!),
+                                                                                                  stream: UsersRecord.getDocument(ride.creatorID!),
                                                                                                   builder: (context, snapshot) {
                                                                                                     // Customize what your widget looks like when it's loading.
                                                                                                     if (!snapshot.hasData) {
@@ -1296,9 +1424,7 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                                                                                                                     crossAxisAlignment: CrossAxisAlignment.start,
                                                                                                                     children: [
                                                                                                                       Text(
-                                                                                                                        rowUsersRecord.displayName != null && rowUsersRecord.displayName != ''
-                                                                                                                            ? rowUsersRecord.displayName
-                                                                                                                            : 'Driver',
+                                                                                                                        rowUsersRecord.displayName != null && rowUsersRecord.displayName != '' ? rowUsersRecord.displayName : 'Driver',
                                                                                                                         style: FlutterFlowTheme.of(context).bodyMedium.override(
                                                                                                                               font: GoogleFonts.inter(
                                                                                                                                 fontWeight: FontWeight.w600,
@@ -1373,122 +1499,621 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                                                                                   ),
                                                                                 ),
                                                                               ),
-                                                                            ).animateOnPageLoad(animationsMap['containerOnPageLoadAnimation2']!),
-                                                                            Align(
-                                                                              alignment: AlignmentDirectional(0.97, -0.96),
-                                                                              child: Padding(
-                                                                                padding: EdgeInsetsDirectional.fromSTEB(10.0, 10.0, 5.0, 0.0),
-                                                                                child: Container(
-                                                                                  width: 60.0,
-                                                                                  height: 100.0,
-                                                                                  decoration: BoxDecoration(
-                                                                                    color: Color(0xFFF97E4C),
-                                                                                    borderRadius: BorderRadius.circular(12.0),
-                                                                                  ),
-                                                                                  child: Column(
-                                                                                    mainAxisSize: MainAxisSize.min,
-                                                                                    mainAxisAlignment: MainAxisAlignment.center,
-                                                                                    children: [
-                                                                                      Padding(
-                                                                                        padding: EdgeInsetsDirectional.fromSTEB(0.0, 5.0, 0.0, 0.0),
-                                                                                        child: Text(
-                                                                                          'Ride',
-                                                                                          style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                                                                font: GoogleFonts.inter(
-                                                                                                  fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
-                                                                                                  fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                                ),
-                                                                                                color: FlutterFlowTheme.of(context).info,
-                                                                                                fontSize: 12.0,
-                                                                                                letterSpacing: 0.0,
+                                                                              Align(
+                                                                                alignment: AlignmentDirectional(0.97, -0.96),
+                                                                                child: Padding(
+                                                                                  padding: EdgeInsetsDirectional.fromSTEB(10.0, 10.0, 5.0, 0.0),
+                                                                                  child: Container(
+                                                                                    // ✅ RESPONSIVE SIZING
+                                                                                    width: MediaQuery.sizeOf(context).width * 0.12,  // 12% of screen width
+                                                                                    constraints: BoxConstraints(
+                                                                                      minWidth: 55.0,    // Minimum width
+                                                                                      maxWidth: 70.0,    // Maximum width
+                                                                                      minHeight: 85.0,   // Minimum height
+                                                                                      maxHeight: 100.0,  // Maximum height
+                                                                                    ),
+                                                                                    decoration: BoxDecoration(
+                                                                                      color: Color(0xFFF97E4C),
+                                                                                      borderRadius: BorderRadius.circular(12.0),
+                                                                                    ),
+                                                                                    child: Column(
+                                                                                      mainAxisSize: MainAxisSize.min,
+                                                                                      mainAxisAlignment: MainAxisAlignment.center,
+                                                                                      children: [
+                                                                                        Padding(
+                                                                                          padding: EdgeInsetsDirectional.fromSTEB(0.0, 5.0, 0.0, 0.0),
+                                                                                          child: Text(
+                                                                                            'Ride',
+                                                                                            style: FlutterFlowTheme.of(context).bodyMedium.override(
+                                                                                              font: GoogleFonts.inter(
                                                                                                 fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
                                                                                                 fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
                                                                                               ),
+                                                                                              color: FlutterFlowTheme.of(context).info,
+                                                                                              fontSize: 12.0,
+                                                                                              letterSpacing: 0.0,
+                                                                                            ),
+                                                                                          ),
                                                                                         ),
-                                                                                      ),
-                                                                                      Padding(
-                                                                                        padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 4.0),
-                                                                                        child: AutoSizeText(
-                                                                                          '₹${formatNumber(
-                                                                                            listViewRidesNewRecord.rideCost,
-                                                                                            formatType: FormatType.custom,
-                                                                                            format: '',
-                                                                                            locale: '',
-                                                                                          )}',
-                                                                                          style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                                                                font: GoogleFonts.inter(
-                                                                                                  fontWeight: FontWeight.bold,
-                                                                                                  fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                                ),
-                                                                                                color: FlutterFlowTheme.of(context).info,
-                                                                                                fontSize: 15.0,
-                                                                                                letterSpacing: 0.0,
+                                                                                        Padding(
+                                                                                          padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 4.0),
+                                                                                          child: AutoSizeText(
+                                                                                            '₹${formatNumber(ride.rideCost, formatType: FormatType.custom, format: '', locale: '')}',
+                                                                                            style: FlutterFlowTheme.of(context).bodyMedium.override(
+                                                                                              font: GoogleFonts.inter(
                                                                                                 fontWeight: FontWeight.bold,
                                                                                                 fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
                                                                                               ),
-                                                                                        ),
-                                                                                      ),
-                                                                                      Container(
-                                                                                        width: double.infinity,
-                                                                                        height: 55.0,
-                                                                                        decoration: BoxDecoration(
-                                                                                          color: Color(0xFFFF9561),
-                                                                                          borderRadius: BorderRadius.only(
-                                                                                            bottomLeft: Radius.circular(10.0),
-                                                                                            bottomRight: Radius.circular(10.0),
-                                                                                            topLeft: Radius.circular(10.0),
-                                                                                            topRight: Radius.circular(10.0),
+                                                                                              color: FlutterFlowTheme.of(context).info,
+                                                                                              fontSize: 15.0,
+                                                                                              letterSpacing: 0.0,
+                                                                                              fontWeight: FontWeight.bold,
+                                                                                            ),
+                                                                                            maxLines: 1,
+                                                                                            minFontSize: 12,
                                                                                           ),
                                                                                         ),
-                                                                                        child: Column(
-                                                                                          mainAxisSize: MainAxisSize.min,
-                                                                                          mainAxisAlignment: MainAxisAlignment.start,
-                                                                                          children: [
-                                                                                            Padding(
-                                                                                              padding: EdgeInsetsDirectional.fromSTEB(0.0, 5.0, 0.0, 0.0),
-                                                                                              child: Text(
-                                                                                                'Parcel',
-                                                                                                textAlign: TextAlign.center,
-                                                                                                style: FlutterFlowTheme.of(context).labelSmall.override(
-                                                                                                      font: GoogleFonts.inter(
-                                                                                                        fontWeight: FontWeight.w500,
-                                                                                                        fontStyle: FlutterFlowTheme.of(context).labelSmall.fontStyle,
-                                                                                                      ),
-                                                                                                      color: FlutterFlowTheme.of(context).info,
-                                                                                                      fontSize: 12.0,
-                                                                                                      letterSpacing: 0.0,
+                                                                                        // ✅ Parcel section also responsive
+                                                                                        Container(
+                                                                                          width: double.infinity,
+                                                                                          // ✅ Flexible height
+                                                                                          constraints: BoxConstraints(minHeight: 48.0, maxHeight: 55.0),
+                                                                                          decoration: BoxDecoration(
+                                                                                            color: Color(0xFFFF9561),
+                                                                                            borderRadius: BorderRadius.circular(10.0),
+                                                                                          ),
+                                                                                          child: Column(
+                                                                                            mainAxisSize: MainAxisSize.min,
+                                                                                            mainAxisAlignment: MainAxisAlignment.center,
+                                                                                            children: [
+                                                                                              Padding(
+                                                                                                padding: EdgeInsetsDirectional.fromSTEB(0.0, 3.0, 0.0, 0.0),
+                                                                                                child: Text(
+                                                                                                  'Parcel',
+                                                                                                  textAlign: TextAlign.center,
+                                                                                                  style: FlutterFlowTheme.of(context).labelSmall.override(
+                                                                                                    font: GoogleFonts.inter(
                                                                                                       fontWeight: FontWeight.w500,
                                                                                                       fontStyle: FlutterFlowTheme.of(context).labelSmall.fontStyle,
                                                                                                     ),
-                                                                                              ),
-                                                                                            ),
-                                                                                            AutoSizeText(
-                                                                                              '₹${listViewRidesNewRecord.totalDeliveryCost}',
-                                                                                              textAlign: TextAlign.center,
-                                                                                              style: FlutterFlowTheme.of(context).labelSmall.override(
-                                                                                                    font: GoogleFonts.inter(
-                                                                                                      fontWeight: FontWeight.bold,
-                                                                                                      fontStyle: FlutterFlowTheme.of(context).labelSmall.fontStyle,
-                                                                                                    ),
                                                                                                     color: FlutterFlowTheme.of(context).info,
-                                                                                                    fontSize: 15.0,
+                                                                                                    fontSize: 11.0,
                                                                                                     letterSpacing: 0.0,
+                                                                                                  ),
+                                                                                                ),
+                                                                                              ),
+                                                                                              AutoSizeText(
+                                                                                                '₹${ride.totalDeliveryCost}',
+                                                                                                textAlign: TextAlign.center,
+                                                                                                style: FlutterFlowTheme.of(context).labelSmall.override(
+                                                                                                  font: GoogleFonts.inter(
                                                                                                     fontWeight: FontWeight.bold,
                                                                                                     fontStyle: FlutterFlowTheme.of(context).labelSmall.fontStyle,
                                                                                                   ),
-                                                                                            ),
-                                                                                          ].divide(SizedBox(height: 4.0)),
+                                                                                                  color: FlutterFlowTheme.of(context).info,
+                                                                                                  fontSize: 14.0,
+                                                                                                  letterSpacing: 0.0,
+                                                                                                ),
+                                                                                                maxLines: 1,
+                                                                                                minFontSize: 11,
+                                                                                              ),
+                                                                                            ],
+                                                                                          ),
                                                                                         ),
-                                                                                      ),
-                                                                                    ],
+                                                                                      ],
+                                                                                    ),
                                                                                   ),
                                                                                 ),
                                                                               ),
-                                                                            ),
-                                                                          ],
-                                                                        );
-                                                                      },
-                                                                    ).animateOnPageLoad(animationsMap['listViewOnPageLoadAnimation']!);
+                                                                            ],
+                                                                          );
+                                                                        },
+                                                                      ).animateOnPageLoad(animationsMap['listViewOnPageLoadAnimation']!);
+                                                                    } else {
+                                                                      return ListView.separated(
+                                                                        padding: EdgeInsets.zero,
+                                                                        primary: false,
+                                                                        shrinkWrap: true,
+                                                                        scrollDirection: Axis.vertical,
+                                                                        itemCount: listViewRidesNewRecordList.length,
+                                                                        separatorBuilder: (_, __) => SizedBox(height: 10.0),
+                                                                        itemBuilder: (context, listViewIndex) {
+                                                                          final listViewRidesNewRecord = listViewRidesNewRecordList[listViewIndex];
+                                                                          return Stack(
+                                                                            children: [
+                                                                              InkWell(
+                                                                                splashColor: Colors.transparent,
+                                                                                focusColor: Colors.transparent,
+                                                                                hoverColor: Colors.transparent,
+                                                                                highlightColor: Colors.transparent,
+                                                                                onTap: () async {
+                                                                                  context.pushNamed(
+                                                                                    RideDetailsCustomerWidget.routeName,
+                                                                                    queryParameters: {
+                                                                                      'rideDetails': serializeParam(
+                                                                                        listViewRidesNewRecord.reference,
+                                                                                        ParamType.DocumentReference,
+                                                                                      ),
+                                                                                    }.withoutNulls,
+                                                                                  );
+                                                                                },
+                                                                                child: Material(
+                                                                                  color: Colors.transparent,
+                                                                                  elevation: 10.0,
+                                                                                  shape: RoundedRectangleBorder(
+                                                                                    borderRadius: BorderRadius.circular(12.0),
+                                                                                  ),
+                                                                                  child: ClipRRect(
+                                                                                    borderRadius: BorderRadius.circular(12.0),
+                                                                                    child: Container(
+                                                                                      width: double.infinity,
+                                                                                      decoration: BoxDecoration(
+                                                                                        color: FlutterFlowTheme.of(context).primaryBackground,
+                                                                                        boxShadow: [
+                                                                                          BoxShadow(
+                                                                                            blurRadius: 4.0,
+                                                                                            color: Color(0x1A000000),
+                                                                                            offset: Offset(
+                                                                                              0.0,
+                                                                                              2.0,
+                                                                                            ),
+                                                                                          )
+                                                                                        ],
+                                                                                        borderRadius: BorderRadius.circular(12.0),
+                                                                                        border: Border.all(
+                                                                                          color: FlutterFlowTheme.of(context).tertiary,
+                                                                                        ),
+                                                                                      ),
+                                                                                      alignment: AlignmentDirectional(1.0, 0.0),
+                                                                                      child: Padding(
+                                                                                        padding: EdgeInsetsDirectional.fromSTEB(10.0, 10.0, 5.0, 10.0),
+                                                                                        child: SizedBox(
+                                                                                          child: Column(
+                                                                                            mainAxisSize: MainAxisSize.min,
+                                                                                            mainAxisAlignment: MainAxisAlignment.center,
+                                                                                            crossAxisAlignment: CrossAxisAlignment.center,
+                                                                                            children: [
+                                                                                              Row(
+                                                                                                mainAxisSize: MainAxisSize.max,
+                                                                                                mainAxisAlignment: MainAxisAlignment.start,
+                                                                                                children: [
+                                                                                                  Row(
+                                                                                                    mainAxisSize: MainAxisSize.max,
+                                                                                                    children: [
+                                                                                                      Icon(
+                                                                                                        Icons.location_on_outlined,
+                                                                                                        color: FlutterFlowTheme.of(context).primary,
+                                                                                                        size: 24.0,
+                                                                                                      ),
+                                                                                                      ClipRRect(
+                                                                                                        borderRadius: BorderRadius.circular(15.0),
+                                                                                                        child: Container(
+                                                                                                          width: 170.0,
+                                                                                                          decoration: BoxDecoration(
+                                                                                                            color: Color(0xFFE3E6E0),
+                                                                                                            borderRadius: BorderRadius.circular(15.0),
+                                                                                                          ),
+                                                                                                          child: Padding(
+                                                                                                            padding: EdgeInsetsDirectional.fromSTEB(15.0, 5.0, 10.0, 5.0),
+                                                                                                            child: Text(
+                                                                                                              listViewRidesNewRecord.rideStartLocation,
+                                                                                                              style: FlutterFlowTheme.of(context).bodyMedium.override(
+                                                                                                                    font: GoogleFonts.inter(
+                                                                                                                      fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
+                                                                                                                      fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                                                    ),
+                                                                                                                    fontSize: 12.0,
+                                                                                                                    letterSpacing: 0.0,
+                                                                                                                    fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
+                                                                                                                    fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                                                  ),
+                                                                                                            ),
+                                                                                                          ),
+                                                                                                        ),
+                                                                                                      ),
+                                                                                                    ],
+                                                                                                  ),
+                                                                                                ].divide(SizedBox(width: 5.0)),
+                                                                                              ),
+                                                                                              Align(
+                                                                                                alignment: AlignmentDirectional(-1.0, 0.0),
+                                                                                                child: Padding(
+                                                                                                  padding: EdgeInsetsDirectional.fromSTEB(25.0, 0.0, 0.0, 0.0),
+                                                                                                  child: Container(
+                                                                                                    width: 184.9,
+                                                                                                    height: 16.8,
+                                                                                                    decoration: BoxDecoration(),
+                                                                                                    child: Row(
+                                                                                                      mainAxisSize: MainAxisSize.max,
+                                                                                                      children: [
+                                                                                                        if (listViewRidesNewRecord.modeOfTransport == 'Bike')
+                                                                                                          Padding(
+                                                                                                            padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
+                                                                                                            child: Icon(
+                                                                                                              Icons.motorcycle_sharp,
+                                                                                                              color: Color(0xFF8A8888),
+                                                                                                              size: 20.0,
+                                                                                                            ),
+                                                                                                          ),
+                                                                                                        if (listViewRidesNewRecord.modeOfTransport == 'Train')
+                                                                                                          Padding(
+                                                                                                            padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
+                                                                                                            child: Icon(
+                                                                                                              Icons.train,
+                                                                                                              color: Color(0xFF929090),
+                                                                                                              size: 20.0,
+                                                                                                            ),
+                                                                                                          ),
+                                                                                                        if (listViewRidesNewRecord.modeOfTransport == 'Car')
+                                                                                                          Padding(
+                                                                                                            padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
+                                                                                                            child: FaIcon(
+                                                                                                              FontAwesomeIcons.carSide,
+                                                                                                              color: Color(0xFF8F9192),
+                                                                                                              size: 15.0,
+                                                                                                            ),
+                                                                                                          ),
+                                                                                                        if (listViewRidesNewRecord.modeOfTransport == 'Bus')
+                                                                                                          FaIcon(
+                                                                                                            FontAwesomeIcons.bus,
+                                                                                                            color: Color(0xFF919191),
+                                                                                                            size: 15.0,
+                                                                                                          ),
+                                                                                                        Align(
+                                                                                                          alignment: AlignmentDirectional(0.0, 0.0),
+                                                                                                          child: Text(
+                                                                                                            '${dateTimeFormat("jm", listViewRidesNewRecord.pickupTime)} । ${dateTimeFormat("yMMMd", listViewRidesNewRecord.pickupTime)}',
+                                                                                                            style: FlutterFlowTheme.of(context).labelMedium.override(
+                                                                                                                  font: GoogleFonts.inter(
+                                                                                                                    fontWeight: FlutterFlowTheme.of(context).labelMedium.fontWeight,
+                                                                                                                    fontStyle: FlutterFlowTheme.of(context).labelMedium.fontStyle,
+                                                                                                                  ),
+                                                                                                                  color: FlutterFlowTheme.of(context).secondaryText,
+                                                                                                                  fontSize: 12.0,
+                                                                                                                  letterSpacing: 0.0,
+                                                                                                                  fontWeight: FlutterFlowTheme.of(context).labelMedium.fontWeight,
+                                                                                                                  fontStyle: FlutterFlowTheme.of(context).labelMedium.fontStyle,
+                                                                                                                ),
+                                                                                                          ),
+                                                                                                        ),
+                                                                                                      ].divide(SizedBox(width: 5.0)),
+                                                                                                    ),
+                                                                                                  ),
+                                                                                                ),
+                                                                                              ),
+                                                                                              Row(
+                                                                                                mainAxisSize: MainAxisSize.max,
+                                                                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                                                                children: [
+                                                                                                  Row(
+                                                                                                    mainAxisSize: MainAxisSize.min,
+                                                                                                    children: [
+                                                                                                      Icon(
+                                                                                                        Icons.location_on_outlined,
+                                                                                                        color: FlutterFlowTheme.of(context).primary,
+                                                                                                        size: 24.0,
+                                                                                                      ),
+                                                                                                      Container(
+                                                                                                        width: 170.0,
+                                                                                                        decoration: BoxDecoration(
+                                                                                                          color: Color(0xFFE3E6E0),
+                                                                                                          borderRadius: BorderRadius.circular(15.0),
+                                                                                                        ),
+                                                                                                        child: Padding(
+                                                                                                          padding: EdgeInsetsDirectional.fromSTEB(15.0, 5.0, 10.0, 5.0),
+                                                                                                          child: Text(
+                                                                                                            listViewRidesNewRecord.rideEndLocation,
+                                                                                                            style: FlutterFlowTheme.of(context).bodyMedium.override(
+                                                                                                                  font: GoogleFonts.inter(
+                                                                                                                    fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
+                                                                                                                    fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                                                  ),
+                                                                                                                  fontSize: 12.0,
+                                                                                                                  letterSpacing: 0.0,
+                                                                                                                  fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
+                                                                                                                  fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                                                ),
+                                                                                                          ),
+                                                                                                        ),
+                                                                                                      ),
+                                                                                                    ],
+                                                                                                  ),
+                                                                                                ].divide(SizedBox(width: 5.0)),
+                                                                                              ),
+                                                                                              if (listViewRidesNewRecord.creatorID != null)
+                                                                                                Padding(
+                                                                                                  padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
+                                                                                                  child: StreamBuilder<UsersRecord>(
+                                                                                                    stream: UsersRecord.getDocument(listViewRidesNewRecord.creatorID!),
+                                                                                                    builder: (context, snapshot) {
+                                                                                                      // Customize what your widget looks like when it's loading.
+                                                                                                      if (!snapshot.hasData) {
+                                                                                                        return Center(
+                                                                                                          child: SizedBox(
+                                                                                                            width: 50.0,
+                                                                                                            height: 50.0,
+                                                                                                            child: SpinKitFadingCircle(
+                                                                                                              color: Color(0xFF2B3C58),
+                                                                                                              size: 50.0,
+                                                                                                            ),
+                                                                                                          ),
+                                                                                                        );
+                                                                                                      }
+
+                                                                                                      final rowUsersRecord = snapshot.data!;
+
+                                                                                                      return Row(
+                                                                                                        mainAxisSize: MainAxisSize.max,
+                                                                                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                                                                        children: [
+                                                                                                          Align(
+                                                                                                            alignment: AlignmentDirectional(-1.0, 0.0),
+                                                                                                            child: Container(
+                                                                                                              width: 180.0,
+                                                                                                              decoration: BoxDecoration(),
+                                                                                                              child: Row(
+                                                                                                                mainAxisSize: MainAxisSize.min,
+                                                                                                                mainAxisAlignment: MainAxisAlignment.start,
+                                                                                                                children: [
+                                                                                                                  InkWell(
+                                                                                                                    splashColor: Colors.transparent,
+                                                                                                                    focusColor: Colors.transparent,
+                                                                                                                    hoverColor: Colors.transparent,
+                                                                                                                    highlightColor: Colors.transparent,
+                                                                                                                    onTap: () async {
+                                                                                                                      context.pushNamed(
+                                                                                                                        DriverReviewWidget.routeName,
+                                                                                                                        queryParameters: {
+                                                                                                                          'userRef': serializeParam(
+                                                                                                                            rowUsersRecord.reference,
+                                                                                                                            ParamType.DocumentReference,
+                                                                                                                          ),
+                                                                                                                        }.withoutNulls,
+                                                                                                                      );
+                                                                                                                    },
+                                                                                                                    child: Builder(
+                                                                                                                      builder: (context) {
+                                                                                                                        if (rowUsersRecord.photoUrl != null && rowUsersRecord.photoUrl != '') {
+                                                                                                                          return Container(
+                                                                                                                            width: 30.0,
+                                                                                                                            height: 30.0,
+                                                                                                                            clipBehavior: Clip.antiAlias,
+                                                                                                                            decoration: BoxDecoration(
+                                                                                                                              shape: BoxShape.circle,
+                                                                                                                            ),
+                                                                                                                            child: Image.network(
+                                                                                                                              rowUsersRecord.photoUrl,
+                                                                                                                              fit: BoxFit.cover,
+                                                                                                                            ),
+                                                                                                                          );
+                                                                                                                        } else {
+                                                                                                                          return InkWell(
+                                                                                                                            splashColor: Colors.transparent,
+                                                                                                                            focusColor: Colors.transparent,
+                                                                                                                            hoverColor: Colors.transparent,
+                                                                                                                            highlightColor: Colors.transparent,
+                                                                                                                            onTap: () async {
+                                                                                                                              context.pushNamed(
+                                                                                                                                DriverReviewWidget.routeName,
+                                                                                                                                queryParameters: {
+                                                                                                                                  'userRef': serializeParam(
+                                                                                                                                    rowUsersRecord.reference,
+                                                                                                                                    ParamType.DocumentReference,
+                                                                                                                                  ),
+                                                                                                                                }.withoutNulls,
+                                                                                                                              );
+                                                                                                                            },
+                                                                                                                            child: Container(
+                                                                                                                              width: 30.0,
+                                                                                                                              height: 30.0,
+                                                                                                                              clipBehavior: Clip.antiAlias,
+                                                                                                                              decoration: BoxDecoration(
+                                                                                                                                shape: BoxShape.circle,
+                                                                                                                              ),
+                                                                                                                              child: Image.asset(
+                                                                                                                                'assets/images/userIconTr.png',
+                                                                                                                                fit: BoxFit.cover,
+                                                                                                                              ),
+                                                                                                                            ),
+                                                                                                                          );
+                                                                                                                        }
+                                                                                                                      },
+                                                                                                                    ),
+                                                                                                                  ),
+                                                                                                                  Padding(
+                                                                                                                    padding: EdgeInsetsDirectional.fromSTEB(12.0, 0.0, 5.0, 0.0),
+                                                                                                                    child: Column(
+                                                                                                                      mainAxisSize: MainAxisSize.min,
+                                                                                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                                                                                      children: [
+                                                                                                                        Text(
+                                                                                                                          rowUsersRecord.displayName != null && rowUsersRecord.displayName != '' ? rowUsersRecord.displayName : 'Driver',
+                                                                                                                          style: FlutterFlowTheme.of(context).bodyMedium.override(
+                                                                                                                                font: GoogleFonts.inter(
+                                                                                                                                  fontWeight: FontWeight.w600,
+                                                                                                                                  fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                                                                ),
+                                                                                                                                fontSize: 12.0,
+                                                                                                                                letterSpacing: 0.0,
+                                                                                                                                fontWeight: FontWeight.w600,
+                                                                                                                                fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                                                              ),
+                                                                                                                        ),
+                                                                                                                      ],
+                                                                                                                    ),
+                                                                                                                  ),
+                                                                                                                ],
+                                                                                                              ),
+                                                                                                            ),
+                                                                                                          ),
+                                                                                                          Align(
+                                                                                                            alignment: AlignmentDirectional(0.0, 0.0),
+                                                                                                            child: Container(
+                                                                                                              width: 30.0,
+                                                                                                              decoration: BoxDecoration(),
+                                                                                                              child: Padding(
+                                                                                                                padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 5.0, 0.0),
+                                                                                                                child: Stack(
+                                                                                                                  alignment: AlignmentDirectional(0.0, 0.0),
+                                                                                                                  children: [
+                                                                                                                    ClipRRect(
+                                                                                                                      borderRadius: BorderRadius.circular(8.0),
+                                                                                                                      child: Image.asset(
+                                                                                                                        'assets/images/Ride_Search_Icons.png',
+                                                                                                                        width: 25.0,
+                                                                                                                        height: 30.0,
+                                                                                                                        fit: BoxFit.cover,
+                                                                                                                      ),
+                                                                                                                    ),
+                                                                                                                    Text(
+                                                                                                                      valueOrDefault<String>(
+                                                                                                                        formatNumber(
+                                                                                                                          functions.averageRating(rowUsersRecord.ratings.toList()),
+                                                                                                                          formatType: FormatType.compact,
+                                                                                                                        ),
+                                                                                                                        '0',
+                                                                                                                      ),
+                                                                                                                      style: FlutterFlowTheme.of(context).bodyMedium.override(
+                                                                                                                            font: GoogleFonts.inter(
+                                                                                                                              fontWeight: FontWeight.w900,
+                                                                                                                              fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                                                            ),
+                                                                                                                            color: FlutterFlowTheme.of(context).primaryBackground,
+                                                                                                                            fontSize: 9.0,
+                                                                                                                            letterSpacing: 0.0,
+                                                                                                                            fontWeight: FontWeight.w900,
+                                                                                                                            fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                                                          ),
+                                                                                                                    ),
+                                                                                                                  ],
+                                                                                                                ),
+                                                                                                              ),
+                                                                                                            ),
+                                                                                                          ),
+                                                                                                        ].divide(SizedBox(width: 1.0)),
+                                                                                                      );
+                                                                                                    },
+                                                                                                  ),
+                                                                                                ),
+                                                                                            ].divide(SizedBox(height: 12.0)),
+                                                                                          ),
+                                                                                        ),
+                                                                                      ),
+                                                                                    ),
+                                                                                  ),
+                                                                                ),
+                                                                              ).animateOnPageLoad(animationsMap['containerOnPageLoadAnimation2']!),
+                                                                              Align(
+                                                                                alignment: AlignmentDirectional(0.97, -0.96),
+                                                                                child: Padding(
+                                                                                  padding: EdgeInsetsDirectional.fromSTEB(10.0, 10.0, 5.0, 0.0),
+                                                                                  child: Container(
+                                                                                    // ✅ RESPONSIVE SIZING
+                                                                                    width: MediaQuery.sizeOf(context).width * 0.12,  // 12% of screen width
+                                                                                    constraints: BoxConstraints(
+                                                                                      minWidth: 55.0,    // Minimum width
+                                                                                      maxWidth: 70.0,    // Maximum width
+                                                                                      minHeight: 85.0,   // Minimum height
+                                                                                      maxHeight: 100.0,  // Maximum height
+                                                                                    ),
+                                                                                    decoration: BoxDecoration(
+                                                                                      color: Color(0xFFF97E4C),
+                                                                                      borderRadius: BorderRadius.circular(12.0),
+                                                                                    ),
+                                                                                    child: Column(
+                                                                                      mainAxisSize: MainAxisSize.min,
+                                                                                      mainAxisAlignment: MainAxisAlignment.center,
+                                                                                      children: [
+                                                                                        Padding(
+                                                                                          padding: EdgeInsetsDirectional.fromSTEB(0.0, 5.0, 0.0, 0.0),
+                                                                                          child: Text(
+                                                                                            'Ride',
+                                                                                            style: FlutterFlowTheme.of(context).bodyMedium.override(
+                                                                                              font: GoogleFonts.inter(
+                                                                                                fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
+                                                                                                fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                              ),
+                                                                                              color: FlutterFlowTheme.of(context).info,
+                                                                                              fontSize: 12.0,
+                                                                                              letterSpacing: 0.0,
+                                                                                            ),
+                                                                                          ),
+                                                                                        ),
+                                                                                        Padding(
+                                                                                          padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 4.0),
+                                                                                          child: AutoSizeText(
+                                                                                            '₹${formatNumber(listViewRidesNewRecord.rideCost, formatType: FormatType.custom, format: '', locale: '')}',
+                                                                                            style: FlutterFlowTheme.of(context).bodyMedium.override(
+                                                                                              font: GoogleFonts.inter(
+                                                                                                fontWeight: FontWeight.bold,
+                                                                                                fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                              ),
+                                                                                              color: FlutterFlowTheme.of(context).info,
+                                                                                              fontSize: 15.0,
+                                                                                              letterSpacing: 0.0,
+                                                                                              fontWeight: FontWeight.bold,
+                                                                                            ),
+                                                                                            maxLines: 1,
+                                                                                            minFontSize: 12,
+                                                                                          ),
+                                                                                        ),
+                                                                                        // ✅ Parcel section also responsive
+                                                                                        Container(
+                                                                                          width: double.infinity,
+                                                                                          // ✅ Flexible height
+                                                                                          constraints: BoxConstraints(minHeight: 48.0, maxHeight: 55.0),
+                                                                                          decoration: BoxDecoration(
+                                                                                            color: Color(0xFFFF9561),
+                                                                                            borderRadius: BorderRadius.circular(10.0),
+                                                                                          ),
+                                                                                          child: Column(
+                                                                                            mainAxisSize: MainAxisSize.min,
+                                                                                            mainAxisAlignment: MainAxisAlignment.center,
+                                                                                            children: [
+                                                                                              Padding(
+                                                                                                padding: EdgeInsetsDirectional.fromSTEB(0.0, 3.0, 0.0, 0.0),
+                                                                                                child: Text(
+                                                                                                  'Parcel',
+                                                                                                  textAlign: TextAlign.center,
+                                                                                                  style: FlutterFlowTheme.of(context).labelSmall.override(
+                                                                                                    font: GoogleFonts.inter(
+                                                                                                      fontWeight: FontWeight.w500,
+                                                                                                      fontStyle: FlutterFlowTheme.of(context).labelSmall.fontStyle,
+                                                                                                    ),
+                                                                                                    color: FlutterFlowTheme.of(context).info,
+                                                                                                    fontSize: 11.0,
+                                                                                                    letterSpacing: 0.0,
+                                                                                                  ),
+                                                                                                ),
+                                                                                              ),
+                                                                                              AutoSizeText(
+                                                                                                '₹${listViewRidesNewRecord.totalDeliveryCost}',
+                                                                                                textAlign: TextAlign.center,
+                                                                                                style: FlutterFlowTheme.of(context).labelSmall.override(
+                                                                                                  font: GoogleFonts.inter(
+                                                                                                    fontWeight: FontWeight.bold,
+                                                                                                    fontStyle: FlutterFlowTheme.of(context).labelSmall.fontStyle,
+                                                                                                  ),
+                                                                                                  color: FlutterFlowTheme.of(context).info,
+                                                                                                  fontSize: 14.0,
+                                                                                                  letterSpacing: 0.0,
+                                                                                                ),
+                                                                                                maxLines: 1,
+                                                                                                minFontSize: 11,
+                                                                                              ),
+                                                                                            ],
+                                                                                          ),
+                                                                                        ),
+                                                                                      ],
+                                                                                    ),
+                                                                                  ),
+                                                                                ),
+                                                                              ),
+                                                                            ],
+                                                                          );
+                                                                        },
+                                                                      ).animateOnPageLoad(animationsMap['listViewOnPageLoadAnimation']!);
+                                                                    }
                                                                   },
                                                                 ),
                                                               ].divide(SizedBox(height: 16.0)).addToEnd(SizedBox(height: 15.0)),
@@ -2122,8 +2747,7 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                                                                                     ),
                                                                                   ].divide(SizedBox(height: 5.0)),
                                                                                 ),
-                                                                              if (allBookingsBookingsRecord.rideAdditionalInformation != null &&
-                                                                                  allBookingsBookingsRecord.rideAdditionalInformation != '')
+                                                                              if (allBookingsBookingsRecord.rideAdditionalInformation != null && allBookingsBookingsRecord.rideAdditionalInformation != '')
                                                                                 Column(
                                                                                   mainAxisSize: MainAxisSize.min,
                                                                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -2320,9 +2944,7 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                                                                               mainAxisSize: MainAxisSize.max,
                                                                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                                                               children: [
-                                                                                if ((allBookingsBookingsRecord.status != 'Accepted') &&
-                                                                                    (allBookingsBookingsRecord.status != 'Completed') &&
-                                                                                    (allBookingsBookingsRecord.status != 'Rejected'))
+                                                                                if ((allBookingsBookingsRecord.status != 'Accepted') && (allBookingsBookingsRecord.status != 'Completed') && (allBookingsBookingsRecord.status != 'Rejected'))
                                                                                   FFButtonWidget(
                                                                                     onPressed: () async {
                                                                                       await allBookingsBookingsRecord.reference.delete();
@@ -4760,1663 +5382,637 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                                             ),
                                         ],
                                       ),
-                                      Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Padding(
-                                            padding: EdgeInsetsDirectional.fromSTEB(0.0, 10.0, 0.0, 0.0),
-                                            child: Row(
-                                              mainAxisSize: MainAxisSize.max,
-                                              mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                              children: [
-                                                Text(
-                                                  'Check By Status',
-                                                  style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                        font: GoogleFonts.inter(
+                                      SingleChildScrollView(
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Padding(
+                                              padding: EdgeInsetsDirectional.fromSTEB(0.0, 10.0, 0.0, 0.0),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.max,
+                                                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                                children: [
+                                                  Text(
+                                                    'Check By Status',
+                                                    style: FlutterFlowTheme.of(context).bodyMedium.override(
+                                                          font: GoogleFonts.inter(
+                                                            fontWeight: FontWeight.w600,
+                                                            fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                          ),
+                                                          fontSize: 16.0,
+                                                          letterSpacing: 0.0,
                                                           fontWeight: FontWeight.w600,
                                                           fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
                                                         ),
-                                                        fontSize: 16.0,
-                                                        letterSpacing: 0.0,
-                                                        fontWeight: FontWeight.w600,
-                                                        fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                      ),
-                                                ),
-                                                FlutterFlowDropDown<String>(
-                                                  controller: _model.postedRidesDropDownValueController ??= FormFieldController<String>(
-                                                    _model.postedRidesDropDownValue ??= _model.myBookingStatus,
                                                   ),
-                                                  options: ['All', 'Live', 'Under Review', 'Rejected'],
-                                                  onChanged: (val) async {
-                                                    safeSetState(() => _model.postedRidesDropDownValue = val);
-                                                    _model.myRidesStatus = _model.myRidesStatus;
-                                                    safeSetState(() {});
-                                                  },
-                                                  width: 200.0,
-                                                  height: 40.0,
-                                                  textStyle: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                        font: GoogleFonts.inter(
+                                                  FlutterFlowDropDown<String>(
+                                                    controller: _model.postedRidesDropDownValueController ??= FormFieldController<String>(
+                                                      _model.postedRidesDropDownValue ??= _model.myBookingStatus,
+                                                    ),
+                                                    options: ['All', 'Live', 'Under Review', 'Rejected'],
+                                                    onChanged: (val) async {
+                                                      safeSetState(() => _model.postedRidesDropDownValue = val);
+                                                      _model.myRidesStatus = _model.myRidesStatus;
+                                                      safeSetState(() {});
+                                                    },
+                                                    width: 200.0,
+                                                    height: 40.0,
+                                                    textStyle: FlutterFlowTheme.of(context).bodyMedium.override(
+                                                          font: GoogleFonts.inter(
+                                                            fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
+                                                            fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                          ),
+                                                          letterSpacing: 0.0,
                                                           fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
                                                           fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
                                                         ),
-                                                        letterSpacing: 0.0,
-                                                        fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
-                                                        fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                      ),
-                                                  hintText: 'Select Status...',
-                                                  icon: Icon(
-                                                    Icons.keyboard_arrow_down_rounded,
-                                                    color: FlutterFlowTheme.of(context).secondaryText,
-                                                    size: 24.0,
+                                                    hintText: 'Select Status...',
+                                                    icon: Icon(
+                                                      Icons.keyboard_arrow_down_rounded,
+                                                      color: FlutterFlowTheme.of(context).secondaryText,
+                                                      size: 24.0,
+                                                    ),
+                                                    fillColor: FlutterFlowTheme.of(context).secondaryBackground,
+                                                    elevation: 2.0,
+                                                    borderColor: FlutterFlowTheme.of(context).primaryText,
+                                                    borderWidth: 0.0,
+                                                    borderRadius: 8.0,
+                                                    margin: EdgeInsetsDirectional.fromSTEB(12.0, 0.0, 12.0, 0.0),
+                                                    hidesUnderline: true,
+                                                    isOverButton: false,
+                                                    isSearchable: false,
+                                                    isMultiSelect: false,
                                                   ),
-                                                  fillColor: FlutterFlowTheme.of(context).secondaryBackground,
-                                                  elevation: 2.0,
-                                                  borderColor: FlutterFlowTheme.of(context).primaryText,
-                                                  borderWidth: 0.0,
-                                                  borderRadius: 8.0,
-                                                  margin: EdgeInsetsDirectional.fromSTEB(12.0, 0.0, 12.0, 0.0),
-                                                  hidesUnderline: true,
-                                                  isOverButton: false,
-                                                  isSearchable: false,
-                                                  isMultiSelect: false,
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          if (_model.myRidesStatus == 'All Rides')
-                                            SizedBox(
-                                              child: Padding(
-                                                padding: EdgeInsetsDirectional.fromSTEB(5.0, 10.0, 5.0, 10.0),
-                                                child: StreamBuilder<List<RidesNewRecord>>(
-                                                  stream: queryRidesNewRecord(
-                                                    queryBuilder: (ridesNewRecord) => ridesNewRecord
-                                                        .where(
-                                                          'creatorID',
-                                                          isEqualTo: currentUserReference,
-                                                        )
-                                                        .orderBy('pickupTime'),
-                                                  ),
-                                                  builder: (context, snapshot) {
-                                                    // Customize what your widget looks like when it's loading.
-                                                    if (!snapshot.hasData) {
-                                                      return Image.asset(
-                                                        'assets/images/Car_Gif.gif',
-                                                      );
-                                                    }
-                                                    List<RidesNewRecord> allRidesRidesNewRecordList = snapshot.data!;
-                                                    if (allRidesRidesNewRecordList.isEmpty) {
-                                                      return NoRidePostedWidget();
-                                                    }
-
-                                                    return ListView.separated(
-                                                      padding: EdgeInsets.zero,
-                                                      primary: false,
-                                                      shrinkWrap: true,
-                                                      scrollDirection: Axis.vertical,
-                                                      itemCount: allRidesRidesNewRecordList.length,
-                                                      separatorBuilder: (_, __) => SizedBox(height: 15.0),
-                                                      itemBuilder: (context, allRidesIndex) {
-                                                        final allRidesRidesNewRecord = allRidesRidesNewRecordList[allRidesIndex];
-                                                        return StreamBuilder<UsersRecord>(
-                                                          stream: UsersRecord.getDocument(allRidesRidesNewRecord.creatorID!),
-                                                          builder: (context, snapshot) {
-                                                            // Customize what your widget looks like when it's loading.
-                                                            if (!snapshot.hasData) {
-                                                              return Center(
-                                                                child: SizedBox(
-                                                                  width: 50.0,
-                                                                  height: 50.0,
-                                                                  child: SpinKitFadingCircle(
-                                                                    color: Color(0xFF2B3C58),
-                                                                    size: 50.0,
-                                                                  ),
-                                                                ),
-                                                              );
-                                                            }
-
-                                                            final containerUsersRecord = snapshot.data!;
-
-                                                            return InkWell(
-                                                              splashColor: Colors.transparent,
-                                                              focusColor: Colors.transparent,
-                                                              hoverColor: Colors.transparent,
-                                                              highlightColor: Colors.transparent,
-                                                              onTap: () async {
-                                                                context.pushNamed(
-                                                                  RideDetailsCustomerWidget.routeName,
-                                                                  queryParameters: {
-                                                                    'rideDetails': serializeParam(
-                                                                      allRidesRidesNewRecord.reference,
-                                                                      ParamType.DocumentReference,
-                                                                    ),
-                                                                  }.withoutNulls,
-                                                                );
-                                                              },
-                                                              child: Container(
-                                                                width: double.infinity,
-                                                                decoration: BoxDecoration(
-                                                                  color: Color(0xFFF4F4F4),
-                                                                  boxShadow: [
-                                                                    BoxShadow(
-                                                                      blurRadius: 4.0,
-                                                                      color: Color(0x1A000000),
-                                                                      offset: Offset(
-                                                                        0.0,
-                                                                        2.0,
-                                                                      ),
-                                                                    )
-                                                                  ],
-                                                                  borderRadius: BorderRadius.circular(12.0),
-                                                                  border: Border.all(
-                                                                    color: Color(0xFF4DABF7),
-                                                                  ),
-                                                                ),
-                                                                child: Padding(
-                                                                  padding: EdgeInsetsDirectional.fromSTEB(10.0, 10.0, 5.0, 10.0),
-                                                                  child: Column(
-                                                                    mainAxisSize: MainAxisSize.min,
-                                                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                                                    children: [
-                                                                      Row(
-                                                                        mainAxisSize: MainAxisSize.max,
-                                                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                                        children: [
-                                                                          Row(
-                                                                            mainAxisSize: MainAxisSize.max,
-                                                                            children: [
-                                                                              Icon(
-                                                                                Icons.location_on_outlined,
-                                                                                color: FlutterFlowTheme.of(context).primary,
-                                                                                size: 24.0,
-                                                                              ),
-                                                                              Container(
-                                                                                width: 200.0,
-                                                                                decoration: BoxDecoration(
-                                                                                  color: Color(0xFFE3E6E0),
-                                                                                  borderRadius: BorderRadius.circular(15.0),
-                                                                                ),
-                                                                                child: Padding(
-                                                                                  padding: EdgeInsetsDirectional.fromSTEB(15.0, 5.0, 10.0, 5.0),
-                                                                                  child: Text(
-                                                                                    allRidesRidesNewRecord.rideStartLocation,
-                                                                                    style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                                                          font: GoogleFonts.inter(
-                                                                                            fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
-                                                                                            fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                          ),
-                                                                                          fontSize: 12.0,
-                                                                                          letterSpacing: 0.0,
-                                                                                          fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
-                                                                                          fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                        ),
-                                                                                  ),
-                                                                                ),
-                                                                              ),
-                                                                            ],
-                                                                          ),
-                                                                          if (allRidesRidesNewRecord.modeOfTransport == 'Car')
-                                                                            Padding(
-                                                                              padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
-                                                                              child: FaIcon(
-                                                                                FontAwesomeIcons.carSide,
-                                                                                color: Color(0xFF8F9192),
-                                                                                size: 20.0,
-                                                                              ),
-                                                                            ),
-                                                                          if (allRidesRidesNewRecord.modeOfTransport == 'Train')
-                                                                            Padding(
-                                                                              padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
-                                                                              child: Icon(
-                                                                                Icons.train,
-                                                                                color: Color(0xFF929090),
-                                                                                size: 30.0,
-                                                                              ),
-                                                                            ),
-                                                                          if (allRidesRidesNewRecord.modeOfTransport == 'Bike')
-                                                                            Padding(
-                                                                              padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
-                                                                              child: Icon(
-                                                                                Icons.motorcycle_sharp,
-                                                                                color: Color(0xFF8A8888),
-                                                                                size: 30.0,
-                                                                              ),
-                                                                            ),
-                                                                          if (allRidesRidesNewRecord.modeOfTransport == 'Bus')
-                                                                            Padding(
-                                                                              padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
-                                                                              child: FaIcon(
-                                                                                FontAwesomeIcons.bus,
-                                                                                color: Color(0xFF919191),
-                                                                                size: 20.0,
-                                                                              ),
-                                                                            ),
-                                                                        ].divide(SizedBox(width: 5.0)),
-                                                                      ),
-                                                                      Align(
-                                                                        alignment: AlignmentDirectional(0.0, 0.0),
-                                                                        child: Row(
-                                                                          mainAxisSize: MainAxisSize.max,
-                                                                          mainAxisAlignment: MainAxisAlignment.center,
-                                                                          children: [
-                                                                            Align(
-                                                                              alignment: AlignmentDirectional(0.0, 0.0),
-                                                                              child: Text(
-                                                                                'Travel time: ',
-                                                                                style: FlutterFlowTheme.of(context).labelMedium.override(
-                                                                                      font: GoogleFonts.inter(
-                                                                                        fontWeight: FlutterFlowTheme.of(context).labelMedium.fontWeight,
-                                                                                        fontStyle: FlutterFlowTheme.of(context).labelMedium.fontStyle,
-                                                                                      ),
-                                                                                      color: FlutterFlowTheme.of(context).secondaryText,
-                                                                                      fontSize: 12.0,
-                                                                                      letterSpacing: 0.0,
-                                                                                      fontWeight: FlutterFlowTheme.of(context).labelMedium.fontWeight,
-                                                                                      fontStyle: FlutterFlowTheme.of(context).labelMedium.fontStyle,
-                                                                                    ),
-                                                                              ),
-                                                                            ),
-                                                                            Align(
-                                                                              alignment: AlignmentDirectional(0.0, 0.0),
-                                                                              child: Text(
-                                                                                allRidesRidesNewRecord.travelTime,
-                                                                                style: FlutterFlowTheme.of(context).labelMedium.override(
-                                                                                      font: GoogleFonts.inter(
-                                                                                        fontWeight: FlutterFlowTheme.of(context).labelMedium.fontWeight,
-                                                                                        fontStyle: FlutterFlowTheme.of(context).labelMedium.fontStyle,
-                                                                                      ),
-                                                                                      color: FlutterFlowTheme.of(context).secondaryText,
-                                                                                      fontSize: 12.0,
-                                                                                      letterSpacing: 0.0,
-                                                                                      fontWeight: FlutterFlowTheme.of(context).labelMedium.fontWeight,
-                                                                                      fontStyle: FlutterFlowTheme.of(context).labelMedium.fontStyle,
-                                                                                    ),
-                                                                              ),
-                                                                            ),
-                                                                          ],
-                                                                        ),
-                                                                      ),
-                                                                      Row(
-                                                                        mainAxisSize: MainAxisSize.max,
-                                                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                                        children: [
-                                                                          Row(
-                                                                            mainAxisSize: MainAxisSize.max,
-                                                                            children: [
-                                                                              Icon(
-                                                                                Icons.location_on_outlined,
-                                                                                color: FlutterFlowTheme.of(context).primary,
-                                                                                size: 24.0,
-                                                                              ),
-                                                                              Container(
-                                                                                width: 200.0,
-                                                                                decoration: BoxDecoration(
-                                                                                  color: Color(0xFFE3E6E0),
-                                                                                  borderRadius: BorderRadius.circular(15.0),
-                                                                                ),
-                                                                                child: Padding(
-                                                                                  padding: EdgeInsetsDirectional.fromSTEB(15.0, 5.0, 10.0, 5.0),
-                                                                                  child: Text(
-                                                                                    allRidesRidesNewRecord.rideEndLocation,
-                                                                                    style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                                                          font: GoogleFonts.inter(
-                                                                                            fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
-                                                                                            fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                          ),
-                                                                                          fontSize: 12.0,
-                                                                                          letterSpacing: 0.0,
-                                                                                          fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
-                                                                                          fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                        ),
-                                                                                  ),
-                                                                                ),
-                                                                              ),
-                                                                            ],
-                                                                          ),
-                                                                        ].divide(SizedBox(width: 5.0)),
-                                                                      ),
-                                                                      Row(
-                                                                        mainAxisSize: MainAxisSize.max,
-                                                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                                        children: [
-                                                                          Row(
-                                                                            mainAxisSize: MainAxisSize.max,
-                                                                            children: [
-                                                                              Container(
-                                                                                width: 40.0,
-                                                                                height: 40.0,
-                                                                                decoration: BoxDecoration(
-                                                                                  color: FlutterFlowTheme.of(context).secondaryBackground,
-                                                                                  // image:
-                                                                                  //     DecorationImage(
-                                                                                  //   fit: BoxFit.cover,
-                                                                                  //   image: Image.asset(
-                                                                                  //     "assets/images/profileIcon.png",
-                                                                                  //   ).image,
-                                                                                  // ),
-                                                                                  shape: BoxShape.circle,
-                                                                                  border: Border.all(
-                                                                                    color: Color(0xFF4DABF7),
-                                                                                    width: 2.0,
-                                                                                  ),
-                                                                                ),
-                                                                                child: Container(
-                                                                                    width: 200.0,
-                                                                                    height: 200.0,
-                                                                                    clipBehavior: Clip.antiAlias,
-                                                                                    decoration: BoxDecoration(
-                                                                                      shape: BoxShape.circle,
-                                                                                    ),
-                                                                                    child: CachedNetworkImage(
-                                                                                        imageUrl: containerUsersRecord.photoUrl ?? '',
-                                                                                        fit: BoxFit.cover,
-                                                                                        fadeInDuration: const Duration(milliseconds: 500),
-                                                                                        fadeOutDuration: const Duration(milliseconds: 500),
-                                                                                        placeholder: (context, url) => const Center(
-                                                                                              child: CircularProgressIndicator(),
-                                                                                            ),
-                                                                                        errorWidget: (context, url, error) => SizedBox.shrink())),
-                                                                              ),
-                                                                              Padding(
-                                                                                padding: EdgeInsetsDirectional.fromSTEB(12.0, 0.0, 12.0, 0.0),
-                                                                                child: Column(
-                                                                                  mainAxisSize: MainAxisSize.min,
-                                                                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                                                                  children: [
-                                                                                    Text(
-                                                                                      containerUsersRecord.displayName,
-                                                                                      style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                                                            font: GoogleFonts.inter(
-                                                                                              fontWeight: FontWeight.w600,
-                                                                                              fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                            ),
-                                                                                            letterSpacing: 0.0,
-                                                                                            fontWeight: FontWeight.w600,
-                                                                                            fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                          ),
-                                                                                    ),
-                                                                                  ],
-                                                                                ),
-                                                                              ),
-                                                                              Stack(
-                                                                                alignment: AlignmentDirectional(0.0, 0.0),
-                                                                                children: [
-                                                                                  ClipRRect(
-                                                                                    borderRadius: BorderRadius.circular(8.0),
-                                                                                    child: Image.asset(
-                                                                                      'assets/images/Ride_Search_Icons.png',
-                                                                                      width: 34.0,
-                                                                                      height: 35.8,
-                                                                                      fit: BoxFit.cover,
-                                                                                    ),
-                                                                                  ),
-                                                                                  Text(
-                                                                                    '4.8',
-                                                                                    style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                                                          font: GoogleFonts.inter(
-                                                                                            fontWeight: FontWeight.w900,
-                                                                                            fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                          ),
-                                                                                          color: FlutterFlowTheme.of(context).accent4,
-                                                                                          fontSize: 10.0,
-                                                                                          letterSpacing: 0.0,
-                                                                                          fontWeight: FontWeight.w900,
-                                                                                          fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                        ),
-                                                                                  ),
-                                                                                ],
-                                                                              ),
-                                                                            ],
-                                                                          ),
-                                                                          Padding(
-                                                                            padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 15.0, 0.0),
-                                                                            child: Container(
-                                                                              width: 50.0,
-                                                                              height: 50.0,
-                                                                              decoration: BoxDecoration(
-                                                                                color: Color(0xFFF77F4A),
-                                                                                shape: BoxShape.circle,
-                                                                              ),
-                                                                              child: Align(
-                                                                                alignment: AlignmentDirectional(0.0, 0.0),
-                                                                                child: Text(
-                                                                                  allRidesRidesNewRecord.totalDeliveryCost,
-                                                                                  textAlign: TextAlign.center,
-                                                                                  style: FlutterFlowTheme.of(context).titleMedium.override(
-                                                                                        font: GoogleFonts.interTight(
-                                                                                          fontWeight: FontWeight.w500,
-                                                                                          fontStyle: FlutterFlowTheme.of(context).titleMedium.fontStyle,
-                                                                                        ),
-                                                                                        color: Colors.white,
-                                                                                        fontSize: 14.0,
-                                                                                        letterSpacing: 0.0,
-                                                                                        fontWeight: FontWeight.w500,
-                                                                                        fontStyle: FlutterFlowTheme.of(context).titleMedium.fontStyle,
-                                                                                      ),
-                                                                                ),
-                                                                              ),
-                                                                            ),
-                                                                          ),
-                                                                        ],
-                                                                      ),
-                                                                      Row(
-                                                                        mainAxisSize: MainAxisSize.max,
-                                                                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                                                        children: [
-                                                                          Text(
-                                                                            'Current Status:',
-                                                                            style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                                                  font: GoogleFonts.inter(
-                                                                                    fontWeight: FontWeight.w600,
-                                                                                    fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                  ),
-                                                                                  fontSize: 16.0,
-                                                                                  letterSpacing: 0.0,
-                                                                                  fontWeight: FontWeight.w600,
-                                                                                  fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                ),
-                                                                          ),
-                                                                          Text(
-                                                                            allRidesRidesNewRecord.rideStatus,
-                                                                            style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                                                  font: GoogleFonts.inter(
-                                                                                    fontWeight: FontWeight.w600,
-                                                                                    fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                  ),
-                                                                                  fontSize: 16.0,
-                                                                                  letterSpacing: 0.0,
-                                                                                  fontWeight: FontWeight.w600,
-                                                                                  fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                ),
-                                                                          ),
-                                                                        ],
-                                                                      ),
-                                                                      if (allRidesRidesNewRecord.rideStatus != 'Under Review')
-                                                                        Row(
-                                                                          mainAxisSize: MainAxisSize.max,
-                                                                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                                                          children: [
-                                                                            InkWell(
-                                                                              splashColor: Colors.transparent,
-                                                                              focusColor: Colors.transparent,
-                                                                              hoverColor: Colors.transparent,
-                                                                              highlightColor: Colors.transparent,
-                                                                              onTap: () async {
-                                                                                await allRidesRidesNewRecord.reference.delete();
-                                                                              },
-                                                                              child: Icon(
-                                                                                Icons.delete,
-                                                                                color: Color(0xFFDC0A46),
-                                                                                size: 24.0,
-                                                                              ),
-                                                                            ),
-                                                                            FFButtonWidget(
-                                                                              onPressed: () async {
-                                                                                context.pushNamed(
-                                                                                  RideEditPageWidget.routeName,
-                                                                                  queryParameters: {
-                                                                                    'rideEdit': serializeParam(
-                                                                                      allRidesRidesNewRecord.reference,
-                                                                                      ParamType.DocumentReference,
-                                                                                    ),
-                                                                                  }.withoutNulls,
-                                                                                );
-                                                                              },
-                                                                              text: 'Edit',
-                                                                              options: FFButtonOptions(
-                                                                                width: 80.5,
-                                                                                height: 26.2,
-                                                                                padding: EdgeInsetsDirectional.fromSTEB(16.0, 0.0, 16.0, 0.0),
-                                                                                iconPadding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
-                                                                                color: FlutterFlowTheme.of(context).accent3,
-                                                                                textStyle: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                                                      font: GoogleFonts.inter(
-                                                                                        fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
-                                                                                        fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                      ),
-                                                                                      color: FlutterFlowTheme.of(context).primaryText,
-                                                                                      letterSpacing: 0.0,
-                                                                                      fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
-                                                                                      fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                    ),
-                                                                                elevation: 0.0,
-                                                                                borderSide: BorderSide(
-                                                                                  color: FlutterFlowTheme.of(context).accent3,
-                                                                                  width: 1.0,
-                                                                                ),
-                                                                                borderRadius: BorderRadius.circular(8.0),
-                                                                              ),
-                                                                            ),
-                                                                          ],
-                                                                        ),
-                                                                    ].divide(SizedBox(height: 12.0)),
-                                                                  ),
-                                                                ),
-                                                              ),
-                                                            );
-                                                          },
-                                                        );
-                                                      },
-                                                    );
-                                                  },
-                                                ),
+                                                ],
                                               ),
                                             ),
-                                          if (_model.myRidesStatus == 'Live')
-                                            SizedBox(
-                                              child: Padding(
-                                                padding: EdgeInsetsDirectional.fromSTEB(5.0, 10.0, 5.0, 10.0),
-                                                child: StreamBuilder<List<RidesNewRecord>>(
-                                                  stream: queryRidesNewRecord(
-                                                    queryBuilder: (ridesNewRecord) => ridesNewRecord
-                                                        .where(
-                                                          'rideStatus',
-                                                          isEqualTo: 'Live',
-                                                        )
-                                                        .where(
-                                                          'creatorID',
-                                                          isEqualTo: currentUserReference,
-                                                        )
-                                                        .orderBy('pickupTime'),
-                                                  ),
-                                                  builder: (context, snapshot) {
-                                                    // Customize what your widget looks like when it's loading.
-                                                    if (!snapshot.hasData) {
-                                                      return Image.asset(
-                                                        'assets/images/Car_Gif.gif',
-                                                      );
-                                                    }
-                                                    List<RidesNewRecord> liveRidesRidesNewRecordList = snapshot.data!;
-                                                    if (liveRidesRidesNewRecordList.isEmpty) {
-                                                      return NoRidePostedWidget();
-                                                    }
-
-                                                    return ListView.separated(
-                                                      padding: EdgeInsets.zero,
-                                                      primary: false,
-                                                      shrinkWrap: true,
-                                                      scrollDirection: Axis.vertical,
-                                                      itemCount: liveRidesRidesNewRecordList.length,
-                                                      separatorBuilder: (_, __) => SizedBox(height: 15.0),
-                                                      itemBuilder: (context, liveRidesIndex) {
-                                                        final liveRidesRidesNewRecord = liveRidesRidesNewRecordList[liveRidesIndex];
-                                                        return StreamBuilder<UsersRecord>(
-                                                          stream: UsersRecord.getDocument(liveRidesRidesNewRecord.creatorID!),
-                                                          builder: (context, snapshot) {
-                                                            // Customize what your widget looks like when it's loading.
-                                                            if (!snapshot.hasData) {
-                                                              return Center(
-                                                                child: SizedBox(
-                                                                  width: 50.0,
-                                                                  height: 50.0,
-                                                                  child: SpinKitFadingCircle(
-                                                                    color: Color(0xFF2B3C58),
-                                                                    size: 50.0,
-                                                                  ),
-                                                                ),
-                                                              );
-                                                            }
-
-                                                            final containerUsersRecord = snapshot.data!;
-
-                                                            return InkWell(
-                                                              splashColor: Colors.transparent,
-                                                              focusColor: Colors.transparent,
-                                                              hoverColor: Colors.transparent,
-                                                              highlightColor: Colors.transparent,
-                                                              onTap: () async {
-                                                                context.pushNamed(
-                                                                  RideDetailsCustomerWidget.routeName,
-                                                                  queryParameters: {
-                                                                    'rideDetails': serializeParam(
-                                                                      liveRidesRidesNewRecord.reference,
-                                                                      ParamType.DocumentReference,
-                                                                    ),
-                                                                  }.withoutNulls,
-                                                                );
-                                                              },
-                                                              child: Container(
-                                                                width: double.infinity,
-                                                                decoration: BoxDecoration(
-                                                                  color: Color(0xFFF4F4F4),
-                                                                  boxShadow: [
-                                                                    BoxShadow(
-                                                                      blurRadius: 4.0,
-                                                                      color: Color(0x1A000000),
-                                                                      offset: Offset(
-                                                                        0.0,
-                                                                        2.0,
-                                                                      ),
-                                                                    )
-                                                                  ],
-                                                                  borderRadius: BorderRadius.circular(12.0),
-                                                                  border: Border.all(
-                                                                    color: Color(0xFF4DABF7),
-                                                                  ),
-                                                                ),
-                                                                child: Padding(
-                                                                  padding: EdgeInsetsDirectional.fromSTEB(10.0, 10.0, 5.0, 10.0),
-                                                                  child: Column(
-                                                                    mainAxisSize: MainAxisSize.min,
-                                                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                                                    children: [
-                                                                      Row(
-                                                                        mainAxisSize: MainAxisSize.max,
-                                                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                                        children: [
-                                                                          Row(
-                                                                            mainAxisSize: MainAxisSize.max,
-                                                                            children: [
-                                                                              Icon(
-                                                                                Icons.location_on_outlined,
-                                                                                color: FlutterFlowTheme.of(context).primary,
-                                                                                size: 24.0,
-                                                                              ),
-                                                                              Container(
-                                                                                width: 200.0,
-                                                                                decoration: BoxDecoration(
-                                                                                  color: Color(0xFFE3E6E0),
-                                                                                  borderRadius: BorderRadius.circular(15.0),
-                                                                                ),
-                                                                                child: Padding(
-                                                                                  padding: EdgeInsetsDirectional.fromSTEB(15.0, 5.0, 10.0, 5.0),
-                                                                                  child: Text(
-                                                                                    liveRidesRidesNewRecord.rideStartLocation,
-                                                                                    style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                                                          font: GoogleFonts.inter(
-                                                                                            fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
-                                                                                            fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                          ),
-                                                                                          fontSize: 12.0,
-                                                                                          letterSpacing: 0.0,
-                                                                                          fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
-                                                                                          fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                        ),
-                                                                                  ),
-                                                                                ),
-                                                                              ),
-                                                                            ],
-                                                                          ),
-                                                                          if (liveRidesRidesNewRecord.modeOfTransport == 'Car')
-                                                                            Padding(
-                                                                              padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
-                                                                              child: FaIcon(
-                                                                                FontAwesomeIcons.carSide,
-                                                                                color: Color(0xFF8F9192),
-                                                                                size: 20.0,
-                                                                              ),
-                                                                            ),
-                                                                          if (liveRidesRidesNewRecord.modeOfTransport == 'Train')
-                                                                            Padding(
-                                                                              padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
-                                                                              child: Icon(
-                                                                                Icons.train,
-                                                                                color: Color(0xFF929090),
-                                                                                size: 30.0,
-                                                                              ),
-                                                                            ),
-                                                                          if (liveRidesRidesNewRecord.modeOfTransport == 'Bike')
-                                                                            Padding(
-                                                                              padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
-                                                                              child: Icon(
-                                                                                Icons.motorcycle_sharp,
-                                                                                color: Color(0xFF8A8888),
-                                                                                size: 30.0,
-                                                                              ),
-                                                                            ),
-                                                                          if (liveRidesRidesNewRecord.modeOfTransport == 'Bus')
-                                                                            Padding(
-                                                                              padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
-                                                                              child: FaIcon(
-                                                                                FontAwesomeIcons.bus,
-                                                                                color: Color(0xFF919191),
-                                                                                size: 20.0,
-                                                                              ),
-                                                                            ),
-                                                                        ].divide(SizedBox(width: 5.0)),
-                                                                      ),
-                                                                      Align(
-                                                                        alignment: AlignmentDirectional(0.0, 0.0),
-                                                                        child: Row(
-                                                                          mainAxisSize: MainAxisSize.max,
-                                                                          mainAxisAlignment: MainAxisAlignment.center,
-                                                                          children: [
-                                                                            Align(
-                                                                              alignment: AlignmentDirectional(0.0, 0.0),
-                                                                              child: Text(
-                                                                                'Travel time: ',
-                                                                                style: FlutterFlowTheme.of(context).labelMedium.override(
-                                                                                      font: GoogleFonts.inter(
-                                                                                        fontWeight: FlutterFlowTheme.of(context).labelMedium.fontWeight,
-                                                                                        fontStyle: FlutterFlowTheme.of(context).labelMedium.fontStyle,
-                                                                                      ),
-                                                                                      color: FlutterFlowTheme.of(context).secondaryText,
-                                                                                      fontSize: 12.0,
-                                                                                      letterSpacing: 0.0,
-                                                                                      fontWeight: FlutterFlowTheme.of(context).labelMedium.fontWeight,
-                                                                                      fontStyle: FlutterFlowTheme.of(context).labelMedium.fontStyle,
-                                                                                    ),
-                                                                              ),
-                                                                            ),
-                                                                            Align(
-                                                                              alignment: AlignmentDirectional(0.0, 0.0),
-                                                                              child: Text(
-                                                                                liveRidesRidesNewRecord.travelTime,
-                                                                                style: FlutterFlowTheme.of(context).labelMedium.override(
-                                                                                      font: GoogleFonts.inter(
-                                                                                        fontWeight: FlutterFlowTheme.of(context).labelMedium.fontWeight,
-                                                                                        fontStyle: FlutterFlowTheme.of(context).labelMedium.fontStyle,
-                                                                                      ),
-                                                                                      color: FlutterFlowTheme.of(context).secondaryText,
-                                                                                      fontSize: 12.0,
-                                                                                      letterSpacing: 0.0,
-                                                                                      fontWeight: FlutterFlowTheme.of(context).labelMedium.fontWeight,
-                                                                                      fontStyle: FlutterFlowTheme.of(context).labelMedium.fontStyle,
-                                                                                    ),
-                                                                              ),
-                                                                            ),
-                                                                          ],
-                                                                        ),
-                                                                      ),
-                                                                      Row(
-                                                                        mainAxisSize: MainAxisSize.max,
-                                                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                                        children: [
-                                                                          Row(
-                                                                            mainAxisSize: MainAxisSize.max,
-                                                                            children: [
-                                                                              Icon(
-                                                                                Icons.location_on_outlined,
-                                                                                color: FlutterFlowTheme.of(context).primary,
-                                                                                size: 24.0,
-                                                                              ),
-                                                                              Container(
-                                                                                width: 200.0,
-                                                                                decoration: BoxDecoration(
-                                                                                  color: Color(0xFFE3E6E0),
-                                                                                  borderRadius: BorderRadius.circular(15.0),
-                                                                                ),
-                                                                                child: Padding(
-                                                                                  padding: EdgeInsetsDirectional.fromSTEB(15.0, 5.0, 10.0, 5.0),
-                                                                                  child: Text(
-                                                                                    liveRidesRidesNewRecord.rideEndLocation,
-                                                                                    style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                                                          font: GoogleFonts.inter(
-                                                                                            fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
-                                                                                            fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                          ),
-                                                                                          fontSize: 12.0,
-                                                                                          letterSpacing: 0.0,
-                                                                                          fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
-                                                                                          fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                        ),
-                                                                                  ),
-                                                                                ),
-                                                                              ),
-                                                                            ],
-                                                                          ),
-                                                                        ].divide(SizedBox(width: 5.0)),
-                                                                      ),
-                                                                      Row(
-                                                                        mainAxisSize: MainAxisSize.max,
-                                                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                                        children: [
-                                                                          Row(
-                                                                            mainAxisSize: MainAxisSize.max,
-                                                                            children: [
-                                                                              Container(
-                                                                                width: 40.0,
-                                                                                height: 40.0,
-                                                                                decoration: BoxDecoration(
-                                                                                  color: FlutterFlowTheme.of(context).secondaryBackground,
-                                                                                  image: DecorationImage(
-                                                                                    fit: BoxFit.cover,
-                                                                                    image: Image.asset(
-                                                                                      "assets/images/profileIcon.png",
-                                                                                    ).image,
-                                                                                  ),
-                                                                                  shape: BoxShape.circle,
-                                                                                  border: Border.all(
-                                                                                    color: Color(0xFF4DABF7),
-                                                                                    width: 2.0,
-                                                                                  ),
-                                                                                ),
-                                                                                child: Container(
-                                                                                  width: 200.0,
-                                                                                  height: 200.0,
-                                                                                  clipBehavior: Clip.antiAlias,
-                                                                                  decoration: BoxDecoration(
-                                                                                    shape: BoxShape.circle,
-                                                                                  ),
-                                                                                  child: CachedNetworkImage(
-                                                                                    fadeInDuration: Duration(milliseconds: 500),
-                                                                                    fadeOutDuration: Duration(milliseconds: 500),
-                                                                                    imageUrl: containerUsersRecord.photoUrl,
-                                                                                    fit: BoxFit.cover,
-                                                                                  ),
-                                                                                ),
-                                                                              ),
-                                                                              Padding(
-                                                                                padding: EdgeInsetsDirectional.fromSTEB(12.0, 0.0, 12.0, 0.0),
-                                                                                child: Column(
-                                                                                  mainAxisSize: MainAxisSize.min,
-                                                                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                                                                  children: [
-                                                                                    Text(
-                                                                                      containerUsersRecord.displayName,
-                                                                                      style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                                                            font: GoogleFonts.inter(
-                                                                                              fontWeight: FontWeight.w600,
-                                                                                              fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                            ),
-                                                                                            letterSpacing: 0.0,
-                                                                                            fontWeight: FontWeight.w600,
-                                                                                            fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                          ),
-                                                                                    ),
-                                                                                  ],
-                                                                                ),
-                                                                              ),
-                                                                              Stack(
-                                                                                alignment: AlignmentDirectional(0.0, 0.0),
-                                                                                children: [
-                                                                                  ClipRRect(
-                                                                                    borderRadius: BorderRadius.circular(8.0),
-                                                                                    child: Image.asset(
-                                                                                      'assets/images/Ride_Search_Icons.png',
-                                                                                      width: 34.0,
-                                                                                      height: 35.8,
-                                                                                      fit: BoxFit.cover,
-                                                                                    ),
-                                                                                  ),
-                                                                                  Text(
-                                                                                    '4.8',
-                                                                                    style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                                                          font: GoogleFonts.inter(
-                                                                                            fontWeight: FontWeight.w900,
-                                                                                            fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                          ),
-                                                                                          color: FlutterFlowTheme.of(context).accent4,
-                                                                                          fontSize: 10.0,
-                                                                                          letterSpacing: 0.0,
-                                                                                          fontWeight: FontWeight.w900,
-                                                                                          fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                        ),
-                                                                                  ),
-                                                                                ],
-                                                                              ),
-                                                                            ],
-                                                                          ),
-                                                                          Padding(
-                                                                            padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 15.0, 0.0),
-                                                                            child: Container(
-                                                                              width: 50.0,
-                                                                              height: 50.0,
-                                                                              decoration: BoxDecoration(
-                                                                                color: Color(0xFFF77F4A),
-                                                                                shape: BoxShape.circle,
-                                                                              ),
-                                                                              child: Align(
-                                                                                alignment: AlignmentDirectional(0.0, 0.0),
-                                                                                child: Text(
-                                                                                  liveRidesRidesNewRecord.totalDeliveryCost,
-                                                                                  textAlign: TextAlign.center,
-                                                                                  style: FlutterFlowTheme.of(context).titleMedium.override(
-                                                                                        font: GoogleFonts.interTight(
-                                                                                          fontWeight: FontWeight.w500,
-                                                                                          fontStyle: FlutterFlowTheme.of(context).titleMedium.fontStyle,
-                                                                                        ),
-                                                                                        color: Colors.white,
-                                                                                        fontSize: 14.0,
-                                                                                        letterSpacing: 0.0,
-                                                                                        fontWeight: FontWeight.w500,
-                                                                                        fontStyle: FlutterFlowTheme.of(context).titleMedium.fontStyle,
-                                                                                      ),
-                                                                                ),
-                                                                              ),
-                                                                            ),
-                                                                          ),
-                                                                        ],
-                                                                      ),
-                                                                      Row(
-                                                                        mainAxisSize: MainAxisSize.max,
-                                                                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                                                        children: [
-                                                                          Text(
-                                                                            'Current Status:',
-                                                                            style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                                                  font: GoogleFonts.inter(
-                                                                                    fontWeight: FontWeight.w600,
-                                                                                    fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                  ),
-                                                                                  fontSize: 16.0,
-                                                                                  letterSpacing: 0.0,
-                                                                                  fontWeight: FontWeight.w600,
-                                                                                  fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                ),
-                                                                          ),
-                                                                          Text(
-                                                                            liveRidesRidesNewRecord.rideStatus,
-                                                                            style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                                                  font: GoogleFonts.inter(
-                                                                                    fontWeight: FontWeight.w600,
-                                                                                    fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                  ),
-                                                                                  fontSize: 16.0,
-                                                                                  letterSpacing: 0.0,
-                                                                                  fontWeight: FontWeight.w600,
-                                                                                  fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                ),
-                                                                          ),
-                                                                        ],
-                                                                      ),
-                                                                    ].divide(SizedBox(height: 12.0)),
-                                                                  ),
-                                                                ),
-                                                              ),
-                                                            );
-                                                          },
+                                            if (_model.myRidesStatus == 'All Rides')
+                                              SizedBox(
+                                                child: Padding(
+                                                  padding: EdgeInsetsDirectional.fromSTEB(5.0, 10.0, 5.0, 10.0),
+                                                  child: StreamBuilder<List<RidesNewRecord>>(
+                                                    stream: queryRidesNewRecord(
+                                                      queryBuilder: (ridesNewRecord) => ridesNewRecord
+                                                          .where(
+                                                            'creatorID',
+                                                            isEqualTo: currentUserReference,
+                                                          )
+                                                          .orderBy('pickupTime'),
+                                                    ),
+                                                    builder: (context, snapshot) {
+                                                      // Customize what your widget looks like when it's loading.
+                                                      if (!snapshot.hasData) {
+                                                        return Image.asset(
+                                                          'assets/images/Car_Gif.gif',
                                                         );
-                                                      },
-                                                    );
-                                                  },
-                                                ),
-                                              ),
-                                            ),
-                                          if (_model.myRidesStatus == 'Under Review')
-                                            SizedBox(
-                                              child: Padding(
-                                                padding: EdgeInsetsDirectional.fromSTEB(5.0, 10.0, 5.0, 10.0),
-                                                child: StreamBuilder<List<RidesNewRecord>>(
-                                                  stream: queryRidesNewRecord(
-                                                    queryBuilder: (ridesNewRecord) => ridesNewRecord
-                                                        .where(
-                                                          'rideStatus',
-                                                          isEqualTo: 'Under Review',
-                                                        )
-                                                        .where(
-                                                          'creatorID',
-                                                          isEqualTo: currentUserReference,
-                                                        )
-                                                        .orderBy('pickupTime'),
-                                                  ),
-                                                  builder: (context, snapshot) {
-                                                    // Customize what your widget looks like when it's loading.
-                                                    if (!snapshot.hasData) {
-                                                      return Image.asset(
-                                                        'assets/images/Car_Gif.gif',
-                                                      );
-                                                    }
-                                                    List<RidesNewRecord> underReviewRidesNewRecordList = snapshot.data!;
-                                                    if (underReviewRidesNewRecordList.isEmpty) {
-                                                      return NoRidePostedWidget();
-                                                    }
+                                                      }
+                                                      List<RidesNewRecord> allRidesRidesNewRecordList = snapshot.data!;
+                                                      if (allRidesRidesNewRecordList.isEmpty) {
 
-                                                    return ListView.separated(
-                                                      padding: EdgeInsets.zero,
-                                                      primary: false,
-                                                      shrinkWrap: true,
-                                                      scrollDirection: Axis.vertical,
-                                                      itemCount: underReviewRidesNewRecordList.length,
-                                                      separatorBuilder: (_, __) => SizedBox(height: 15.0),
-                                                      itemBuilder: (context, underReviewIndex) {
-                                                        final underReviewRidesNewRecord = underReviewRidesNewRecordList[underReviewIndex];
-                                                        return StreamBuilder<UsersRecord>(
-                                                          stream: UsersRecord.getDocument(underReviewRidesNewRecord.creatorID!),
-                                                          builder: (context, snapshot) {
-                                                            // Customize what your widget looks like when it's loading.
-                                                            if (!snapshot.hasData) {
-                                                              return Center(
-                                                                child: SizedBox(
-                                                                  width: 50.0,
-                                                                  height: 50.0,
-                                                                  child: SpinKitFadingCircle(
-                                                                    color: Color(0xFF2B3C58),
-                                                                    size: 50.0,
-                                                                  ),
-                                                                ),
-                                                              );
-                                                            }
+                                                        return NoRidePostedWidget();
+                                                      }
 
-                                                            final containerUsersRecord = snapshot.data!;
+                                                      // return ListView.separated(
+                                                      //   padding: EdgeInsets.zero,
+                                                      //   primary: false,
+                                                      //   shrinkWrap: true,
+                                                      //   scrollDirection: Axis.vertical,
+                                                      //   itemCount: allRidesRidesNewRecordList.length,
+                                                      //   separatorBuilder: (_, __) => SizedBox(height: 15.0),
+                                                      //   itemBuilder: (context, allRidesIndex) {
+                                                      //     final allRidesRidesNewRecord = allRidesRidesNewRecordList[allRidesIndex];
+                                                      //     return StreamBuilder<UsersRecord>(
+                                                      //       stream: UsersRecord.getDocument(allRidesRidesNewRecord.creatorID!),
+                                                      //       builder: (context, snapshot) {
+                                                      //         // Customize what your widget looks like when it's loading.
+                                                      //         if (!snapshot.hasData) {
+                                                      //           return Center(
+                                                      //             child: SizedBox(
+                                                      //               width: 50.0,
+                                                      //               height: 50.0,
+                                                      //               child: SpinKitFadingCircle(
+                                                      //                 color: Color(0xFF2B3C58),
+                                                      //                 size: 50.0,
+                                                      //               ),
+                                                      //             ),
+                                                      //           );
+                                                      //         }
+                                                      //
+                                                      //         final containerUsersRecord = snapshot.data!;
+                                                      //
+                                                      //         return InkWell(
+                                                      //           splashColor: Colors.transparent,
+                                                      //           focusColor: Colors.transparent,
+                                                      //           hoverColor: Colors.transparent,
+                                                      //           highlightColor: Colors.transparent,
+                                                      //           onTap: () async {
+                                                      //             context.pushNamed(
+                                                      //               RideDetailsCustomerWidget.routeName,
+                                                      //               queryParameters: {
+                                                      //                 'rideDetails': serializeParam(
+                                                      //                   allRidesRidesNewRecord.reference,
+                                                      //                   ParamType.DocumentReference,
+                                                      //                 ),
+                                                      //               }.withoutNulls,
+                                                      //             );
+                                                      //           },
+                                                      //           child: Container(
+                                                      //             width: double.infinity,
+                                                      //             decoration: BoxDecoration(
+                                                      //               color: Color(0xFFF4F4F4),
+                                                      //               boxShadow: [
+                                                      //                 BoxShadow(
+                                                      //                   blurRadius: 4.0,
+                                                      //                   color: Color(0x1A000000),
+                                                      //                   offset: Offset(
+                                                      //                     0.0,
+                                                      //                     2.0,
+                                                      //                   ),
+                                                      //                 )
+                                                      //               ],
+                                                      //               borderRadius: BorderRadius.circular(12.0),
+                                                      //               border: Border.all(
+                                                      //                 color: Color(0xFF4DABF7),
+                                                      //               ),
+                                                      //             ),
+                                                      //             child: Padding(
+                                                      //               padding: EdgeInsetsDirectional.fromSTEB(10.0, 10.0, 5.0, 10.0),
+                                                      //               child: Column(
+                                                      //                 mainAxisSize: MainAxisSize.min,
+                                                      //                 crossAxisAlignment: CrossAxisAlignment.start,
+                                                      //                 children: [
+                                                      //                   Row(
+                                                      //                     mainAxisSize: MainAxisSize.max,
+                                                      //                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                      //                     children: [
+                                                      //                       Row(
+                                                      //                         mainAxisSize: MainAxisSize.max,
+                                                      //                         children: [
+                                                      //                           Icon(
+                                                      //                             Icons.location_on_outlined,
+                                                      //                             color: FlutterFlowTheme.of(context).primary,
+                                                      //                             size: 24.0,
+                                                      //                           ),
+                                                      //                           Container(
+                                                      //                             width: 200.0,
+                                                      //                             decoration: BoxDecoration(
+                                                      //                               color: Color(0xFFE3E6E0),
+                                                      //                               borderRadius: BorderRadius.circular(15.0),
+                                                      //                             ),
+                                                      //                             child: Padding(
+                                                      //                               padding: EdgeInsetsDirectional.fromSTEB(15.0, 5.0, 10.0, 5.0),
+                                                      //                               child: Text(
+                                                      //                                 allRidesRidesNewRecord.rideStartLocation,
+                                                      //                                 style: FlutterFlowTheme.of(context).bodyMedium.override(
+                                                      //                                       font: GoogleFonts.inter(
+                                                      //                                         fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
+                                                      //                                         fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                      //                                       ),
+                                                      //                                       fontSize: 12.0,
+                                                      //                                       letterSpacing: 0.0,
+                                                      //                                       fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
+                                                      //                                       fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                      //                                     ),
+                                                      //                               ),
+                                                      //                             ),
+                                                      //                           ),
+                                                      //                         ],
+                                                      //                       ),
+                                                      //                       if (allRidesRidesNewRecord.modeOfTransport == 'Car')
+                                                      //                         Padding(
+                                                      //                           padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
+                                                      //                           child: FaIcon(
+                                                      //                             FontAwesomeIcons.carSide,
+                                                      //                             color: Color(0xFF8F9192),
+                                                      //                             size: 20.0,
+                                                      //                           ),
+                                                      //                         ),
+                                                      //                       if (allRidesRidesNewRecord.modeOfTransport == 'Train')
+                                                      //                         Padding(
+                                                      //                           padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
+                                                      //                           child: Icon(
+                                                      //                             Icons.train,
+                                                      //                             color: Color(0xFF929090),
+                                                      //                             size: 30.0,
+                                                      //                           ),
+                                                      //                         ),
+                                                      //                       if (allRidesRidesNewRecord.modeOfTransport == 'Bike')
+                                                      //                         Padding(
+                                                      //                           padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
+                                                      //                           child: Icon(
+                                                      //                             Icons.motorcycle_sharp,
+                                                      //                             color: Color(0xFF8A8888),
+                                                      //                             size: 30.0,
+                                                      //                           ),
+                                                      //                         ),
+                                                      //                       if (allRidesRidesNewRecord.modeOfTransport == 'Bus')
+                                                      //                         Padding(
+                                                      //                           padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
+                                                      //                           child: FaIcon(
+                                                      //                             FontAwesomeIcons.bus,
+                                                      //                             color: Color(0xFF919191),
+                                                      //                             size: 20.0,
+                                                      //                           ),
+                                                      //                         ),
+                                                      //                     ].divide(SizedBox(width: 5.0)),
+                                                      //                   ),
+                                                      //                   Align(
+                                                      //                     alignment: AlignmentDirectional(0.0, 0.0),
+                                                      //                     child: Row(
+                                                      //                       mainAxisSize: MainAxisSize.max,
+                                                      //                       mainAxisAlignment: MainAxisAlignment.center,
+                                                      //                       children: [
+                                                      //                         Align(
+                                                      //                           alignment: AlignmentDirectional(0.0, 0.0),
+                                                      //                           child: Text(
+                                                      //                             'Travel time: ',
+                                                      //                             style: FlutterFlowTheme.of(context).labelMedium.override(
+                                                      //                                   font: GoogleFonts.inter(
+                                                      //                                     fontWeight: FlutterFlowTheme.of(context).labelMedium.fontWeight,
+                                                      //                                     fontStyle: FlutterFlowTheme.of(context).labelMedium.fontStyle,
+                                                      //                                   ),
+                                                      //                                   color: FlutterFlowTheme.of(context).secondaryText,
+                                                      //                                   fontSize: 12.0,
+                                                      //                                   letterSpacing: 0.0,
+                                                      //                                   fontWeight: FlutterFlowTheme.of(context).labelMedium.fontWeight,
+                                                      //                                   fontStyle: FlutterFlowTheme.of(context).labelMedium.fontStyle,
+                                                      //                                 ),
+                                                      //                           ),
+                                                      //                         ),
+                                                      //                         Align(
+                                                      //                           alignment: AlignmentDirectional(0.0, 0.0),
+                                                      //                           child: Text(
+                                                      //                             allRidesRidesNewRecord.travelTime,
+                                                      //                             style: FlutterFlowTheme.of(context).labelMedium.override(
+                                                      //                                   font: GoogleFonts.inter(
+                                                      //                                     fontWeight: FlutterFlowTheme.of(context).labelMedium.fontWeight,
+                                                      //                                     fontStyle: FlutterFlowTheme.of(context).labelMedium.fontStyle,
+                                                      //                                   ),
+                                                      //                                   color: FlutterFlowTheme.of(context).secondaryText,
+                                                      //                                   fontSize: 12.0,
+                                                      //                                   letterSpacing: 0.0,
+                                                      //                                   fontWeight: FlutterFlowTheme.of(context).labelMedium.fontWeight,
+                                                      //                                   fontStyle: FlutterFlowTheme.of(context).labelMedium.fontStyle,
+                                                      //                                 ),
+                                                      //                           ),
+                                                      //                         ),
+                                                      //                       ],
+                                                      //                     ),
+                                                      //                   ),
+                                                      //                   Row(
+                                                      //                     mainAxisSize: MainAxisSize.max,
+                                                      //                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                      //                     children: [
+                                                      //                       Row(
+                                                      //                         mainAxisSize: MainAxisSize.max,
+                                                      //                         children: [
+                                                      //                           Icon(
+                                                      //                             Icons.location_on_outlined,
+                                                      //                             color: FlutterFlowTheme.of(context).primary,
+                                                      //                             size: 24.0,
+                                                      //                           ),
+                                                      //                           Container(
+                                                      //                             width: 200.0,
+                                                      //                             decoration: BoxDecoration(
+                                                      //                               color: Color(0xFFE3E6E0),
+                                                      //                               borderRadius: BorderRadius.circular(15.0),
+                                                      //                             ),
+                                                      //                             child: Padding(
+                                                      //                               padding: EdgeInsetsDirectional.fromSTEB(15.0, 5.0, 10.0, 5.0),
+                                                      //                               child: Text(
+                                                      //                                 allRidesRidesNewRecord.rideEndLocation,
+                                                      //                                 style: FlutterFlowTheme.of(context).bodyMedium.override(
+                                                      //                                       font: GoogleFonts.inter(
+                                                      //                                         fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
+                                                      //                                         fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                      //                                       ),
+                                                      //                                       fontSize: 12.0,
+                                                      //                                       letterSpacing: 0.0,
+                                                      //                                       fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
+                                                      //                                       fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                      //                                     ),
+                                                      //                               ),
+                                                      //                             ),
+                                                      //                           ),
+                                                      //                         ],
+                                                      //                       ),
+                                                      //                     ].divide(SizedBox(width: 5.0)),
+                                                      //                   ),
+                                                      //                   Row(
+                                                      //                     mainAxisSize: MainAxisSize.max,
+                                                      //                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                      //                     children: [
+                                                      //                       Row(
+                                                      //                         mainAxisSize: MainAxisSize.max,
+                                                      //                         children: [
+                                                      //                           Container(
+                                                      //                             width: 40.0,
+                                                      //                             height: 40.0,
+                                                      //                             decoration: BoxDecoration(
+                                                      //                               color: FlutterFlowTheme.of(context).secondaryBackground,
+                                                      //                               // image:
+                                                      //                               //     DecorationImage(
+                                                      //                               //   fit: BoxFit.cover,
+                                                      //                               //   image: Image.asset(
+                                                      //                               //     "assets/images/profileIcon.png",
+                                                      //                               //   ).image,
+                                                      //                               // ),
+                                                      //                               shape: BoxShape.circle,
+                                                      //                               border: Border.all(
+                                                      //                                 color: Color(0xFF4DABF7),
+                                                      //                                 width: 2.0,
+                                                      //                               ),
+                                                      //                             ),
+                                                      //                             child: Container(
+                                                      //                                 width: 200.0,
+                                                      //                                 height: 200.0,
+                                                      //                                 clipBehavior: Clip.antiAlias,
+                                                      //                                 decoration: BoxDecoration(
+                                                      //                                   shape: BoxShape.circle,
+                                                      //                                 ),
+                                                      //                                 child: CachedNetworkImage(
+                                                      //                                     imageUrl: containerUsersRecord.photoUrl ?? '',
+                                                      //                                     fit: BoxFit.cover,
+                                                      //                                     fadeInDuration: const Duration(milliseconds: 500),
+                                                      //                                     fadeOutDuration: const Duration(milliseconds: 500),
+                                                      //                                     placeholder: (context, url) => const Center(
+                                                      //                                           child: CircularProgressIndicator(),
+                                                      //                                         ),
+                                                      //                                     errorWidget: (context, url, error) => SizedBox.shrink())),
+                                                      //                           ),
+                                                      //                           Padding(
+                                                      //                             padding: EdgeInsetsDirectional.fromSTEB(12.0, 0.0, 12.0, 0.0),
+                                                      //                             child: Column(
+                                                      //                               mainAxisSize: MainAxisSize.min,
+                                                      //                               crossAxisAlignment: CrossAxisAlignment.start,
+                                                      //                               children: [
+                                                      //                                 Text(
+                                                      //                                   containerUsersRecord.displayName,
+                                                      //                                   style: FlutterFlowTheme.of(context).bodyMedium.override(
+                                                      //                                         font: GoogleFonts.inter(
+                                                      //                                           fontWeight: FontWeight.w600,
+                                                      //                                           fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                      //                                         ),
+                                                      //                                         letterSpacing: 0.0,
+                                                      //                                         fontWeight: FontWeight.w600,
+                                                      //                                         fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                      //                                       ),
+                                                      //                                 ),
+                                                      //                               ],
+                                                      //                             ),
+                                                      //                           ),
+                                                      //                           Stack(
+                                                      //                             alignment: AlignmentDirectional(0.0, 0.0),
+                                                      //                             children: [
+                                                      //                               ClipRRect(
+                                                      //                                 borderRadius: BorderRadius.circular(8.0),
+                                                      //                                 child: Image.asset(
+                                                      //                                   'assets/images/Ride_Search_Icons.png',
+                                                      //                                   width: 34.0,
+                                                      //                                   height: 35.8,
+                                                      //                                   fit: BoxFit.cover,
+                                                      //                                 ),
+                                                      //                               ),
+                                                      //                               Text(
+                                                      //                                 '4.8',
+                                                      //                                 style: FlutterFlowTheme.of(context).bodyMedium.override(
+                                                      //                                       font: GoogleFonts.inter(
+                                                      //                                         fontWeight: FontWeight.w900,
+                                                      //                                         fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                      //                                       ),
+                                                      //                                       color: FlutterFlowTheme.of(context).accent4,
+                                                      //                                       fontSize: 10.0,
+                                                      //                                       letterSpacing: 0.0,
+                                                      //                                       fontWeight: FontWeight.w900,
+                                                      //                                       fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                      //                                     ),
+                                                      //                               ),
+                                                      //                             ],
+                                                      //                           ),
+                                                      //                         ],
+                                                      //                       ),
+                                                      //                       Padding(
+                                                      //                         padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 15.0, 0.0),
+                                                      //                         child: Container(
+                                                      //                           width: 50.0,
+                                                      //                           height: 50.0,
+                                                      //                           decoration: BoxDecoration(
+                                                      //                             color: Color(0xFFF77F4A),
+                                                      //                             shape: BoxShape.circle,
+                                                      //                           ),
+                                                      //                           child: Align(
+                                                      //                             alignment: AlignmentDirectional(0.0, 0.0),
+                                                      //                             child: Text(
+                                                      //                               allRidesRidesNewRecord.totalDeliveryCost,
+                                                      //                               textAlign: TextAlign.center,
+                                                      //                               style: FlutterFlowTheme.of(context).titleMedium.override(
+                                                      //                                     font: GoogleFonts.interTight(
+                                                      //                                       fontWeight: FontWeight.w500,
+                                                      //                                       fontStyle: FlutterFlowTheme.of(context).titleMedium.fontStyle,
+                                                      //                                     ),
+                                                      //                                     color: Colors.white,
+                                                      //                                     fontSize: 14.0,
+                                                      //                                     letterSpacing: 0.0,
+                                                      //                                     fontWeight: FontWeight.w500,
+                                                      //                                     fontStyle: FlutterFlowTheme.of(context).titleMedium.fontStyle,
+                                                      //                                   ),
+                                                      //                             ),
+                                                      //                           ),
+                                                      //                         ),
+                                                      //                       ),
+                                                      //                     ],
+                                                      //                   ),
+                                                      //                   Row(
+                                                      //                     mainAxisSize: MainAxisSize.max,
+                                                      //                     mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                                      //                     children: [
+                                                      //                       Text(
+                                                      //                         'Current Status:',
+                                                      //                         style: FlutterFlowTheme.of(context).bodyMedium.override(
+                                                      //                               font: GoogleFonts.inter(
+                                                      //                                 fontWeight: FontWeight.w600,
+                                                      //                                 fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                      //                               ),
+                                                      //                               fontSize: 16.0,
+                                                      //                               letterSpacing: 0.0,
+                                                      //                               fontWeight: FontWeight.w600,
+                                                      //                               fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                      //                             ),
+                                                      //                       ),
+                                                      //                       Text(
+                                                      //                         allRidesRidesNewRecord.rideStatus,
+                                                      //                         style: FlutterFlowTheme.of(context).bodyMedium.override(
+                                                      //                               font: GoogleFonts.inter(
+                                                      //                                 fontWeight: FontWeight.w600,
+                                                      //                                 fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                      //                               ),
+                                                      //                               fontSize: 16.0,
+                                                      //                               letterSpacing: 0.0,
+                                                      //                               fontWeight: FontWeight.w600,
+                                                      //                               fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                      //                             ),
+                                                      //                       ),
+                                                      //                     ],
+                                                      //                   ),
+                                                      //                   if (allRidesRidesNewRecord.rideStatus != 'Under Review')
+                                                      //                     Row(
+                                                      //                       mainAxisSize: MainAxisSize.max,
+                                                      //                       mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                                      //                       children: [
+                                                      //                         InkWell(
+                                                      //                           splashColor: Colors.transparent,
+                                                      //                           focusColor: Colors.transparent,
+                                                      //                           hoverColor: Colors.transparent,
+                                                      //                           highlightColor: Colors.transparent,
+                                                      //                           onTap: () async {
+                                                      //                             await allRidesRidesNewRecord.reference.delete();
+                                                      //                           },
+                                                      //                           child: Icon(
+                                                      //                             Icons.delete,
+                                                      //                             color: Color(0xFFDC0A46),
+                                                      //                             size: 24.0,
+                                                      //                           ),
+                                                      //                         ),
+                                                      //                         FFButtonWidget(
+                                                      //                           onPressed: () async {
+                                                      //                             context.pushNamed(
+                                                      //                               RideEditPageWidget.routeName,
+                                                      //                               queryParameters: {
+                                                      //                                 'rideEdit': serializeParam(
+                                                      //                                   allRidesRidesNewRecord.reference,
+                                                      //                                   ParamType.DocumentReference,
+                                                      //                                 ),
+                                                      //                               }.withoutNulls,
+                                                      //                             );
+                                                      //                           },
+                                                      //                           text: 'Edit',
+                                                      //                           options: FFButtonOptions(
+                                                      //                             width: 80.5,
+                                                      //                             height: 26.2,
+                                                      //                             padding: EdgeInsetsDirectional.fromSTEB(16.0, 0.0, 16.0, 0.0),
+                                                      //                             iconPadding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
+                                                      //                             color: FlutterFlowTheme.of(context).accent3,
+                                                      //                             textStyle: FlutterFlowTheme.of(context).bodyMedium.override(
+                                                      //                                   font: GoogleFonts.inter(
+                                                      //                                     fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
+                                                      //                                     fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                      //                                   ),
+                                                      //                                   color: FlutterFlowTheme.of(context).primaryText,
+                                                      //                                   letterSpacing: 0.0,
+                                                      //                                   fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
+                                                      //                                   fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                      //                                 ),
+                                                      //                             elevation: 0.0,
+                                                      //                             borderSide: BorderSide(
+                                                      //                               color: FlutterFlowTheme.of(context).accent3,
+                                                      //                               width: 1.0,
+                                                      //                             ),
+                                                      //                             borderRadius: BorderRadius.circular(8.0),
+                                                      //                           ),
+                                                      //                         ),
+                                                      //                       ],
+                                                      //                     ),
+                                                      //                 ].divide(SizedBox(height: 12.0)),
+                                                      //               ),
+                                                      //             ),
+                                                      //           ),
+                                                      //         );
+                                                      //       },
+                                                      //     );
+                                                      //   },
+                                                      // );
 
-                                                            return InkWell(
-                                                              splashColor: Colors.transparent,
-                                                              focusColor: Colors.transparent,
-                                                              hoverColor: Colors.transparent,
-                                                              highlightColor: Colors.transparent,
-                                                              onTap: () async {
-                                                                context.pushNamed(
-                                                                  RideDetailsCustomerWidget.routeName,
-                                                                  queryParameters: {
-                                                                    'rideDetails': serializeParam(
-                                                                      underReviewRidesNewRecord.reference,
-                                                                      ParamType.DocumentReference,
-                                                                    ),
-                                                                  }.withoutNulls,
-                                                                );
-                                                              },
-                                                              child: Container(
-                                                                width: double.infinity,
-                                                                decoration: BoxDecoration(
-                                                                  color: Color(0xFFF4F4F4),
-                                                                  boxShadow: [
-                                                                    BoxShadow(
-                                                                      blurRadius: 4.0,
-                                                                      color: Color(0x1A000000),
-                                                                      offset: Offset(
-                                                                        0.0,
-                                                                        2.0,
+                                                      return ListView.separated(
+                                                        padding: EdgeInsets.zero,
+                                                        primary: false,
+                                                        shrinkWrap: true,
+                                                        scrollDirection: Axis.vertical,
+                                                          itemCount: allRidesRidesNewRecordList.length,
+                                                        separatorBuilder: (_, __) => SizedBox(height: 10.0),
+                                                        itemBuilder: (context, allRidesIndex) {
+                                                              final allRidesRidesNewRecord = allRidesRidesNewRecordList[allRidesIndex];
+                                                          return Stack(
+                                                            children: [
+                                                              InkWell(
+                                                                splashColor: Colors.transparent,
+                                                                focusColor: Colors.transparent,
+                                                                hoverColor: Colors.transparent,
+                                                                highlightColor: Colors.transparent,
+                                                                onTap: () async {
+                                                                  context.pushNamed(
+                                                                    RideDetailsCustomerWidget.routeName,
+                                                                    queryParameters: {
+                                                                      'rideDetails': serializeParam(
+                                                                        allRidesRidesNewRecord.reference,
+                                                                        ParamType.DocumentReference,
                                                                       ),
-                                                                    )
-                                                                  ],
-                                                                  borderRadius: BorderRadius.circular(12.0),
-                                                                  border: Border.all(
-                                                                    color: Color(0xFF4DABF7),
-                                                                  ),
-                                                                ),
-                                                                child: Padding(
-                                                                  padding: EdgeInsetsDirectional.fromSTEB(10.0, 10.0, 5.0, 10.0),
-                                                                  child: Column(
-                                                                    mainAxisSize: MainAxisSize.min,
-                                                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                                                    children: [
-                                                                      Row(
-                                                                        mainAxisSize: MainAxisSize.max,
-                                                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                                        children: [
-                                                                          Row(
-                                                                            mainAxisSize: MainAxisSize.max,
-                                                                            children: [
-                                                                              Icon(
-                                                                                Icons.location_on_outlined,
-                                                                                color: FlutterFlowTheme.of(context).primary,
-                                                                                size: 24.0,
-                                                                              ),
-                                                                              Container(
-                                                                                width: 200.0,
-                                                                                decoration: BoxDecoration(
-                                                                                  color: Color(0xFFE3E6E0),
-                                                                                  borderRadius: BorderRadius.circular(15.0),
-                                                                                ),
-                                                                                child: Padding(
-                                                                                  padding: EdgeInsetsDirectional.fromSTEB(15.0, 5.0, 10.0, 5.0),
-                                                                                  child: Text(
-                                                                                    underReviewRidesNewRecord.rideStartLocation,
-                                                                                    style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                                                          font: GoogleFonts.inter(
-                                                                                            fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
-                                                                                            fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                          ),
-                                                                                          fontSize: 12.0,
-                                                                                          letterSpacing: 0.0,
-                                                                                          fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
-                                                                                          fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                        ),
-                                                                                  ),
-                                                                                ),
-                                                                              ),
-                                                                            ],
-                                                                          ),
-                                                                          if (underReviewRidesNewRecord.modeOfTransport == 'Car')
-                                                                            Padding(
-                                                                              padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
-                                                                              child: FaIcon(
-                                                                                FontAwesomeIcons.carSide,
-                                                                                color: Color(0xFF8F9192),
-                                                                                size: 20.0,
-                                                                              ),
-                                                                            ),
-                                                                          if (underReviewRidesNewRecord.modeOfTransport == 'Train')
-                                                                            Padding(
-                                                                              padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
-                                                                              child: Icon(
-                                                                                Icons.train,
-                                                                                color: Color(0xFF929090),
-                                                                                size: 30.0,
-                                                                              ),
-                                                                            ),
-                                                                          if (underReviewRidesNewRecord.modeOfTransport == 'Bike')
-                                                                            Padding(
-                                                                              padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
-                                                                              child: Icon(
-                                                                                Icons.motorcycle_sharp,
-                                                                                color: Color(0xFF8A8888),
-                                                                                size: 30.0,
-                                                                              ),
-                                                                            ),
-                                                                          if (underReviewRidesNewRecord.modeOfTransport == 'Bus')
-                                                                            Padding(
-                                                                              padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
-                                                                              child: FaIcon(
-                                                                                FontAwesomeIcons.bus,
-                                                                                color: Color(0xFF919191),
-                                                                                size: 20.0,
-                                                                              ),
-                                                                            ),
-                                                                        ].divide(SizedBox(width: 5.0)),
-                                                                      ),
-                                                                      Align(
-                                                                        alignment: AlignmentDirectional(0.0, 0.0),
-                                                                        child: Row(
-                                                                          mainAxisSize: MainAxisSize.max,
-                                                                          mainAxisAlignment: MainAxisAlignment.center,
-                                                                          children: [
-                                                                            Align(
-                                                                              alignment: AlignmentDirectional(0.0, 0.0),
-                                                                              child: Text(
-                                                                                'Travel time: ',
-                                                                                style: FlutterFlowTheme.of(context).labelMedium.override(
-                                                                                      font: GoogleFonts.inter(
-                                                                                        fontWeight: FlutterFlowTheme.of(context).labelMedium.fontWeight,
-                                                                                        fontStyle: FlutterFlowTheme.of(context).labelMedium.fontStyle,
-                                                                                      ),
-                                                                                      color: FlutterFlowTheme.of(context).secondaryText,
-                                                                                      fontSize: 12.0,
-                                                                                      letterSpacing: 0.0,
-                                                                                      fontWeight: FlutterFlowTheme.of(context).labelMedium.fontWeight,
-                                                                                      fontStyle: FlutterFlowTheme.of(context).labelMedium.fontStyle,
-                                                                                    ),
-                                                                              ),
-                                                                            ),
-                                                                            Align(
-                                                                              alignment: AlignmentDirectional(0.0, 0.0),
-                                                                              child: Text(
-                                                                                underReviewRidesNewRecord.travelTime,
-                                                                                style: FlutterFlowTheme.of(context).labelMedium.override(
-                                                                                      font: GoogleFonts.inter(
-                                                                                        fontWeight: FlutterFlowTheme.of(context).labelMedium.fontWeight,
-                                                                                        fontStyle: FlutterFlowTheme.of(context).labelMedium.fontStyle,
-                                                                                      ),
-                                                                                      color: FlutterFlowTheme.of(context).secondaryText,
-                                                                                      fontSize: 12.0,
-                                                                                      letterSpacing: 0.0,
-                                                                                      fontWeight: FlutterFlowTheme.of(context).labelMedium.fontWeight,
-                                                                                      fontStyle: FlutterFlowTheme.of(context).labelMedium.fontStyle,
-                                                                                    ),
-                                                                              ),
-                                                                            ),
-                                                                          ],
-                                                                        ),
-                                                                      ),
-                                                                      Row(
-                                                                        mainAxisSize: MainAxisSize.max,
-                                                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                                        children: [
-                                                                          Row(
-                                                                            mainAxisSize: MainAxisSize.max,
-                                                                            children: [
-                                                                              Icon(
-                                                                                Icons.location_on_outlined,
-                                                                                color: FlutterFlowTheme.of(context).primary,
-                                                                                size: 24.0,
-                                                                              ),
-                                                                              Container(
-                                                                                width: 200.0,
-                                                                                decoration: BoxDecoration(
-                                                                                  color: Color(0xFFE3E6E0),
-                                                                                  borderRadius: BorderRadius.circular(15.0),
-                                                                                ),
-                                                                                child: Padding(
-                                                                                  padding: EdgeInsetsDirectional.fromSTEB(15.0, 5.0, 10.0, 5.0),
-                                                                                  child: Text(
-                                                                                    underReviewRidesNewRecord.rideEndLocation,
-                                                                                    style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                                                          font: GoogleFonts.inter(
-                                                                                            fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
-                                                                                            fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                          ),
-                                                                                          fontSize: 12.0,
-                                                                                          letterSpacing: 0.0,
-                                                                                          fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
-                                                                                          fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                        ),
-                                                                                  ),
-                                                                                ),
-                                                                              ),
-                                                                            ],
-                                                                          ),
-                                                                        ].divide(SizedBox(width: 5.0)),
-                                                                      ),
-                                                                      Row(
-                                                                        mainAxisSize: MainAxisSize.max,
-                                                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                                        children: [
-                                                                          Row(
-                                                                            mainAxisSize: MainAxisSize.max,
-                                                                            children: [
-                                                                              Container(
-                                                                                width: 40.0,
-                                                                                height: 40.0,
-                                                                                decoration: BoxDecoration(
-                                                                                  color: FlutterFlowTheme.of(context).secondaryBackground,
-                                                                                  image: DecorationImage(
-                                                                                    fit: BoxFit.cover,
-                                                                                    image: Image.asset(
-                                                                                      "assets/images/profileIcon.png",
-                                                                                    ).image,
-                                                                                  ),
-                                                                                  shape: BoxShape.circle,
-                                                                                  border: Border.all(
-                                                                                    color: Color(0xFF4DABF7),
-                                                                                    width: 2.0,
-                                                                                  ),
-                                                                                ),
-                                                                                child: Container(
-                                                                                  width: 200.0,
-                                                                                  height: 200.0,
-                                                                                  clipBehavior: Clip.antiAlias,
-                                                                                  decoration: BoxDecoration(
-                                                                                    shape: BoxShape.circle,
-                                                                                  ),
-                                                                                  child: CachedNetworkImage(
-                                                                                    fadeInDuration: Duration(milliseconds: 500),
-                                                                                    fadeOutDuration: Duration(milliseconds: 500),
-                                                                                    imageUrl: containerUsersRecord.photoUrl,
-                                                                                    fit: BoxFit.cover,
-                                                                                  ),
-                                                                                ),
-                                                                              ),
-                                                                              Padding(
-                                                                                padding: EdgeInsetsDirectional.fromSTEB(12.0, 0.0, 12.0, 0.0),
-                                                                                child: Column(
-                                                                                  mainAxisSize: MainAxisSize.min,
-                                                                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                                                                  children: [
-                                                                                    Text(
-                                                                                      containerUsersRecord.displayName,
-                                                                                      style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                                                            font: GoogleFonts.inter(
-                                                                                              fontWeight: FontWeight.w600,
-                                                                                              fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                            ),
-                                                                                            letterSpacing: 0.0,
-                                                                                            fontWeight: FontWeight.w600,
-                                                                                            fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                          ),
-                                                                                    ),
-                                                                                  ],
-                                                                                ),
-                                                                              ),
-                                                                              Stack(
-                                                                                alignment: AlignmentDirectional(0.0, 0.0),
-                                                                                children: [
-                                                                                  ClipRRect(
-                                                                                    borderRadius: BorderRadius.circular(8.0),
-                                                                                    child: Image.asset(
-                                                                                      'assets/images/Ride_Search_Icons.png',
-                                                                                      width: 34.0,
-                                                                                      height: 35.8,
-                                                                                      fit: BoxFit.cover,
-                                                                                    ),
-                                                                                  ),
-                                                                                  Text(
-                                                                                    '4.8',
-                                                                                    style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                                                          font: GoogleFonts.inter(
-                                                                                            fontWeight: FontWeight.w900,
-                                                                                            fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                          ),
-                                                                                          color: FlutterFlowTheme.of(context).accent4,
-                                                                                          fontSize: 10.0,
-                                                                                          letterSpacing: 0.0,
-                                                                                          fontWeight: FontWeight.w900,
-                                                                                          fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                        ),
-                                                                                  ),
-                                                                                ],
-                                                                              ),
-                                                                            ],
-                                                                          ),
-                                                                          Padding(
-                                                                            padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 15.0, 0.0),
-                                                                            child: Container(
-                                                                              width: 50.0,
-                                                                              height: 50.0,
-                                                                              decoration: BoxDecoration(
-                                                                                color: Color(0xFFF77F4A),
-                                                                                shape: BoxShape.circle,
-                                                                              ),
-                                                                              child: Align(
-                                                                                alignment: AlignmentDirectional(0.0, 0.0),
-                                                                                child: Text(
-                                                                                  underReviewRidesNewRecord.totalDeliveryCost,
-                                                                                  textAlign: TextAlign.center,
-                                                                                  style: FlutterFlowTheme.of(context).titleMedium.override(
-                                                                                        font: GoogleFonts.interTight(
-                                                                                          fontWeight: FontWeight.w500,
-                                                                                          fontStyle: FlutterFlowTheme.of(context).titleMedium.fontStyle,
-                                                                                        ),
-                                                                                        color: Colors.white,
-                                                                                        fontSize: 14.0,
-                                                                                        letterSpacing: 0.0,
-                                                                                        fontWeight: FontWeight.w500,
-                                                                                        fontStyle: FlutterFlowTheme.of(context).titleMedium.fontStyle,
-                                                                                      ),
-                                                                                ),
-                                                                              ),
-                                                                            ),
-                                                                          ),
-                                                                        ],
-                                                                      ),
-                                                                      Row(
-                                                                        mainAxisSize: MainAxisSize.max,
-                                                                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                                                        children: [
-                                                                          Text(
-                                                                            'Current Status:',
-                                                                            style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                                                  font: GoogleFonts.inter(
-                                                                                    fontWeight: FontWeight.w600,
-                                                                                    fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                  ),
-                                                                                  fontSize: 16.0,
-                                                                                  letterSpacing: 0.0,
-                                                                                  fontWeight: FontWeight.w600,
-                                                                                  fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                ),
-                                                                          ),
-                                                                          Text(
-                                                                            underReviewRidesNewRecord.rideStatus,
-                                                                            style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                                                  font: GoogleFonts.inter(
-                                                                                    fontWeight: FontWeight.w600,
-                                                                                    fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                  ),
-                                                                                  fontSize: 16.0,
-                                                                                  letterSpacing: 0.0,
-                                                                                  fontWeight: FontWeight.w600,
-                                                                                  fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                ),
-                                                                          ),
-                                                                        ],
-                                                                      ),
-                                                                    ].divide(SizedBox(height: 12.0)),
-                                                                  ),
-                                                                ),
-                                                              ),
-                                                            );
-                                                          },
-                                                        );
-                                                      },
-                                                    );
-                                                  },
-                                                ),
-                                              ),
-                                            ),
-                                          if (_model.myRidesStatus == 'Rejected')
-                                            SizedBox(
-                                              child: Padding(
-                                                padding: EdgeInsetsDirectional.fromSTEB(5.0, 10.0, 5.0, 10.0),
-                                                child: StreamBuilder<List<RidesNewRecord>>(
-                                                  stream: queryRidesNewRecord(
-                                                    queryBuilder: (ridesNewRecord) => ridesNewRecord
-                                                        .where(
-                                                          'rideStatus',
-                                                          isEqualTo: 'Rejected',
-                                                        )
-                                                        .where(
-                                                          'creatorID',
-                                                          isEqualTo: currentUserReference,
-                                                        )
-                                                        .orderBy('pickupTime'),
-                                                  ),
-                                                  builder: (context, snapshot) {
-                                                    // Customize what your widget looks like when it's loading.
-                                                    if (!snapshot.hasData) {
-                                                      return Image.asset(
-                                                        'assets/images/Car_Gif.gif',
-                                                      );
-                                                    }
-                                                    List<RidesNewRecord> rejectedRidesNewRecordList = snapshot.data!;
-                                                    if (rejectedRidesNewRecordList.isEmpty) {
-                                                      return NoRidePostedWidget();
-                                                    }
-
-                                                    return ListView.separated(
-                                                      padding: EdgeInsets.zero,
-                                                      primary: false,
-                                                      shrinkWrap: true,
-                                                      scrollDirection: Axis.vertical,
-                                                      itemCount: rejectedRidesNewRecordList.length,
-                                                      separatorBuilder: (_, __) => SizedBox(height: 15.0),
-                                                      itemBuilder: (context, rejectedIndex) {
-                                                        final rejectedRidesNewRecord = rejectedRidesNewRecordList[rejectedIndex];
-                                                        return Stack(
-                                                          children: [
-                                                            StreamBuilder<UsersRecord>(
-                                                              stream: UsersRecord.getDocument(rejectedRidesNewRecord.creatorID!),
-                                                              builder: (context, snapshot) {
-                                                                // Customize what your widget looks like when it's loading.
-                                                                if (!snapshot.hasData) {
-                                                                  return Center(
-                                                                    child: SizedBox(
-                                                                      width: 50.0,
-                                                                      height: 50.0,
-                                                                      child: SpinKitFadingCircle(
-                                                                        color: Color(0xFF2B3C58),
-                                                                        size: 50.0,
-                                                                      ),
-                                                                    ),
+                                                                    }.withoutNulls,
                                                                   );
-                                                                }
-
-                                                                final containerUsersRecord = snapshot.data!;
-
-                                                                return InkWell(
-                                                                  splashColor: Colors.transparent,
-                                                                  focusColor: Colors.transparent,
-                                                                  hoverColor: Colors.transparent,
-                                                                  highlightColor: Colors.transparent,
-                                                                  onTap: () async {
-                                                                    context.pushNamed(
-                                                                      RideDetailsCustomerWidget.routeName,
-                                                                      queryParameters: {
-                                                                        'rideDetails': serializeParam(
-                                                                          rejectedRidesNewRecord.reference,
-                                                                          ParamType.DocumentReference,
+                                                                },
+                                                                child: Material(
+                                                                  color: Colors.transparent,
+                                                                  elevation: 10.0,
+                                                                  shape: RoundedRectangleBorder(
+                                                                    borderRadius: BorderRadius.circular(12.0),
+                                                                  ),
+                                                                  child: ClipRRect(
+                                                                    borderRadius: BorderRadius.circular(12.0),
+                                                                    child: Container(
+                                                                      width: double.infinity,
+                                                                      decoration: BoxDecoration(
+                                                                        color: FlutterFlowTheme.of(context).primaryBackground,
+                                                                        boxShadow: [
+                                                                          BoxShadow(
+                                                                            blurRadius: 4.0,
+                                                                            color: Color(0x1A000000),
+                                                                            offset: Offset(
+                                                                              0.0,
+                                                                              2.0,
+                                                                            ),
+                                                                          )
+                                                                        ],
+                                                                        borderRadius: BorderRadius.circular(12.0),
+                                                                        border: Border.all(
+                                                                          color: FlutterFlowTheme.of(context).tertiary,
                                                                         ),
-                                                                      }.withoutNulls,
-                                                                    );
-                                                                  },
-                                                                  child: Container(
-                                                                    width: double.infinity,
-                                                                    decoration: BoxDecoration(
-                                                                      color: Color(0xFFF4F4F4),
-                                                                      boxShadow: [
-                                                                        BoxShadow(
-                                                                          blurRadius: 4.0,
-                                                                          color: Color(0x1A000000),
-                                                                          offset: Offset(
-                                                                            0.0,
-                                                                            2.0,
-                                                                          ),
-                                                                        )
-                                                                      ],
-                                                                      borderRadius: BorderRadius.circular(12.0),
-                                                                      border: Border.all(
-                                                                        color: Color(0xFF4DABF7),
                                                                       ),
-                                                                    ),
-                                                                    child: Stack(
-                                                                      children: [
-                                                                        Padding(
-                                                                          padding: EdgeInsetsDirectional.fromSTEB(10.0, 10.0, 5.0, 10.0),
-                                                                          child: Column(
-                                                                            mainAxisSize: MainAxisSize.max,
-                                                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                                                            children: [
-                                                                              Row(
-                                                                                mainAxisSize: MainAxisSize.max,
-                                                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                                                children: [
-                                                                                  Row(
-                                                                                    mainAxisSize: MainAxisSize.min,
-                                                                                    children: [
-                                                                                      Icon(
-                                                                                        Icons.location_on_outlined,
-                                                                                        color: FlutterFlowTheme.of(context).primary,
-                                                                                        size: 24.0,
-                                                                                      ),
-                                                                                      Container(
-                                                                                        width: 200.0,
-                                                                                        decoration: BoxDecoration(
-                                                                                          color: Color(0xFFE3E6E0),
-                                                                                          borderRadius: BorderRadius.circular(15.0),
-                                                                                        ),
-                                                                                        child: Padding(
-                                                                                          padding: EdgeInsetsDirectional.fromSTEB(15.0, 5.0, 10.0, 5.0),
-                                                                                          child: Text(
-                                                                                            rejectedRidesNewRecord.googleStartAddress != null && rejectedRidesNewRecord.googleStartAddress != ''
-                                                                                                ? rejectedRidesNewRecord.googleStartAddress
-                                                                                                : rejectedRidesNewRecord.rideStartLocation,
-                                                                                            style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                                                                  font: GoogleFonts.inter(
-                                                                                                    fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
-                                                                                                    fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                                  ),
-                                                                                                  fontSize: 12.0,
-                                                                                                  letterSpacing: 0.0,
-                                                                                                  fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
-                                                                                                  fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                                ),
-                                                                                          ),
-                                                                                        ),
-                                                                                      ),
-                                                                                    ],
-                                                                                  ),
-                                                                                ].divide(SizedBox(width: 5.0)),
-                                                                              ),
-                                                                              Padding(
-                                                                                padding: EdgeInsetsDirectional.fromSTEB(5.0, 0.0, 0.0, 0.0),
-                                                                                child: Row(
-                                                                                  mainAxisSize: MainAxisSize.min,
+                                                                      alignment: AlignmentDirectional(1.0, 0.0),
+                                                                      child: Padding(
+                                                                        padding: EdgeInsetsDirectional.fromSTEB(10.0, 10.0, 5.0, 10.0),
+                                                                        child: SizedBox(
+                                                                          child: Container(
+                                                                            color: Colors.transparent,
+                                                                            child: Column(
+                                                                              mainAxisSize: MainAxisSize.min,
+                                                                              mainAxisAlignment: MainAxisAlignment.center,
+                                                                              crossAxisAlignment: CrossAxisAlignment.center,
+                                                                              children: [
+                                                                                Row(
+                                                                                  mainAxisSize: MainAxisSize.max,
                                                                                   mainAxisAlignment: MainAxisAlignment.start,
                                                                                   children: [
-                                                                                    if (rejectedRidesNewRecord.modeOfTransport == 'Bus')
-                                                                                      Padding(
-                                                                                        padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
-                                                                                        child: FaIcon(
-                                                                                          FontAwesomeIcons.bus,
-                                                                                          color: Color(0xFF919191),
-                                                                                          size: 20.0,
+                                                                                    Row(
+                                                                                      mainAxisSize: MainAxisSize.max,
+                                                                                      children: [
+                                                                                        Icon(
+                                                                                          Icons.location_on_outlined,
+                                                                                          color: FlutterFlowTheme.of(context).primary,
+                                                                                          size: 24.0,
                                                                                         ),
-                                                                                      ),
-                                                                                    if (rejectedRidesNewRecord.modeOfTransport == 'Bike')
-                                                                                      Padding(
-                                                                                        padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
-                                                                                        child: Icon(
-                                                                                          Icons.motorcycle_sharp,
-                                                                                          color: Color(0xFF8A8888),
-                                                                                          size: 30.0,
-                                                                                        ),
-                                                                                      ),
-                                                                                    if (rejectedRidesNewRecord.modeOfTransport == 'Train')
-                                                                                      Padding(
-                                                                                        padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
-                                                                                        child: Icon(
-                                                                                          Icons.train,
-                                                                                          color: Color(0xFF929090),
-                                                                                          size: 30.0,
-                                                                                        ),
-                                                                                      ),
-                                                                                    if (rejectedRidesNewRecord.modeOfTransport == 'Car')
-                                                                                      Padding(
-                                                                                        padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
-                                                                                        child: FaIcon(
-                                                                                          FontAwesomeIcons.carSide,
-                                                                                          color: Color(0xFF8F9192),
-                                                                                          size: 15.0,
-                                                                                        ),
-                                                                                      ),
-                                                                                    if (rejectedRidesNewRecord.modeOfTransport == 'Bike')
-                                                                                      Padding(
-                                                                                        padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
-                                                                                        child: Icon(
-                                                                                          Icons.motorcycle_sharp,
-                                                                                          color: Color(0xFF8A8888),
-                                                                                          size: 20.0,
-                                                                                        ),
-                                                                                      ),
-                                                                                    if (rejectedRidesNewRecord.modeOfTransport == 'Train')
-                                                                                      Padding(
-                                                                                        padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
-                                                                                        child: Icon(
-                                                                                          Icons.train,
-                                                                                          color: Color(0xFF929090),
-                                                                                          size: 20.0,
-                                                                                        ),
-                                                                                      ),
-                                                                                    if (rejectedRidesNewRecord.modeOfTransport == 'Bus')
-                                                                                      Padding(
-                                                                                        padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
-                                                                                        child: FaIcon(
-                                                                                          FontAwesomeIcons.bus,
-                                                                                          color: Color(0xFF919191),
-                                                                                          size: 15.0,
-                                                                                        ),
-                                                                                      ),
-                                                                                    Align(
-                                                                                      alignment: AlignmentDirectional(0.0, 0.0),
-                                                                                      child: Text(
-                                                                                        'Travel time: ',
-                                                                                        style: FlutterFlowTheme.of(context).labelMedium.override(
-                                                                                              font: GoogleFonts.inter(
-                                                                                                fontWeight: FlutterFlowTheme.of(context).labelMedium.fontWeight,
-                                                                                                fontStyle: FlutterFlowTheme.of(context).labelMedium.fontStyle,
-                                                                                              ),
-                                                                                              color: FlutterFlowTheme.of(context).secondaryText,
-                                                                                              fontSize: 12.0,
-                                                                                              letterSpacing: 0.0,
-                                                                                              fontWeight: FlutterFlowTheme.of(context).labelMedium.fontWeight,
-                                                                                              fontStyle: FlutterFlowTheme.of(context).labelMedium.fontStyle,
+                                                                                        ClipRRect(
+                                                                                          borderRadius: BorderRadius.circular(10.0),
+                                                                                          child: Container(
+                                                                                            // height: 30,
+                                                                                            width: 170.0,
+                                                                                            decoration: BoxDecoration(
+                                                                                              color: Color(0xFFE3E6E0),
+                                                                                              borderRadius: BorderRadius.circular(15.0),
                                                                                             ),
-                                                                                      ),
-                                                                                    ),
-                                                                                    Align(
-                                                                                      alignment: AlignmentDirectional(0.0, 0.0),
-                                                                                      child: Text(
-                                                                                        rejectedRidesNewRecord.travelTime,
-                                                                                        style: FlutterFlowTheme.of(context).labelMedium.override(
-                                                                                              font: GoogleFonts.inter(
-                                                                                                fontWeight: FlutterFlowTheme.of(context).labelMedium.fontWeight,
-                                                                                                fontStyle: FlutterFlowTheme.of(context).labelMedium.fontStyle,
-                                                                                              ),
-                                                                                              color: FlutterFlowTheme.of(context).secondaryText,
-                                                                                              fontSize: 12.0,
-                                                                                              letterSpacing: 0.0,
-                                                                                              fontWeight: FlutterFlowTheme.of(context).labelMedium.fontWeight,
-                                                                                              fontStyle: FlutterFlowTheme.of(context).labelMedium.fontStyle,
-                                                                                            ),
-                                                                                      ),
-                                                                                    ),
-                                                                                  ],
-                                                                                ),
-                                                                              ),
-                                                                              Row(
-                                                                                mainAxisSize: MainAxisSize.max,
-                                                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                                                children: [
-                                                                                  Row(
-                                                                                    mainAxisSize: MainAxisSize.min,
-                                                                                    children: [
-                                                                                      Icon(
-                                                                                        Icons.location_on_outlined,
-                                                                                        color: FlutterFlowTheme.of(context).primary,
-                                                                                        size: 24.0,
-                                                                                      ),
-                                                                                      Container(
-                                                                                        width: 200.0,
-                                                                                        decoration: BoxDecoration(
-                                                                                          color: Color(0xFFE3E6E0),
-                                                                                          borderRadius: BorderRadius.circular(15.0),
-                                                                                        ),
-                                                                                        child: Padding(
-                                                                                          padding: EdgeInsetsDirectional.fromSTEB(15.0, 5.0, 10.0, 5.0),
-                                                                                          child: Text(
-                                                                                            rejectedRidesNewRecord.googleEndAddress != null && rejectedRidesNewRecord.googleEndAddress != ''
-                                                                                                ? rejectedRidesNewRecord.googleEndAddress
-                                                                                                : rejectedRidesNewRecord.rideEndLocation,
-                                                                                            style: FlutterFlowTheme.of(context).bodyMedium.override(
+                                                                                            child: Padding(
+                                                                                              padding: EdgeInsetsDirectional.fromSTEB(15.0, 5.0, 10.0, 5.0),
+                                                                                              child: Text(
+                                                                                                allRidesRidesNewRecord.rideStartLocation,
+                                                                                                style: FlutterFlowTheme.of(context).bodyMedium.override(
                                                                                                   font: GoogleFonts.inter(
                                                                                                     fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
                                                                                                     fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
@@ -6426,378 +6022,720 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                                                                                                   fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
                                                                                                   fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
                                                                                                 ),
-                                                                                          ),
-                                                                                        ),
-                                                                                      ),
-                                                                                    ],
-                                                                                  ),
-                                                                                ].divide(SizedBox(width: 5.0)),
-                                                                              ),
-                                                                              Row(
-                                                                                mainAxisSize: MainAxisSize.max,
-                                                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                                                children: [
-                                                                                  Row(
-                                                                                    mainAxisSize: MainAxisSize.min,
-                                                                                    children: [
-                                                                                      Container(
-                                                                                        width: 40.0,
-                                                                                        height: 40.0,
-                                                                                        decoration: BoxDecoration(
-                                                                                          color: FlutterFlowTheme.of(context).secondaryBackground,
-                                                                                          image: DecorationImage(
-                                                                                            fit: BoxFit.cover,
-                                                                                            image: Image.asset(
-                                                                                              "assets/images/profileIcon.png",
-                                                                                            ).image,
-                                                                                          ),
-                                                                                          shape: BoxShape.circle,
-                                                                                          border: Border.all(
-                                                                                            color: Color(0xFF4DABF7),
-                                                                                            width: 2.0,
-                                                                                          ),
-                                                                                        ),
-                                                                                        child: Builder(
-                                                                                          builder: (context) {
-                                                                                            if (containerUsersRecord.photoUrl != null && containerUsersRecord.photoUrl != '') {
-                                                                                              return Container(
-                                                                                                width: 200.0,
-                                                                                                height: 200.0,
-                                                                                                clipBehavior: Clip.antiAlias,
-                                                                                                decoration: BoxDecoration(
-                                                                                                  shape: BoxShape.circle,
-                                                                                                ),
-                                                                                                child: CachedNetworkImage(
-                                                                                                  fadeInDuration: Duration(milliseconds: 500),
-                                                                                                  fadeOutDuration: Duration(milliseconds: 500),
-                                                                                                  imageUrl: containerUsersRecord.photoUrl,
-                                                                                                  fit: BoxFit.cover,
-                                                                                                ),
-                                                                                              );
-                                                                                            } else {
-                                                                                              return InkWell(
-                                                                                                splashColor: Colors.transparent,
-                                                                                                focusColor: Colors.transparent,
-                                                                                                hoverColor: Colors.transparent,
-                                                                                                highlightColor: Colors.transparent,
-                                                                                                onTap: () async {
-                                                                                                  context.pushNamed(
-                                                                                                    DriverReviewWidget.routeName,
-                                                                                                    queryParameters: {
-                                                                                                      'userRef': serializeParam(
-                                                                                                        containerUsersRecord.reference,
-                                                                                                        ParamType.DocumentReference,
-                                                                                                      ),
-                                                                                                    }.withoutNulls,
-                                                                                                  );
-                                                                                                },
-                                                                                                child: Container(
-                                                                                                  width: 200.0,
-                                                                                                  height: 200.0,
-                                                                                                  clipBehavior: Clip.antiAlias,
-                                                                                                  decoration: BoxDecoration(
-                                                                                                    shape: BoxShape.circle,
-                                                                                                  ),
-                                                                                                  child: Image.asset(
-                                                                                                    'assets/images/userIconTr.png',
-                                                                                                    fit: BoxFit.cover,
-                                                                                                  ),
-                                                                                                ),
-                                                                                              );
-                                                                                            }
-                                                                                          },
-                                                                                        ),
-                                                                                      ),
-                                                                                      Padding(
-                                                                                        padding: EdgeInsetsDirectional.fromSTEB(12.0, 0.0, 12.0, 0.0),
-                                                                                        child: Column(
-                                                                                          mainAxisSize: MainAxisSize.min,
-                                                                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                                                                          children: [
-                                                                                            Text(
-                                                                                              containerUsersRecord.displayName,
-                                                                                              style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                                                                    font: GoogleFonts.inter(
-                                                                                                      fontWeight: FontWeight.w600,
-                                                                                                      fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                                    ),
-                                                                                                    letterSpacing: 0.0,
-                                                                                                    fontWeight: FontWeight.w600,
-                                                                                                    fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                                  ),
-                                                                                            ),
-                                                                                          ],
-                                                                                        ),
-                                                                                      ),
-                                                                                    ],
-                                                                                  ),
-                                                                                  Padding(
-                                                                                    padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
-                                                                                    child: Stack(
-                                                                                      alignment: AlignmentDirectional(0.0, 0.0),
-                                                                                      children: [
-                                                                                        InkWell(
-                                                                                          splashColor: Colors.transparent,
-                                                                                          focusColor: Colors.transparent,
-                                                                                          hoverColor: Colors.transparent,
-                                                                                          highlightColor: Colors.transparent,
-                                                                                          onTap: () async {
-                                                                                            context.pushNamed(
-                                                                                              DriverReviewWidget.routeName,
-                                                                                              queryParameters: {
-                                                                                                'userRef': serializeParam(
-                                                                                                  containerUsersRecord.reference,
-                                                                                                  ParamType.DocumentReference,
-                                                                                                ),
-                                                                                              }.withoutNulls,
-                                                                                            );
-                                                                                          },
-                                                                                          child: ClipRRect(
-                                                                                            borderRadius: BorderRadius.circular(8.0),
-                                                                                            child: Image.asset(
-                                                                                              'assets/images/Ride_Search_Icons.png',
-                                                                                              width: 34.0,
-                                                                                              height: 35.8,
-                                                                                              fit: BoxFit.cover,
-                                                                                            ),
-                                                                                          ),
-                                                                                        ),
-                                                                                        Text(
-                                                                                          valueOrDefault<String>(
-                                                                                            formatNumber(
-                                                                                              functions.averageRating(containerUsersRecord.ratings.toList()),
-                                                                                              formatType: FormatType.compact,
-                                                                                            ),
-                                                                                            '0',
-                                                                                          ),
-                                                                                          style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                                                                font: GoogleFonts.inter(
-                                                                                                  fontWeight: FontWeight.w900,
-                                                                                                  fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                                ),
-                                                                                                color: FlutterFlowTheme.of(context).accent4,
-                                                                                                fontSize: 10.0,
-                                                                                                letterSpacing: 0.0,
-                                                                                                fontWeight: FontWeight.w900,
-                                                                                                fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
                                                                                               ),
+                                                                                            ),
+                                                                                          ),
                                                                                         ),
                                                                                       ],
                                                                                     ),
-                                                                                  ),
-                                                                                ],
-                                                                              ),
-                                                                              Row(
-                                                                                mainAxisSize: MainAxisSize.max,
-                                                                                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                                                                children: [
-                                                                                  Text(
-                                                                                    'Current Status:',
-                                                                                    style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                                                          font: GoogleFonts.inter(
-                                                                                            fontWeight: FontWeight.w600,
-                                                                                            fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                          ),
-                                                                                          fontSize: 16.0,
-                                                                                          letterSpacing: 0.0,
-                                                                                          fontWeight: FontWeight.w600,
-                                                                                          fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                        ),
-                                                                                  ),
-                                                                                  Text(
-                                                                                    rejectedRidesNewRecord.rideStatus,
-                                                                                    style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                                                          font: GoogleFonts.inter(
-                                                                                            fontWeight: FontWeight.w600,
-                                                                                            fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                          ),
-                                                                                          color: () {
-                                                                                            if (rejectedRidesNewRecord.rideStatus == 'Active') {
-                                                                                              return FlutterFlowTheme.of(context).success;
-                                                                                            } else if (rejectedRidesNewRecord.rideStatus == 'Rejected') {
-                                                                                              return FlutterFlowTheme.of(context).error;
-                                                                                            } else {
-                                                                                              return FlutterFlowTheme.of(context).warning;
-                                                                                            }
-                                                                                          }(),
-                                                                                          fontSize: 16.0,
-                                                                                          letterSpacing: 0.0,
-                                                                                          fontWeight: FontWeight.w600,
-                                                                                          fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                        ),
-                                                                                  ),
-                                                                                ],
-                                                                              ),
-                                                                              Row(
-                                                                                mainAxisSize: MainAxisSize.max,
-                                                                                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                                                                children: [
-                                                                                  InkWell(
-                                                                                    splashColor: Colors.transparent,
-                                                                                    focusColor: Colors.transparent,
-                                                                                    hoverColor: Colors.transparent,
-                                                                                    highlightColor: Colors.transparent,
-                                                                                    onTap: () async {
-                                                                                      await rejectedRidesNewRecord.reference.delete();
-                                                                                    },
-                                                                                    child: Icon(
-                                                                                      Icons.delete,
-                                                                                      color: Color(0xFFDC0A46),
-                                                                                      size: 24.0,
-                                                                                    ),
-                                                                                  ),
-                                                                                  FFButtonWidget(
-                                                                                    onPressed: () async {
-                                                                                      context.pushNamed(
-                                                                                        RideEditPageWidget.routeName,
-                                                                                        queryParameters: {
-                                                                                          'rideEdit': serializeParam(
-                                                                                            rejectedRidesNewRecord.reference,
-                                                                                            ParamType.DocumentReference,
-                                                                                          ),
-                                                                                        }.withoutNulls,
-                                                                                      );
-                                                                                    },
-                                                                                    text: 'Edit',
-                                                                                    options: FFButtonOptions(
-                                                                                      width: 80.5,
-                                                                                      height: 26.2,
-                                                                                      padding: EdgeInsetsDirectional.fromSTEB(16.0, 0.0, 16.0, 0.0),
-                                                                                      iconPadding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
-                                                                                      color: FlutterFlowTheme.of(context).accent3,
-                                                                                      textStyle: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                                                            font: GoogleFonts.inter(
-                                                                                              fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
-                                                                                              fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                  ].divide(SizedBox(width: 5.0)),
+                                                                                ),
+                                                                                Align(
+                                                                                  alignment: AlignmentDirectional(-1.0, 0.0),
+                                                                                  child: Padding(
+                                                                                    padding: EdgeInsetsDirectional.fromSTEB(25.0, 0.0, 0.0, 0.0),
+                                                                                    child: Container(
+                                                                                      width: 184.9,
+                                                                                      height: 16.8,
+                                                                                      decoration: BoxDecoration(),
+                                                                                      child: Row(
+                                                                                        mainAxisSize: MainAxisSize.max,
+                                                                                        children: [
+                                                                                          if (allRidesRidesNewRecord.modeOfTransport == 'Bike')
+                                                                                            Padding(
+                                                                                              padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
+                                                                                              child: Icon(
+                                                                                                Icons.motorcycle_sharp,
+                                                                                                color: Color(0xFF8A8888),
+                                                                                                size: 20.0,
+                                                                                              ),
                                                                                             ),
-                                                                                            color: FlutterFlowTheme.of(context).primaryText,
-                                                                                            letterSpacing: 0.0,
-                                                                                            fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
-                                                                                            fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                          if (allRidesRidesNewRecord.modeOfTransport == 'Train')
+                                                                                            Padding(
+                                                                                              padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
+                                                                                              child: Icon(
+                                                                                                Icons.train,
+                                                                                                color: Color(0xFF929090),
+                                                                                                size: 20.0,
+                                                                                              ),
+                                                                                            ),
+                                                                                          if (allRidesRidesNewRecord.modeOfTransport == 'Car')
+                                                                                            Padding(
+                                                                                              padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
+                                                                                              child: FaIcon(
+                                                                                                FontAwesomeIcons.carSide,
+                                                                                                color: Color(0xFF8F9192),
+                                                                                                size: 15.0,
+                                                                                              ),
+                                                                                            ),
+                                                                                          if (allRidesRidesNewRecord.modeOfTransport == 'Bus')
+                                                                                            FaIcon(
+                                                                                              FontAwesomeIcons.bus,
+                                                                                              color: Color(0xFF919191),
+                                                                                              size: 15.0,
+                                                                                            ),
+                                                                                          Align(
+                                                                                            alignment: AlignmentDirectional(0.0, 0.0),
+                                                                                            child: Text(
+                                                                                              '${dateTimeFormat("jm", allRidesRidesNewRecord.pickupTime)} । ${dateTimeFormat("yMMMd", allRidesRidesNewRecord.pickupTime)}',
+                                                                                              style: FlutterFlowTheme.of(context).labelMedium.override(
+                                                                                                font: GoogleFonts.inter(
+                                                                                                  fontWeight: FlutterFlowTheme.of(context).labelMedium.fontWeight,
+                                                                                                  fontStyle: FlutterFlowTheme.of(context).labelMedium.fontStyle,
+                                                                                                ),
+                                                                                                color: FlutterFlowTheme.of(context).secondaryText,
+                                                                                                fontSize: 12.0,
+                                                                                                letterSpacing: 0.0,
+                                                                                                fontWeight: FlutterFlowTheme.of(context).labelMedium.fontWeight,
+                                                                                                fontStyle: FlutterFlowTheme.of(context).labelMedium.fontStyle,
+                                                                                              ),
+                                                                                            ),
                                                                                           ),
-                                                                                      elevation: 0.0,
-                                                                                      borderSide: BorderSide(
-                                                                                        color: FlutterFlowTheme.of(context).accent3,
-                                                                                        width: 1.0,
+                                                                                        ].divide(SizedBox(width: 5.0)),
                                                                                       ),
-                                                                                      borderRadius: BorderRadius.circular(8.0),
                                                                                     ),
                                                                                   ),
-                                                                                  Align(
-                                                                                    alignment: AlignmentDirectional(0.0, 0.0),
-                                                                                    child: InkWell(
-                                                                                      splashColor: Colors.transparent,
-                                                                                      focusColor: Colors.transparent,
-                                                                                      hoverColor: Colors.transparent,
-                                                                                      highlightColor: Colors.transparent,
-                                                                                      onTap: () async {
-                                                                                        context.pushNamed(BookingsDriverWidget.routeName);
-                                                                                      },
-                                                                                      child: Container(
-                                                                                        width: 139.6,
-                                                                                        height: 28.0,
-                                                                                        decoration: BoxDecoration(
-                                                                                          color: Color(0x1F4CAF50),
-                                                                                          borderRadius: BorderRadius.circular(14.0),
+                                                                                ),
+                                                                                Row(
+                                                                                  mainAxisSize: MainAxisSize.max,
+                                                                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                                                  children: [
+                                                                                    Row(
+                                                                                      mainAxisSize: MainAxisSize.min,
+                                                                                      children: [
+                                                                                        Icon(
+                                                                                          Icons.location_on_outlined,
+                                                                                          color: FlutterFlowTheme.of(context).primary,
+                                                                                          size: 24.0,
                                                                                         ),
-                                                                                        child: Padding(
-                                                                                          padding: EdgeInsets.all(4.0),
-                                                                                          child: Row(
-                                                                                            mainAxisSize: MainAxisSize.min,
-                                                                                            mainAxisAlignment: MainAxisAlignment.center,
-                                                                                            children: [
-                                                                                              Padding(
-                                                                                                padding: EdgeInsetsDirectional.fromSTEB(4.0, 0.0, 4.0, 0.0),
-                                                                                                child: Text(
-                                                                                                  'Booking Request',
-                                                                                                  style: FlutterFlowTheme.of(context).bodySmall.override(
-                                                                                                        font: GoogleFonts.inter(
-                                                                                                          fontWeight: FontWeight.w500,
-                                                                                                          fontStyle: FlutterFlowTheme.of(context).bodySmall.fontStyle,
-                                                                                                        ),
-                                                                                                        color: FlutterFlowTheme.of(context).success,
-                                                                                                        letterSpacing: 0.0,
-                                                                                                        fontWeight: FontWeight.w500,
-                                                                                                        fontStyle: FlutterFlowTheme.of(context).bodySmall.fontStyle,
-                                                                                                      ),
+                                                                                        Container(
+                                                                                          width: 170.0,
+                                                                                          decoration: BoxDecoration(
+                                                                                            color: Color(0xFFE3E6E0),
+                                                                                            borderRadius: BorderRadius.circular(15.0),
+                                                                                          ),
+                                                                                          child: Padding(
+                                                                                            padding: EdgeInsetsDirectional.fromSTEB(15.0, 5.0, 10.0, 5.0),
+                                                                                            child: Text(
+                                                                                              allRidesRidesNewRecord.rideEndLocation,
+                                                                                              style: FlutterFlowTheme.of(context).bodyMedium.override(
+                                                                                                font: GoogleFonts.inter(
+                                                                                                  fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
+                                                                                                  fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
                                                                                                 ),
+                                                                                                fontSize: 12.0,
+                                                                                                letterSpacing: 0.0,
+                                                                                                fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
+                                                                                                fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                              ),
+                                                                                            ),
+                                                                                          ),
+                                                                                        ),
+                                                                                      ],
+                                                                                    ),
+                                                                                  ].divide(SizedBox(width: 5.0)),
+                                                                                ),
+                                                                                if (allRidesRidesNewRecord.creatorID != null)
+                                                                                  Padding(
+                                                                                    padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
+                                                                                    child: StreamBuilder<UsersRecord>(
+                                                                                      stream: UsersRecord.getDocument(allRidesRidesNewRecord.creatorID!),
+                                                                                      builder: (context, snapshot) {
+                                                                                        // Customize what your widget looks like when it's loading.
+                                                                                        if (!snapshot.hasData) {
+                                                                                          return Center(
+                                                                                            child: SizedBox(
+                                                                                              width: 50.0,
+                                                                                              height: 50.0,
+                                                                                              child: SpinKitFadingCircle(
+                                                                                                color: Color(0xFF2B3C58),
+                                                                                                size: 50.0,
+                                                                                              ),
+                                                                                            ),
+                                                                                          );
+                                                                                        }
+                                                                                        Container(
+                                                                                          color: Colors.red,
+                                                                                            height: 20,
+                                                                                          width: 20,
+                                                                                        );
+
+                                                                                        final rowUsersRecord = snapshot.data!;
+
+                                                                                        return Container(
+                                                                                          color: Colors.transparent,
+                                                                                          child: Column(
+                                                                                            mainAxisSize: MainAxisSize.min,
+                                                                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                                                                            children: [
+                                                                                              Row(
+                                                                                                mainAxisSize: MainAxisSize.max,
+                                                                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                                                                crossAxisAlignment: CrossAxisAlignment.center,
+                                                                                                children: [
+                                                                                                  // Left side: label + status
+                                                                                                  Expanded(
+                                                                                                    child: Row(
+                                                                                                      mainAxisSize: MainAxisSize.min,
+                                                                                                      children: [
+                                                                                                        Text(
+                                                                                                          'Current Status: ',
+                                                                                                          style: FlutterFlowTheme.of(context).bodyMedium.override(
+                                                                                                            font: GoogleFonts.inter(
+                                                                                                              fontWeight: FontWeight.w600,
+                                                                                                              fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                                            ),
+                                                                                                            fontSize: 15.0,
+                                                                                                            letterSpacing: 0.0,
+                                                                                                            fontWeight: FontWeight.w600,
+                                                                                                            fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                                          ),
+                                                                                                        ),
+                                                                                                        SizedBox(width: 8),
+                                                                                                        Flexible(
+                                                                                                          child: Text(
+                                                                                                            allRidesRidesNewRecord.rideStatus,
+                                                                                                            overflow: TextOverflow.ellipsis,
+                                                                                                            style: FlutterFlowTheme.of(context).bodyMedium.override(
+                                                                                                              font: GoogleFonts.inter(
+                                                                                                                fontWeight: FontWeight.w600,
+                                                                                                                fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                                              ),
+                                                                                                              fontSize: 15.0,
+                                                                                                              letterSpacing: 0.0,
+                                                                                                              fontWeight: FontWeight.w600,
+                                                                                                              fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                                              // ✅ CONDITIONAL COLOR
+                                                                                                              color: allRidesRidesNewRecord.rideStatus == 'Live'
+                                                                                                                  ? Colors.green.shade700          // ✅ GREEN for Live
+                                                                                                                  : allRidesRidesNewRecord.rideStatus == 'Under Review'
+                                                                                                                  ? Colors.orange.shade700      // ✅ ORANGE for Under Review
+                                                                                                                  : allRidesRidesNewRecord.rideStatus == 'Rejected'
+                                                                                                                  ? Color(0xFFDC0A46)        // ✅ RED for Rejected
+                                                                                                                  : FlutterFlowTheme.of(context).primaryText,  // ✅ DEFAULT BLACK
+                                                                                                            ),
+                                                                                                          ),
+                                                                                                        ),
+                                                                                                      ],
+                                                                                                    ),
+                                                                                                  ),
+
+                                                                                                  // Right side: delete + edit (only if not Under Review)
+                                                                                                  if (allRidesRidesNewRecord.rideStatus != 'Under Review')
+                                                                                                    Row(
+                                                                                                      mainAxisSize: MainAxisSize.min,
+                                                                                                      children: [
+                                                                                                        InkWell(
+                                                                                                          splashColor: Colors.transparent,
+                                                                                                          focusColor: Colors.transparent,
+                                                                                                          hoverColor: Colors.transparent,
+                                                                                                          highlightColor: Colors.transparent,
+                                                                                                          onTap: () => showDialog<void>(
+                                                                                                            context: context,
+                                                                                                            barrierDismissible: false,
+                                                                                                            builder: (BuildContext dialogContext) {
+                                                                                                              return AlertDialog(
+                                                                                                                backgroundColor: FlutterFlowTheme.of(context).secondaryBackground,
+                                                                                                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
+                                                                                                                title: Row(
+                                                                                                                  children: [
+                                                                                                                    Icon(Icons.warning_amber_rounded, color: Color(0xFFFF9561), size: 30.0),
+                                                                                                                    SizedBox(width: 12.0),
+                                                                                                                    Text(
+                                                                                                                      'Delete Ride?',
+                                                                                                                      style: FlutterFlowTheme.of(context).headlineSmall.override(fontWeight: FontWeight.w700),
+                                                                                                                    ),
+                                                                                                                  ],
+                                                                                                                ),
+                                                                                                                content: Text(
+                                                                                                                  'Are you sure you want to permanently delete this ride? This action cannot be undone.',
+                                                                                                                  style: FlutterFlowTheme.of(context).bodyMedium.override(lineHeight: 1.5),
+                                                                                                                ),
+                                                                                                                actions: [
+                                                                                                                  TextButton(
+                                                                                                                    onPressed: () => Navigator.of(dialogContext).pop(),
+                                                                                                                    child: Text('Cancel', style: FlutterFlowTheme.of(context).bodyMedium.override(fontWeight: FontWeight.w600)),
+                                                                                                                  ),
+                                                                                                                  ElevatedButton(
+                                                                                                                    onPressed: () async {
+                                                                                                                      Navigator.of(dialogContext).pop();
+                                                                                                                      await allRidesRidesNewRecord.reference.delete();
+                                                                                                                      ScaffoldMessenger.of(context).showSnackBar(
+                                                                                                                        SnackBar(content: Text('Ride deleted!'), backgroundColor: Color(0xFFFF9561)),
+                                                                                                                      );
+                                                                                                                    },
+                                                                                                                    style: ElevatedButton.styleFrom(
+                                                                                                                      backgroundColor: Color(0xFFFF9561),
+                                                                                                                      foregroundColor: Colors.white,
+                                                                                                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+                                                                                                                      padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+                                                                                                                    ),
+                                                                                                                    child: Text('Delete', style: FlutterFlowTheme.of(context).bodyMedium.override(fontWeight: FontWeight.w700, fontSize: 16.0, color: Colors.white)),
+                                                                                                                  ),
+                                                                                                                ],
+                                                                                                              );
+                                                                                                            },
+                                                                                                          ),
+                                                                                                          child: Icon(Icons.delete, color: Color(0xFFDC0A46), size: 24.0),
+                                                                                                        ),
+
+                                                                                                        const SizedBox(width: 8.0),
+                                                                                                        FFButtonWidget(
+                                                                                                          onPressed: () async {
+                                                                                                            context.pushNamed(
+                                                                                                              RideEditPageWidget.routeName,
+                                                                                                              queryParameters: {
+                                                                                                                'rideEdit': serializeParam(
+                                                                                                                  allRidesRidesNewRecord.reference,
+                                                                                                                  ParamType.DocumentReference,
+                                                                                                                ),
+                                                                                                              }.withoutNulls,
+                                                                                                            );
+                                                                                                          },
+                                                                                                          text: 'Edit',
+                                                                                                          options: FFButtonOptions(
+                                                                                                            // make width responsive
+                                                                                                            width: 80.0,
+                                                                                                            height: 30.0,
+                                                                                                            padding:
+                                                                                                            const EdgeInsetsDirectional.fromSTEB(16.0, 0.0, 16.0, 0.0),
+                                                                                                            color: FlutterFlowTheme.of(context).accent3,
+                                                                                                            textStyle: FlutterFlowTheme.of(context).bodyMedium.override(
+                                                                                                              font: GoogleFonts.inter(
+                                                                                                                fontWeight:
+                                                                                                                FlutterFlowTheme.of(context).bodyMedium.fontWeight,
+                                                                                                                fontStyle:
+                                                                                                                FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                                              ),
+                                                                                                              color: FlutterFlowTheme.of(context).primaryText,
+                                                                                                              letterSpacing: 0.0,
+                                                                                                              fontWeight:
+                                                                                                              FlutterFlowTheme.of(context).bodyMedium.fontWeight,
+                                                                                                              fontStyle:
+                                                                                                              FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                                            ),
+                                                                                                            elevation: 0.0,
+                                                                                                            borderSide: BorderSide(
+                                                                                                              color: FlutterFlowTheme.of(context).accent3,
+                                                                                                              width: 1.0,
+                                                                                                            ),
+                                                                                                            borderRadius: BorderRadius.circular(8.0),
+                                                                                                          ),
+                                                                                                        ),
+                                                                                                      ],
+                                                                                                    ),
+                                                                                                ],
+                                                                                              ),
+
+                                                                                              SizedBox(height: 10.0), // Small gap between rows
+
+                                                                                              // ✅ FIRST ROW: Driver Avatar + Name (your existing)
+                                                                                              Row(
+                                                                                                mainAxisSize: MainAxisSize.max,
+                                                                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                                                                children: [
+                                                                                                  Align(
+                                                                                                    alignment: AlignmentDirectional(-1.0, 0.0),
+                                                                                                    child: Container(
+                                                                                                      width: 180.0,
+                                                                                                      decoration: BoxDecoration(),
+                                                                                                      child: Row(
+                                                                                                        mainAxisSize: MainAxisSize.min,
+                                                                                                        mainAxisAlignment: MainAxisAlignment.start,
+                                                                                                        children: [
+                                                                                                          InkWell(
+                                                                                                            splashColor: Colors.transparent,
+                                                                                                            focusColor: Colors.transparent,
+                                                                                                            hoverColor: Colors.transparent,
+                                                                                                            highlightColor: Colors.transparent,
+                                                                                                            onTap: () async {
+                                                                                                              context.pushNamed(
+                                                                                                                DriverReviewWidget.routeName,
+                                                                                                                queryParameters: {
+                                                                                                                  'userRef': serializeParam(
+                                                                                                                    rowUsersRecord.reference,
+                                                                                                                    ParamType.DocumentReference,
+                                                                                                                  ),
+                                                                                                                }.withoutNulls,
+                                                                                                              );
+                                                                                                            },
+                                                                                                            child: Builder(
+                                                                                                              builder: (context) {
+                                                                                                                if (rowUsersRecord.photoUrl != null && rowUsersRecord.photoUrl != '') {
+                                                                                                                  return Container(
+                                                                                                                    width: 30.0,
+                                                                                                                    height: 30.0,
+                                                                                                                    clipBehavior: Clip.antiAlias,
+                                                                                                                    decoration: BoxDecoration(
+                                                                                                                      shape: BoxShape.circle,
+                                                                                                                    ),
+                                                                                                                    child: Image.network(
+                                                                                                                      rowUsersRecord.photoUrl,
+                                                                                                                      fit: BoxFit.cover,
+                                                                                                                    ),
+                                                                                                                  );
+                                                                                                                } else {
+                                                                                                                  return InkWell(
+                                                                                                                    splashColor: Colors.transparent,
+                                                                                                                    focusColor: Colors.transparent,
+                                                                                                                    hoverColor: Colors.transparent,
+                                                                                                                    highlightColor: Colors.transparent,
+                                                                                                                    onTap: () async {
+                                                                                                                      context.pushNamed(
+                                                                                                                        DriverReviewWidget.routeName,
+                                                                                                                        queryParameters: {
+                                                                                                                          'userRef': serializeParam(
+                                                                                                                            rowUsersRecord.reference,
+                                                                                                                            ParamType.DocumentReference,
+                                                                                                                          ),
+                                                                                                                        }.withoutNulls,
+                                                                                                                      );
+                                                                                                                    },
+                                                                                                                    child: Container(
+                                                                                                                      width: 30.0,
+                                                                                                                      height: 30.0,
+                                                                                                                      clipBehavior: Clip.antiAlias,
+                                                                                                                      decoration: BoxDecoration(
+                                                                                                                        shape: BoxShape.circle,
+                                                                                                                      ),
+                                                                                                                      child: Image.asset(
+                                                                                                                        'assets/images/userIconTr.png',
+                                                                                                                        fit: BoxFit.cover,
+                                                                                                                      ),
+                                                                                                                    ),
+                                                                                                                  );
+                                                                                                                }
+                                                                                                              },
+                                                                                                            ),
+                                                                                                          ),
+                                                                                                          Padding(
+                                                                                                            padding: EdgeInsetsDirectional.fromSTEB(12.0, 0.0, 5.0, 0.0),
+                                                                                                            child: Column(
+                                                                                                              mainAxisSize: MainAxisSize.min,
+                                                                                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                                                                                              children: [
+                                                                                                                Text(
+                                                                                                                  rowUsersRecord.displayName != null && rowUsersRecord.displayName != '' ? rowUsersRecord.displayName : 'Driver',
+                                                                                                                  style: FlutterFlowTheme.of(context).bodyMedium.override(
+                                                                                                                    font: GoogleFonts.inter(
+                                                                                                                      fontWeight: FontWeight.w600,
+                                                                                                                      fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                                                    ),
+                                                                                                                    fontSize: 12.0,
+                                                                                                                    letterSpacing: 0.0,
+                                                                                                                    fontWeight: FontWeight.w600,
+                                                                                                                    fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                                                  ),
+                                                                                                                ),
+                                                                                                              ],
+                                                                                                            ),
+                                                                                                          ),
+                                                                                                        ],
+                                                                                                      ),
+                                                                                                    ),
+                                                                                                  ),
+                                                                                                  Align(
+                                                                                                    alignment: AlignmentDirectional(0.0, 0.0),
+                                                                                                    child: Container(
+                                                                                                      width: 30.0,
+                                                                                                      decoration: BoxDecoration(),
+                                                                                                      child: Padding(
+                                                                                                        padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 5.0, 0.0),
+                                                                                                        child: Stack(
+                                                                                                          alignment: AlignmentDirectional(0.0, 0.0),
+                                                                                                          children: [
+                                                                                                            ClipRRect(
+                                                                                                              borderRadius: BorderRadius.circular(8.0),
+                                                                                                              child: Image.asset(
+                                                                                                                'assets/images/Ride_Search_Icons.png',
+                                                                                                                width: 25.0,
+                                                                                                                height: 30.0,
+                                                                                                                fit: BoxFit.cover,
+                                                                                                              ),
+                                                                                                            ),
+                                                                                                            Text(
+                                                                                                              valueOrDefault<String>(
+                                                                                                                formatNumber(
+                                                                                                                  functions.averageRating(rowUsersRecord.ratings.toList()),
+                                                                                                                  formatType: FormatType.compact,
+                                                                                                                ),
+                                                                                                                '0',
+                                                                                                              ),
+                                                                                                              style: FlutterFlowTheme.of(context).bodyMedium.override(
+                                                                                                                font: GoogleFonts.inter(
+                                                                                                                  fontWeight: FontWeight.w900,
+                                                                                                                  fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                                                ),
+                                                                                                                color: FlutterFlowTheme.of(context).primaryBackground,
+                                                                                                                fontSize: 9.0,
+                                                                                                                letterSpacing: 0.0,
+                                                                                                                fontWeight: FontWeight.w900,
+                                                                                                                fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                                              ),
+                                                                                                            ),
+                                                                                                          ],
+                                                                                                        ),
+                                                                                                      ),
+                                                                                                    ),
+                                                                                                  ),
+                                                                                                ].divide(SizedBox(width: 4.0)),
                                                                                               ),
                                                                                             ],
                                                                                           ),
-                                                                                        ),
-                                                                                      ),
+                                                                                        );
+
+                                                                                      },
                                                                                     ),
                                                                                   ),
-                                                                                ],
-                                                                              ),
-                                                                              Row(
-                                                                                mainAxisSize: MainAxisSize.max,
-                                                                                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                                                                children: [
-                                                                                  Text(
-                                                                                    'Current Status:',
-                                                                                    style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                                                          font: GoogleFonts.inter(
-                                                                                            fontWeight: FontWeight.w600,
-                                                                                            fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                          ),
-                                                                                          fontSize: 16.0,
-                                                                                          letterSpacing: 0.0,
-                                                                                          fontWeight: FontWeight.w600,
-                                                                                          fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                        ),
-                                                                                  ),
-                                                                                  Text(
-                                                                                    rejectedRidesNewRecord.rideStatus,
-                                                                                    style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                                                          font: GoogleFonts.inter(
-                                                                                            fontWeight: FontWeight.w600,
-                                                                                            fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                          ),
-                                                                                          color: () {
-                                                                                            if (rejectedRidesNewRecord.rideStatus == 'Active') {
-                                                                                              return FlutterFlowTheme.of(context).success;
-                                                                                            } else if (rejectedRidesNewRecord.rideStatus == 'Rejected') {
-                                                                                              return FlutterFlowTheme.of(context).error;
-                                                                                            } else {
-                                                                                              return FlutterFlowTheme.of(context).warning;
-                                                                                            }
-                                                                                          }(),
-                                                                                          fontSize: 16.0,
-                                                                                          letterSpacing: 0.0,
-                                                                                          fontWeight: FontWeight.w600,
-                                                                                          fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                        ),
-                                                                                  ),
-                                                                                ],
-                                                                              ),
-                                                                            ].divide(SizedBox(height: 12.0)),
+                                                                              ].divide(SizedBox(height: 12.0)),
+                                                                            ),
                                                                           ),
                                                                         ),
-                                                                        Align(
-                                                                          alignment: AlignmentDirectional(0.97, -0.96),
-                                                                          child: Padding(
-                                                                            padding: EdgeInsetsDirectional.fromSTEB(0.0, 10.0, 5.0, 0.0),
-                                                                            child: Container(
-                                                                              width: 75.0,
-                                                                              height: 90.0,
-                                                                              decoration: BoxDecoration(
-                                                                                color: Color(0xFFF97E4C),
-                                                                                borderRadius: BorderRadius.circular(12.0),
+                                                                      ),
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                              ).animateOnPageLoad(animationsMap['containerOnPageLoadAnimation2']!),
+                                                              Align(
+                                                                alignment: AlignmentDirectional(0.97, -0.96),
+                                                                child: Padding(
+                                                                  padding: EdgeInsetsDirectional.fromSTEB(10.0, 10.0, 5.0, 0.0),
+                                                                  child: Container(
+                                                                    // ✅ RESPONSIVE SIZING
+                                                                    width: MediaQuery.sizeOf(context).width * 0.12,  // 12% of screen width
+                                                                    constraints: BoxConstraints(
+                                                                      minWidth: 55.0,    // Minimum width
+                                                                      maxWidth: 70.0,    // Maximum width
+                                                                      minHeight: 85.0,   // Minimum height
+                                                                      maxHeight: 100.0,  // Maximum height
+                                                                    ),
+                                                                    decoration: BoxDecoration(
+                                                                      color: Color(0xFFF97E4C),
+                                                                      borderRadius: BorderRadius.circular(12.0),
+                                                                    ),
+                                                                    child: Column(
+                                                                      mainAxisSize: MainAxisSize.min,
+                                                                      mainAxisAlignment: MainAxisAlignment.center,
+                                                                      children: [
+                                                                        Padding(
+                                                                          padding: EdgeInsetsDirectional.fromSTEB(0.0, 5.0, 0.0, 0.0),
+                                                                          child: Text(
+                                                                            'Ride',
+                                                                            style: FlutterFlowTheme.of(context).bodyMedium.override(
+                                                                              font: GoogleFonts.inter(
+                                                                                fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
+                                                                                fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
                                                                               ),
-                                                                              child: Column(
-                                                                                mainAxisSize: MainAxisSize.max,
-                                                                                children: [
-                                                                                  Padding(
-                                                                                    padding: EdgeInsetsDirectional.fromSTEB(0.0, 5.0, 0.0, 0.0),
+                                                                              color: FlutterFlowTheme.of(context).info,
+                                                                              fontSize: 12.0,
+                                                                              letterSpacing: 0.0,
+                                                                            ),
+                                                                          ),
+                                                                        ),
+                                                                        Padding(
+                                                                          padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 4.0),
+                                                                          child: AutoSizeText(
+                                                                            '₹${formatNumber(allRidesRidesNewRecord.rideCost, formatType: FormatType.custom, format: '', locale: '')}',
+                                                                            style: FlutterFlowTheme.of(context).bodyMedium.override(
+                                                                              font: GoogleFonts.inter(
+                                                                                fontWeight: FontWeight.bold,
+                                                                                fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                              ),
+                                                                              color: FlutterFlowTheme.of(context).info,
+                                                                              fontSize: 15.0,
+                                                                              letterSpacing: 0.0,
+                                                                              fontWeight: FontWeight.bold,
+                                                                            ),
+                                                                            maxLines: 1,
+                                                                            minFontSize: 12,
+                                                                          ),
+                                                                        ),
+                                                                        // ✅ Parcel section also responsive
+                                                                        Container(
+                                                                          width: double.infinity,
+                                                                          // ✅ Flexible height
+                                                                          constraints: BoxConstraints(minHeight: 48.0, maxHeight: 55.0),
+                                                                          decoration: BoxDecoration(
+                                                                            color: Color(0xFFFF9561),
+                                                                            borderRadius: BorderRadius.circular(10.0),
+                                                                          ),
+                                                                          child: Column(
+                                                                            mainAxisSize: MainAxisSize.min,
+                                                                            mainAxisAlignment: MainAxisAlignment.center,
+                                                                            children: [
+                                                                              Padding(
+                                                                                padding: EdgeInsetsDirectional.fromSTEB(0.0, 3.0, 0.0, 0.0),
+                                                                                child: Text(
+                                                                                  'Parcel',
+                                                                                  textAlign: TextAlign.center,
+                                                                                  style: FlutterFlowTheme.of(context).labelSmall.override(
+                                                                                    font: GoogleFonts.inter(
+                                                                                      fontWeight: FontWeight.w500,
+                                                                                      fontStyle: FlutterFlowTheme.of(context).labelSmall.fontStyle,
+                                                                                    ),
+                                                                                    color: FlutterFlowTheme.of(context).info,
+                                                                                    fontSize: 11.0,
+                                                                                    letterSpacing: 0.0,
+                                                                                  ),
+                                                                                ),
+                                                                              ),
+                                                                              AutoSizeText(
+                                                                                '₹${allRidesRidesNewRecord.totalDeliveryCost}',
+                                                                                textAlign: TextAlign.center,
+                                                                                style: FlutterFlowTheme.of(context).labelSmall.override(
+                                                                                  font: GoogleFonts.inter(
+                                                                                    fontWeight: FontWeight.bold,
+                                                                                    fontStyle: FlutterFlowTheme.of(context).labelSmall.fontStyle,
+                                                                                  ),
+                                                                                  color: FlutterFlowTheme.of(context).info,
+                                                                                  fontSize: 14.0,
+                                                                                  letterSpacing: 0.0,
+                                                                                ),
+                                                                                maxLines: 1,
+                                                                                minFontSize: 11,
+                                                                              ),
+                                                                            ],
+                                                                          ),
+                                                                        ),
+                                                                      ],
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          );
+                                                        },
+                                                      ).animateOnPageLoad(animationsMap['listViewOnPageLoadAnimation']!);
+
+                                                    },
+                                                  ),
+                                                ),
+                                              ),
+                                            if (_model.myRidesStatus == 'Live')
+                                              SizedBox(
+                                                child: Padding(
+                                                  padding: EdgeInsetsDirectional.fromSTEB(5.0, 10.0, 5.0, 10.0),
+                                                  child: StreamBuilder<List<RidesNewRecord>>(
+                                                    stream: queryRidesNewRecord(
+                                                      queryBuilder: (ridesNewRecord) => ridesNewRecord
+                                                          .where(
+                                                            'rideStatus',
+                                                            isEqualTo: 'Live',
+                                                          )
+                                                          .where(
+                                                            'creatorID',
+                                                            isEqualTo: currentUserReference,
+                                                          )
+                                                          .orderBy('pickupTime'),
+                                                    ),
+                                                    builder: (context, snapshot) {
+                                                      // Customize what your widget looks like when it's loading.
+                                                      if (!snapshot.hasData) {
+                                                        return Image.asset(
+                                                          'assets/images/Car_Gif.gif',
+                                                        );
+                                                      }
+                                                      List<RidesNewRecord> liveRidesRidesNewRecordList = snapshot.data!;
+                                                      if (liveRidesRidesNewRecordList.isEmpty) {
+                                                        return NoRidePostedWidget();
+                                                      }
+
+                                                      return ListView.separated(
+                                                        padding: EdgeInsets.zero,
+                                                        primary: false,
+                                                        shrinkWrap: true,
+                                                        scrollDirection: Axis.vertical,
+                                                        itemCount: liveRidesRidesNewRecordList.length,
+                                                        separatorBuilder: (_, __) => SizedBox(height: 15.0),
+                                                        itemBuilder: (context, liveRidesIndex) {
+                                                          final liveRidesRidesNewRecord = liveRidesRidesNewRecordList[liveRidesIndex];
+                                                          return StreamBuilder<UsersRecord>(
+                                                            stream: UsersRecord.getDocument(liveRidesRidesNewRecord.creatorID!),
+                                                            builder: (context, snapshot) {
+                                                              // Customize what your widget looks like when it's loading.
+                                                              if (!snapshot.hasData) {
+                                                                return Center(
+                                                                  child: SizedBox(
+                                                                    width: 50.0,
+                                                                    height: 50.0,
+                                                                    child: SpinKitFadingCircle(
+                                                                      color: Color(0xFF2B3C58),
+                                                                      size: 50.0,
+                                                                    ),
+                                                                  ),
+                                                                );
+                                                              }
+
+                                                              final containerUsersRecord = snapshot.data!;
+
+                                                              return InkWell(
+                                                                splashColor: Colors.transparent,
+                                                                focusColor: Colors.transparent,
+                                                                hoverColor: Colors.transparent,
+                                                                highlightColor: Colors.transparent,
+                                                                onTap: () async {
+                                                                  context.pushNamed(
+                                                                    RideDetailsCustomerWidget.routeName,
+                                                                    queryParameters: {
+                                                                      'rideDetails': serializeParam(
+                                                                        liveRidesRidesNewRecord.reference,
+                                                                        ParamType.DocumentReference,
+                                                                      ),
+                                                                    }.withoutNulls,
+                                                                  );
+                                                                },
+                                                                child: Container(
+                                                                  width: double.infinity,
+                                                                  decoration: BoxDecoration(
+                                                                    color: Color(0xFFF4F4F4),
+                                                                    boxShadow: [
+                                                                      BoxShadow(
+                                                                        blurRadius: 4.0,
+                                                                        color: Color(0x1A000000),
+                                                                        offset: Offset(
+                                                                          0.0,
+                                                                          2.0,
+                                                                        ),
+                                                                      )
+                                                                    ],
+                                                                    borderRadius: BorderRadius.circular(12.0),
+                                                                    border: Border.all(
+                                                                      color: Color(0xFF4DABF7),
+                                                                    ),
+                                                                  ),
+                                                                  child: Padding(
+                                                                    padding: EdgeInsetsDirectional.fromSTEB(10.0, 10.0, 5.0, 10.0),
+                                                                    child: Column(
+                                                                      mainAxisSize: MainAxisSize.min,
+                                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                                      children: [
+                                                                        Row(
+                                                                          mainAxisSize: MainAxisSize.max,
+                                                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                                          children: [
+                                                                            Row(
+                                                                              mainAxisSize: MainAxisSize.max,
+                                                                              children: [
+                                                                                Icon(
+                                                                                  Icons.location_on_outlined,
+                                                                                  color: FlutterFlowTheme.of(context).primary,
+                                                                                  size: 24.0,
+                                                                                ),
+                                                                                Container(
+                                                                                  width: 200.0,
+                                                                                  decoration: BoxDecoration(
+                                                                                    color: Color(0xFFE3E6E0),
+                                                                                    borderRadius: BorderRadius.circular(15.0),
+                                                                                  ),
+                                                                                  child: Padding(
+                                                                                    padding: EdgeInsetsDirectional.fromSTEB(15.0, 5.0, 10.0, 5.0),
                                                                                     child: Text(
-                                                                                      'Ride',
+                                                                                      liveRidesRidesNewRecord.rideStartLocation,
                                                                                       style: FlutterFlowTheme.of(context).bodyMedium.override(
                                                                                             font: GoogleFonts.inter(
                                                                                               fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
                                                                                               fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
                                                                                             ),
-                                                                                            color: FlutterFlowTheme.of(context).info,
                                                                                             fontSize: 12.0,
                                                                                             letterSpacing: 0.0,
                                                                                             fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
@@ -6805,95 +6743,1464 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                                                                                           ),
                                                                                     ),
                                                                                   ),
-                                                                                  Padding(
-                                                                                    padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 4.0),
+                                                                                ),
+                                                                              ],
+                                                                            ),
+                                                                            if (liveRidesRidesNewRecord.modeOfTransport == 'Car')
+                                                                              Padding(
+                                                                                padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
+                                                                                child: FaIcon(
+                                                                                  FontAwesomeIcons.carSide,
+                                                                                  color: Color(0xFF8F9192),
+                                                                                  size: 20.0,
+                                                                                ),
+                                                                              ),
+                                                                            if (liveRidesRidesNewRecord.modeOfTransport == 'Train')
+                                                                              Padding(
+                                                                                padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
+                                                                                child: Icon(
+                                                                                  Icons.train,
+                                                                                  color: Color(0xFF929090),
+                                                                                  size: 30.0,
+                                                                                ),
+                                                                              ),
+                                                                            if (liveRidesRidesNewRecord.modeOfTransport == 'Bike')
+                                                                              Padding(
+                                                                                padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
+                                                                                child: Icon(
+                                                                                  Icons.motorcycle_sharp,
+                                                                                  color: Color(0xFF8A8888),
+                                                                                  size: 30.0,
+                                                                                ),
+                                                                              ),
+                                                                            if (liveRidesRidesNewRecord.modeOfTransport == 'Bus')
+                                                                              Padding(
+                                                                                padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
+                                                                                child: FaIcon(
+                                                                                  FontAwesomeIcons.bus,
+                                                                                  color: Color(0xFF919191),
+                                                                                  size: 20.0,
+                                                                                ),
+                                                                              ),
+                                                                          ].divide(SizedBox(width: 5.0)),
+                                                                        ),
+                                                                        Align(
+                                                                          alignment: AlignmentDirectional(0.0, 0.0),
+                                                                          child: Row(
+                                                                            mainAxisSize: MainAxisSize.max,
+                                                                            mainAxisAlignment: MainAxisAlignment.center,
+                                                                            children: [
+                                                                              Align(
+                                                                                alignment: AlignmentDirectional(0.0, 0.0),
+                                                                                child: Text(
+                                                                                  'Travel time: ',
+                                                                                  style: FlutterFlowTheme.of(context).labelMedium.override(
+                                                                                        font: GoogleFonts.inter(
+                                                                                          fontWeight: FlutterFlowTheme.of(context).labelMedium.fontWeight,
+                                                                                          fontStyle: FlutterFlowTheme.of(context).labelMedium.fontStyle,
+                                                                                        ),
+                                                                                        color: FlutterFlowTheme.of(context).secondaryText,
+                                                                                        fontSize: 12.0,
+                                                                                        letterSpacing: 0.0,
+                                                                                        fontWeight: FlutterFlowTheme.of(context).labelMedium.fontWeight,
+                                                                                        fontStyle: FlutterFlowTheme.of(context).labelMedium.fontStyle,
+                                                                                      ),
+                                                                                ),
+                                                                              ),
+                                                                              Align(
+                                                                                alignment: AlignmentDirectional(0.0, 0.0),
+                                                                                child: Text(
+                                                                                  liveRidesRidesNewRecord.travelTime,
+                                                                                  style: FlutterFlowTheme.of(context).labelMedium.override(
+                                                                                        font: GoogleFonts.inter(
+                                                                                          fontWeight: FlutterFlowTheme.of(context).labelMedium.fontWeight,
+                                                                                          fontStyle: FlutterFlowTheme.of(context).labelMedium.fontStyle,
+                                                                                        ),
+                                                                                        color: FlutterFlowTheme.of(context).secondaryText,
+                                                                                        fontSize: 12.0,
+                                                                                        letterSpacing: 0.0,
+                                                                                        fontWeight: FlutterFlowTheme.of(context).labelMedium.fontWeight,
+                                                                                        fontStyle: FlutterFlowTheme.of(context).labelMedium.fontStyle,
+                                                                                      ),
+                                                                                ),
+                                                                              ),
+                                                                            ],
+                                                                          ),
+                                                                        ),
+                                                                        Row(
+                                                                          mainAxisSize: MainAxisSize.max,
+                                                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                                          children: [
+                                                                            Row(
+                                                                              mainAxisSize: MainAxisSize.max,
+                                                                              children: [
+                                                                                Icon(
+                                                                                  Icons.location_on_outlined,
+                                                                                  color: FlutterFlowTheme.of(context).primary,
+                                                                                  size: 24.0,
+                                                                                ),
+                                                                                Container(
+                                                                                  width: 200.0,
+                                                                                  decoration: BoxDecoration(
+                                                                                    color: Color(0xFFE3E6E0),
+                                                                                    borderRadius: BorderRadius.circular(15.0),
+                                                                                  ),
+                                                                                  child: Padding(
+                                                                                    padding: EdgeInsetsDirectional.fromSTEB(15.0, 5.0, 10.0, 5.0),
                                                                                     child: Text(
-                                                                                      '₹${rejectedRidesNewRecord.rideCost.toString()}',
+                                                                                      liveRidesRidesNewRecord.rideEndLocation,
                                                                                       style: FlutterFlowTheme.of(context).bodyMedium.override(
                                                                                             font: GoogleFonts.inter(
-                                                                                              fontWeight: FontWeight.bold,
+                                                                                              fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
                                                                                               fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
                                                                                             ),
-                                                                                            color: FlutterFlowTheme.of(context).info,
-                                                                                            fontSize: 15.0,
+                                                                                            fontSize: 12.0,
                                                                                             letterSpacing: 0.0,
-                                                                                            fontWeight: FontWeight.bold,
+                                                                                            fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
                                                                                             fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
                                                                                           ),
                                                                                     ),
                                                                                   ),
-                                                                                  Container(
-                                                                                    width: double.infinity,
-                                                                                    height: 50.0,
-                                                                                    decoration: BoxDecoration(
-                                                                                      color: Color(0xFFFF9561),
-                                                                                      borderRadius: BorderRadius.only(
-                                                                                        bottomLeft: Radius.circular(10.0),
-                                                                                        bottomRight: Radius.circular(10.0),
-                                                                                        topLeft: Radius.circular(10.0),
-                                                                                        topRight: Radius.circular(10.0),
-                                                                                      ),
+                                                                                ),
+                                                                              ],
+                                                                            ),
+                                                                          ].divide(SizedBox(width: 5.0)),
+                                                                        ),
+                                                                        Row(
+                                                                          mainAxisSize: MainAxisSize.max,
+                                                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                                          children: [
+                                                                            Row(
+                                                                              mainAxisSize: MainAxisSize.max,
+                                                                              children: [
+                                                                                Container(
+                                                                                  width: 40.0,
+                                                                                  height: 40.0,
+                                                                                  decoration: BoxDecoration(
+                                                                                    color: FlutterFlowTheme.of(context).secondaryBackground,
+                                                                                    image: DecorationImage(
+                                                                                      fit: BoxFit.cover,
+                                                                                      image: Image.asset(
+                                                                                        "assets/images/profileIcon.png",
+                                                                                      ).image,
                                                                                     ),
-                                                                                    child: Column(
-                                                                                      mainAxisSize: MainAxisSize.min,
-                                                                                      mainAxisAlignment: MainAxisAlignment.start,
-                                                                                      children: [
-                                                                                        Padding(
-                                                                                          padding: EdgeInsetsDirectional.fromSTEB(0.0, 5.0, 0.0, 0.0),
-                                                                                          child: Text(
-                                                                                            'Parcel',
-                                                                                            textAlign: TextAlign.center,
-                                                                                            style: FlutterFlowTheme.of(context).labelSmall.override(
-                                                                                                  font: GoogleFonts.inter(
-                                                                                                    fontWeight: FontWeight.w500,
-                                                                                                    fontStyle: FlutterFlowTheme.of(context).labelSmall.fontStyle,
-                                                                                                  ),
-                                                                                                  color: FlutterFlowTheme.of(context).info,
-                                                                                                  fontSize: 12.0,
-                                                                                                  letterSpacing: 0.0,
-                                                                                                  fontWeight: FontWeight.w500,
-                                                                                                  fontStyle: FlutterFlowTheme.of(context).labelSmall.fontStyle,
-                                                                                                ),
-                                                                                          ),
-                                                                                        ),
-                                                                                        Text(
-                                                                                          '₹${rejectedRidesNewRecord.totalDeliveryCost}',
-                                                                                          textAlign: TextAlign.center,
-                                                                                          style: FlutterFlowTheme.of(context).labelSmall.override(
-                                                                                                font: GoogleFonts.inter(
-                                                                                                  fontWeight: FontWeight.bold,
-                                                                                                  fontStyle: FlutterFlowTheme.of(context).labelSmall.fontStyle,
-                                                                                                ),
-                                                                                                color: FlutterFlowTheme.of(context).info,
-                                                                                                fontSize: 15.0,
-                                                                                                letterSpacing: 0.0,
-                                                                                                fontWeight: FontWeight.bold,
-                                                                                                fontStyle: FlutterFlowTheme.of(context).labelSmall.fontStyle,
-                                                                                              ),
-                                                                                        ),
-                                                                                      ].divide(SizedBox(height: 4.0)),
+                                                                                    shape: BoxShape.circle,
+                                                                                    border: Border.all(
+                                                                                      color: Color(0xFF4DABF7),
+                                                                                      width: 2.0,
                                                                                     ),
                                                                                   ),
-                                                                                ],
+                                                                                  child: Container(
+                                                                                    width: 200.0,
+                                                                                    height: 200.0,
+                                                                                    clipBehavior: Clip.antiAlias,
+                                                                                    decoration: BoxDecoration(
+                                                                                      shape: BoxShape.circle,
+                                                                                    ),
+                                                                                    child: CachedNetworkImage(
+                                                                                      fadeInDuration: Duration(milliseconds: 500),
+                                                                                      fadeOutDuration: Duration(milliseconds: 500),
+                                                                                      imageUrl: containerUsersRecord.photoUrl,
+                                                                                      fit: BoxFit.cover,
+                                                                                    ),
+                                                                                  ),
+                                                                                ),
+                                                                                Padding(
+                                                                                  padding: EdgeInsetsDirectional.fromSTEB(12.0, 0.0, 12.0, 0.0),
+                                                                                  child: Column(
+                                                                                    mainAxisSize: MainAxisSize.min,
+                                                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                                                    children: [
+                                                                                      Text(
+                                                                                        containerUsersRecord.displayName,
+                                                                                        style: FlutterFlowTheme.of(context).bodyMedium.override(
+                                                                                              font: GoogleFonts.inter(
+                                                                                                fontWeight: FontWeight.w600,
+                                                                                                fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                              ),
+                                                                                              letterSpacing: 0.0,
+                                                                                              fontWeight: FontWeight.w600,
+                                                                                              fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                            ),
+                                                                                      ),
+                                                                                    ],
+                                                                                  ),
+                                                                                ),
+                                                                                Stack(
+                                                                                  alignment: AlignmentDirectional(0.0, 0.0),
+                                                                                  children: [
+                                                                                    ClipRRect(
+                                                                                      borderRadius: BorderRadius.circular(8.0),
+                                                                                      child: Image.asset(
+                                                                                        'assets/images/Ride_Search_Icons.png',
+                                                                                        width: 34.0,
+                                                                                        height: 35.8,
+                                                                                        fit: BoxFit.cover,
+                                                                                      ),
+                                                                                    ),
+                                                                                    Text(
+                                                                                      '4.8',
+                                                                                      style: FlutterFlowTheme.of(context).bodyMedium.override(
+                                                                                            font: GoogleFonts.inter(
+                                                                                              fontWeight: FontWeight.w900,
+                                                                                              fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                            ),
+                                                                                            color: FlutterFlowTheme.of(context).accent4,
+                                                                                            fontSize: 10.0,
+                                                                                            letterSpacing: 0.0,
+                                                                                            fontWeight: FontWeight.w900,
+                                                                                            fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                          ),
+                                                                                    ),
+                                                                                  ],
+                                                                                ),
+                                                                              ],
+                                                                            ),
+                                                                            Padding(
+                                                                              padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 15.0, 0.0),
+                                                                              child: Container(
+                                                                                width: 50.0,
+                                                                                height: 50.0,
+                                                                                decoration: BoxDecoration(
+                                                                                  color: Color(0xFFF77F4A),
+                                                                                  shape: BoxShape.circle,
+                                                                                ),
+                                                                                child: Align(
+                                                                                  alignment: AlignmentDirectional(0.0, 0.0),
+                                                                                  child: Text(
+                                                                                    liveRidesRidesNewRecord.totalDeliveryCost,
+                                                                                    textAlign: TextAlign.center,
+                                                                                    style: FlutterFlowTheme.of(context).titleMedium.override(
+                                                                                          font: GoogleFonts.interTight(
+                                                                                            fontWeight: FontWeight.w500,
+                                                                                            fontStyle: FlutterFlowTheme.of(context).titleMedium.fontStyle,
+                                                                                          ),
+                                                                                          color: Colors.white,
+                                                                                          fontSize: 14.0,
+                                                                                          letterSpacing: 0.0,
+                                                                                          fontWeight: FontWeight.w500,
+                                                                                          fontStyle: FlutterFlowTheme.of(context).titleMedium.fontStyle,
+                                                                                        ),
+                                                                                  ),
+                                                                                ),
                                                                               ),
                                                                             ),
-                                                                          ),
+                                                                          ],
                                                                         ),
-                                                                      ],
+                                                                        Row(
+                                                                          mainAxisSize: MainAxisSize.max,
+                                                                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                                                          children: [
+                                                                            Text(
+                                                                              'Current Status:',
+                                                                              style: FlutterFlowTheme.of(context).bodyMedium.override(
+                                                                                    font: GoogleFonts.inter(
+                                                                                      fontWeight: FontWeight.w600,
+                                                                                      fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                    ),
+                                                                                    fontSize: 16.0,
+                                                                                    letterSpacing: 0.0,
+                                                                                    fontWeight: FontWeight.w600,
+                                                                                    fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                  ),
+                                                                            ),
+                                                                            Text(
+                                                                              liveRidesRidesNewRecord.rideStatus,
+                                                                              style: FlutterFlowTheme.of(context).bodyMedium.override(
+                                                                                    font: GoogleFonts.inter(
+                                                                                      fontWeight: FontWeight.w600,
+                                                                                      fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                    ),
+                                                                                    fontSize: 16.0,
+                                                                                    letterSpacing: 0.0,
+                                                                                    fontWeight: FontWeight.w600,
+                                                                                    fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                  ),
+                                                                            ),
+                                                                          ],
+                                                                        ),
+                                                                      ].divide(SizedBox(height: 12.0)),
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                              );
+                                                            },
+                                                          );
+                                                        },
+                                                      );
+                                                    },
+                                                  ),
+                                                ),
+                                              ),
+                                            if (_model.myRidesStatus == 'Under Review')
+                                              SizedBox(
+                                                child: Padding(
+                                                  padding: EdgeInsetsDirectional.fromSTEB(5.0, 10.0, 5.0, 10.0),
+                                                  child: StreamBuilder<List<RidesNewRecord>>(
+                                                    stream: queryRidesNewRecord(
+                                                      queryBuilder: (ridesNewRecord) => ridesNewRecord
+                                                          .where(
+                                                            'rideStatus',
+                                                            isEqualTo: 'Under Review',
+                                                          )
+                                                          .where(
+                                                            'creatorID',
+                                                            isEqualTo: currentUserReference,
+                                                          )
+                                                          .orderBy('pickupTime'),
+                                                    ),
+                                                    builder: (context, snapshot) {
+                                                      // Customize what your widget looks like when it's loading.
+                                                      if (!snapshot.hasData) {
+                                                        return Image.asset(
+                                                          'assets/images/Car_Gif.gif',
+                                                        );
+                                                      }
+                                                      List<RidesNewRecord> underReviewRidesNewRecordList = snapshot.data!;
+                                                      if (underReviewRidesNewRecordList.isEmpty) {
+                                                        return NoRidePostedWidget();
+                                                      }
+
+                                                      return ListView.separated(
+                                                        padding: EdgeInsets.zero,
+                                                        primary: false,
+                                                        shrinkWrap: true,
+                                                        scrollDirection: Axis.vertical,
+                                                        itemCount: underReviewRidesNewRecordList.length,
+                                                        separatorBuilder: (_, __) => SizedBox(height: 15.0),
+                                                        itemBuilder: (context, underReviewIndex) {
+                                                          final underReviewRidesNewRecord = underReviewRidesNewRecordList[underReviewIndex];
+                                                          return StreamBuilder<UsersRecord>(
+                                                            stream: UsersRecord.getDocument(underReviewRidesNewRecord.creatorID!),
+                                                            builder: (context, snapshot) {
+                                                              // Customize what your widget looks like when it's loading.
+                                                              if (!snapshot.hasData) {
+                                                                return Center(
+                                                                  child: SizedBox(
+                                                                    width: 50.0,
+                                                                    height: 50.0,
+                                                                    child: SpinKitFadingCircle(
+                                                                      color: Color(0xFF2B3C58),
+                                                                      size: 50.0,
                                                                     ),
                                                                   ),
                                                                 );
-                                                              },
-                                                            ),
-                                                          ],
-                                                        );
-                                                      },
-                                                    );
-                                                  },
+                                                              }
+
+                                                              final containerUsersRecord = snapshot.data!;
+
+                                                              return InkWell(
+                                                                splashColor: Colors.transparent,
+                                                                focusColor: Colors.transparent,
+                                                                hoverColor: Colors.transparent,
+                                                                highlightColor: Colors.transparent,
+                                                                onTap: () async {
+                                                                  context.pushNamed(
+                                                                    RideDetailsCustomerWidget.routeName,
+                                                                    queryParameters: {
+                                                                      'rideDetails': serializeParam(
+                                                                        underReviewRidesNewRecord.reference,
+                                                                        ParamType.DocumentReference,
+                                                                      ),
+                                                                    }.withoutNulls,
+                                                                  );
+                                                                },
+                                                                child: Container(
+                                                                  width: double.infinity,
+                                                                  decoration: BoxDecoration(
+                                                                    color: Color(0xFFF4F4F4),
+                                                                    boxShadow: [
+                                                                      BoxShadow(
+                                                                        blurRadius: 4.0,
+                                                                        color: Color(0x1A000000),
+                                                                        offset: Offset(
+                                                                          0.0,
+                                                                          2.0,
+                                                                        ),
+                                                                      )
+                                                                    ],
+                                                                    borderRadius: BorderRadius.circular(12.0),
+                                                                    border: Border.all(
+                                                                      color: Color(0xFF4DABF7),
+                                                                    ),
+                                                                  ),
+                                                                  child: Padding(
+                                                                    padding: EdgeInsetsDirectional.fromSTEB(10.0, 10.0, 5.0, 10.0),
+                                                                    child: Column(
+                                                                      mainAxisSize: MainAxisSize.min,
+                                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                                      children: [
+                                                                        Row(
+                                                                          mainAxisSize: MainAxisSize.max,
+                                                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                                          children: [
+                                                                            Row(
+                                                                              mainAxisSize: MainAxisSize.max,
+                                                                              children: [
+                                                                                Icon(
+                                                                                  Icons.location_on_outlined,
+                                                                                  color: FlutterFlowTheme.of(context).primary,
+                                                                                  size: 24.0,
+                                                                                ),
+                                                                                Container(
+                                                                                  width: 200.0,
+                                                                                  decoration: BoxDecoration(
+                                                                                    color: Color(0xFFE3E6E0),
+                                                                                    borderRadius: BorderRadius.circular(15.0),
+                                                                                  ),
+                                                                                  child: Padding(
+                                                                                    padding: EdgeInsetsDirectional.fromSTEB(15.0, 5.0, 10.0, 5.0),
+                                                                                    child: Text(
+                                                                                      underReviewRidesNewRecord.rideStartLocation,
+                                                                                      style: FlutterFlowTheme.of(context).bodyMedium.override(
+                                                                                            font: GoogleFonts.inter(
+                                                                                              fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
+                                                                                              fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                            ),
+                                                                                            fontSize: 12.0,
+                                                                                            letterSpacing: 0.0,
+                                                                                            fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
+                                                                                            fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                          ),
+                                                                                    ),
+                                                                                  ),
+                                                                                ),
+                                                                              ],
+                                                                            ),
+                                                                            if (underReviewRidesNewRecord.modeOfTransport == 'Car')
+                                                                              Padding(
+                                                                                padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
+                                                                                child: FaIcon(
+                                                                                  FontAwesomeIcons.carSide,
+                                                                                  color: Color(0xFF8F9192),
+                                                                                  size: 20.0,
+                                                                                ),
+                                                                              ),
+                                                                            if (underReviewRidesNewRecord.modeOfTransport == 'Train')
+                                                                              Padding(
+                                                                                padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
+                                                                                child: Icon(
+                                                                                  Icons.train,
+                                                                                  color: Color(0xFF929090),
+                                                                                  size: 30.0,
+                                                                                ),
+                                                                              ),
+                                                                            if (underReviewRidesNewRecord.modeOfTransport == 'Bike')
+                                                                              Padding(
+                                                                                padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
+                                                                                child: Icon(
+                                                                                  Icons.motorcycle_sharp,
+                                                                                  color: Color(0xFF8A8888),
+                                                                                  size: 30.0,
+                                                                                ),
+                                                                              ),
+                                                                            if (underReviewRidesNewRecord.modeOfTransport == 'Bus')
+                                                                              Padding(
+                                                                                padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
+                                                                                child: FaIcon(
+                                                                                  FontAwesomeIcons.bus,
+                                                                                  color: Color(0xFF919191),
+                                                                                  size: 20.0,
+                                                                                ),
+                                                                              ),
+                                                                          ].divide(SizedBox(width: 5.0)),
+                                                                        ),
+                                                                        Align(
+                                                                          alignment: AlignmentDirectional(0.0, 0.0),
+                                                                          child: Row(
+                                                                            mainAxisSize: MainAxisSize.max,
+                                                                            mainAxisAlignment: MainAxisAlignment.center,
+                                                                            children: [
+                                                                              Align(
+                                                                                alignment: AlignmentDirectional(0.0, 0.0),
+                                                                                child: Text(
+                                                                                  'Travel time: ',
+                                                                                  style: FlutterFlowTheme.of(context).labelMedium.override(
+                                                                                        font: GoogleFonts.inter(
+                                                                                          fontWeight: FlutterFlowTheme.of(context).labelMedium.fontWeight,
+                                                                                          fontStyle: FlutterFlowTheme.of(context).labelMedium.fontStyle,
+                                                                                        ),
+                                                                                        color: FlutterFlowTheme.of(context).secondaryText,
+                                                                                        fontSize: 12.0,
+                                                                                        letterSpacing: 0.0,
+                                                                                        fontWeight: FlutterFlowTheme.of(context).labelMedium.fontWeight,
+                                                                                        fontStyle: FlutterFlowTheme.of(context).labelMedium.fontStyle,
+                                                                                      ),
+                                                                                ),
+                                                                              ),
+                                                                              Align(
+                                                                                alignment: AlignmentDirectional(0.0, 0.0),
+                                                                                child: Text(
+                                                                                  underReviewRidesNewRecord.travelTime,
+                                                                                  style: FlutterFlowTheme.of(context).labelMedium.override(
+                                                                                        font: GoogleFonts.inter(
+                                                                                          fontWeight: FlutterFlowTheme.of(context).labelMedium.fontWeight,
+                                                                                          fontStyle: FlutterFlowTheme.of(context).labelMedium.fontStyle,
+                                                                                        ),
+                                                                                        color: FlutterFlowTheme.of(context).secondaryText,
+                                                                                        fontSize: 12.0,
+                                                                                        letterSpacing: 0.0,
+                                                                                        fontWeight: FlutterFlowTheme.of(context).labelMedium.fontWeight,
+                                                                                        fontStyle: FlutterFlowTheme.of(context).labelMedium.fontStyle,
+                                                                                      ),
+                                                                                ),
+                                                                              ),
+                                                                            ],
+                                                                          ),
+                                                                        ),
+                                                                        Row(
+                                                                          mainAxisSize: MainAxisSize.max,
+                                                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                                          children: [
+                                                                            Row(
+                                                                              mainAxisSize: MainAxisSize.max,
+                                                                              children: [
+                                                                                Icon(
+                                                                                  Icons.location_on_outlined,
+                                                                                  color: FlutterFlowTheme.of(context).primary,
+                                                                                  size: 24.0,
+                                                                                ),
+                                                                                Container(
+                                                                                  width: 200.0,
+                                                                                  decoration: BoxDecoration(
+                                                                                    color: Color(0xFFE3E6E0),
+                                                                                    borderRadius: BorderRadius.circular(15.0),
+                                                                                  ),
+                                                                                  child: Padding(
+                                                                                    padding: EdgeInsetsDirectional.fromSTEB(15.0, 5.0, 10.0, 5.0),
+                                                                                    child: Text(
+                                                                                      underReviewRidesNewRecord.rideEndLocation,
+                                                                                      style: FlutterFlowTheme.of(context).bodyMedium.override(
+                                                                                            font: GoogleFonts.inter(
+                                                                                              fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
+                                                                                              fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                            ),
+                                                                                            fontSize: 12.0,
+                                                                                            letterSpacing: 0.0,
+                                                                                            fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
+                                                                                            fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                          ),
+                                                                                    ),
+                                                                                  ),
+                                                                                ),
+                                                                              ],
+                                                                            ),
+                                                                          ].divide(SizedBox(width: 5.0)),
+                                                                        ),
+                                                                        Row(
+                                                                          mainAxisSize: MainAxisSize.max,
+                                                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                                          children: [
+                                                                            Row(
+                                                                              mainAxisSize: MainAxisSize.max,
+                                                                              children: [
+                                                                                Container(
+                                                                                  width: 40.0,
+                                                                                  height: 40.0,
+                                                                                  decoration: BoxDecoration(
+                                                                                    color: FlutterFlowTheme.of(context).secondaryBackground,
+                                                                                    image: DecorationImage(
+                                                                                      fit: BoxFit.cover,
+                                                                                      image: Image.asset(
+                                                                                        "assets/images/profileIcon.png",
+                                                                                      ).image,
+                                                                                    ),
+                                                                                    shape: BoxShape.circle,
+                                                                                    border: Border.all(
+                                                                                      color: Color(0xFF4DABF7),
+                                                                                      width: 2.0,
+                                                                                    ),
+                                                                                  ),
+                                                                                  child: Container(
+                                                                                    width: 200.0,
+                                                                                    height: 200.0,
+                                                                                    clipBehavior: Clip.antiAlias,
+                                                                                    decoration: BoxDecoration(
+                                                                                      shape: BoxShape.circle,
+                                                                                    ),
+                                                                                    child: CachedNetworkImage(
+                                                                                      fadeInDuration: Duration(milliseconds: 500),
+                                                                                      fadeOutDuration: Duration(milliseconds: 500),
+                                                                                      imageUrl: containerUsersRecord.photoUrl,
+                                                                                      fit: BoxFit.cover,
+                                                                                    ),
+                                                                                  ),
+                                                                                ),
+                                                                                Padding(
+                                                                                  padding: EdgeInsetsDirectional.fromSTEB(12.0, 0.0, 12.0, 0.0),
+                                                                                  child: Column(
+                                                                                    mainAxisSize: MainAxisSize.min,
+                                                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                                                    children: [
+                                                                                      Text(
+                                                                                        containerUsersRecord.displayName,
+                                                                                        style: FlutterFlowTheme.of(context).bodyMedium.override(
+                                                                                              font: GoogleFonts.inter(
+                                                                                                fontWeight: FontWeight.w600,
+                                                                                                fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                              ),
+                                                                                              letterSpacing: 0.0,
+                                                                                              fontWeight: FontWeight.w600,
+                                                                                              fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                            ),
+                                                                                      ),
+                                                                                    ],
+                                                                                  ),
+                                                                                ),
+                                                                                Stack(
+                                                                                  alignment: AlignmentDirectional(0.0, 0.0),
+                                                                                  children: [
+                                                                                    ClipRRect(
+                                                                                      borderRadius: BorderRadius.circular(8.0),
+                                                                                      child: Image.asset(
+                                                                                        'assets/images/Ride_Search_Icons.png',
+                                                                                        width: 34.0,
+                                                                                        height: 35.8,
+                                                                                        fit: BoxFit.cover,
+                                                                                      ),
+                                                                                    ),
+                                                                                    Text(
+                                                                                      '4.8',
+                                                                                      style: FlutterFlowTheme.of(context).bodyMedium.override(
+                                                                                            font: GoogleFonts.inter(
+                                                                                              fontWeight: FontWeight.w900,
+                                                                                              fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                            ),
+                                                                                            color: FlutterFlowTheme.of(context).accent4,
+                                                                                            fontSize: 10.0,
+                                                                                            letterSpacing: 0.0,
+                                                                                            fontWeight: FontWeight.w900,
+                                                                                            fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                          ),
+                                                                                    ),
+                                                                                  ],
+                                                                                ),
+                                                                              ],
+                                                                            ),
+                                                                            Padding(
+                                                                              padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 15.0, 0.0),
+                                                                              child: Container(
+                                                                                width: 50.0,
+                                                                                height: 50.0,
+                                                                                decoration: BoxDecoration(
+                                                                                  color: Color(0xFFF77F4A),
+                                                                                  shape: BoxShape.circle,
+                                                                                ),
+                                                                                child: Align(
+                                                                                  alignment: AlignmentDirectional(0.0, 0.0),
+                                                                                  child: Text(
+                                                                                    underReviewRidesNewRecord.totalDeliveryCost,
+                                                                                    textAlign: TextAlign.center,
+                                                                                    style: FlutterFlowTheme.of(context).titleMedium.override(
+                                                                                          font: GoogleFonts.interTight(
+                                                                                            fontWeight: FontWeight.w500,
+                                                                                            fontStyle: FlutterFlowTheme.of(context).titleMedium.fontStyle,
+                                                                                          ),
+                                                                                          color: Colors.white,
+                                                                                          fontSize: 14.0,
+                                                                                          letterSpacing: 0.0,
+                                                                                          fontWeight: FontWeight.w500,
+                                                                                          fontStyle: FlutterFlowTheme.of(context).titleMedium.fontStyle,
+                                                                                        ),
+                                                                                  ),
+                                                                                ),
+                                                                              ),
+                                                                            ),
+                                                                          ],
+                                                                        ),
+                                                                        Row(
+                                                                          mainAxisSize: MainAxisSize.max,
+                                                                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                                                          children: [
+                                                                            Text(
+                                                                              'Current Status:',
+                                                                              style: FlutterFlowTheme.of(context).bodyMedium.override(
+                                                                                    font: GoogleFonts.inter(
+                                                                                      fontWeight: FontWeight.w600,
+                                                                                      fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                    ),
+                                                                                    fontSize: 16.0,
+                                                                                    letterSpacing: 0.0,
+                                                                                    fontWeight: FontWeight.w600,
+                                                                                    fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                  ),
+                                                                            ),
+                                                                            Text(
+                                                                              underReviewRidesNewRecord.rideStatus,
+                                                                              style: FlutterFlowTheme.of(context).bodyMedium.override(
+                                                                                    font: GoogleFonts.inter(
+                                                                                      fontWeight: FontWeight.w600,
+                                                                                      fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                    ),
+                                                                                    fontSize: 16.0,
+                                                                                    letterSpacing: 0.0,
+                                                                                    fontWeight: FontWeight.w600,
+                                                                                    fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                  ),
+                                                                            ),
+                                                                          ],
+                                                                        ),
+                                                                      ].divide(SizedBox(height: 12.0)),
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                              );
+                                                            },
+                                                          );
+                                                        },
+                                                      );
+                                                    },
+                                                  ),
                                                 ),
                                               ),
-                                            ),
-                                        ],
+                                            if (_model.myRidesStatus == 'Rejected')
+                                              SizedBox(
+                                                child: Padding(
+                                                  padding: EdgeInsetsDirectional.fromSTEB(5.0, 10.0, 5.0, 10.0),
+                                                  child: StreamBuilder<List<RidesNewRecord>>(
+                                                    stream: queryRidesNewRecord(
+                                                      queryBuilder: (ridesNewRecord) => ridesNewRecord
+                                                          .where(
+                                                            'rideStatus',
+                                                            isEqualTo: 'Rejected',
+                                                          )
+                                                          .where(
+                                                            'creatorID',
+                                                            isEqualTo: currentUserReference,
+                                                          )
+                                                          .orderBy('pickupTime'),
+                                                    ),
+                                                    builder: (context, snapshot) {
+                                                      // Customize what your widget looks like when it's loading.
+                                                      if (!snapshot.hasData) {
+                                                        return Image.asset(
+                                                          'assets/images/Car_Gif.gif',
+                                                        );
+                                                      }
+                                                      List<RidesNewRecord> rejectedRidesNewRecordList = snapshot.data!;
+                                                      if (rejectedRidesNewRecordList.isEmpty) {
+                                                        return NoRidePostedWidget();
+                                                      }
+
+                                                      return ListView.separated(
+                                                        padding: EdgeInsets.zero,
+                                                        primary: false,
+                                                        shrinkWrap: true,
+                                                        scrollDirection: Axis.vertical,
+                                                        itemCount: rejectedRidesNewRecordList.length,
+                                                        separatorBuilder: (_, __) => SizedBox(height: 15.0),
+                                                        itemBuilder: (context, rejectedIndex) {
+                                                          final rejectedRidesNewRecord = rejectedRidesNewRecordList[rejectedIndex];
+                                                          return Stack(
+                                                            children: [
+                                                              StreamBuilder<UsersRecord>(
+                                                                stream: UsersRecord.getDocument(rejectedRidesNewRecord.creatorID!),
+                                                                builder: (context, snapshot) {
+                                                                  // Customize what your widget looks like when it's loading.
+                                                                  if (!snapshot.hasData) {
+                                                                    return Center(
+                                                                      child: SizedBox(
+                                                                        width: 50.0,
+                                                                        height: 50.0,
+                                                                        child: SpinKitFadingCircle(
+                                                                          color: Color(0xFF2B3C58),
+                                                                          size: 50.0,
+                                                                        ),
+                                                                      ),
+                                                                    );
+                                                                  }
+
+                                                                  final containerUsersRecord = snapshot.data!;
+
+                                                                  return InkWell(
+                                                                    splashColor: Colors.transparent,
+                                                                    focusColor: Colors.transparent,
+                                                                    hoverColor: Colors.transparent,
+                                                                    highlightColor: Colors.transparent,
+                                                                    onTap: () async {
+                                                                      context.pushNamed(
+                                                                        RideDetailsCustomerWidget.routeName,
+                                                                        queryParameters: {
+                                                                          'rideDetails': serializeParam(
+                                                                            rejectedRidesNewRecord.reference,
+                                                                            ParamType.DocumentReference,
+                                                                          ),
+                                                                        }.withoutNulls,
+                                                                      );
+                                                                    },
+                                                                    child: Container(
+                                                                      width: double.infinity,
+                                                                      decoration: BoxDecoration(
+                                                                        color: Color(0xFFF4F4F4),
+                                                                        boxShadow: [
+                                                                          BoxShadow(
+                                                                            blurRadius: 4.0,
+                                                                            color: Color(0x1A000000),
+                                                                            offset: Offset(
+                                                                              0.0,
+                                                                              2.0,
+                                                                            ),
+                                                                          )
+                                                                        ],
+                                                                        borderRadius: BorderRadius.circular(12.0),
+                                                                        border: Border.all(
+                                                                          color: Color(0xFF4DABF7),
+                                                                        ),
+                                                                      ),
+                                                                      child: Stack(
+                                                                        children: [
+                                                                          Padding(
+                                                                            padding: EdgeInsetsDirectional.fromSTEB(10.0, 10.0, 5.0, 10.0),
+                                                                            child: Column(
+                                                                              mainAxisSize: MainAxisSize.max,
+                                                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                                                              children: [
+                                                                                Row(
+                                                                                  mainAxisSize: MainAxisSize.max,
+                                                                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                                                  children: [
+                                                                                    Row(
+                                                                                      mainAxisSize: MainAxisSize.min,
+                                                                                      children: [
+                                                                                        Icon(
+                                                                                          Icons.location_on_outlined,
+                                                                                          color: FlutterFlowTheme.of(context).primary,
+                                                                                          size: 24.0,
+                                                                                        ),
+                                                                                        Container(
+                                                                                          width: 200.0,
+                                                                                          decoration: BoxDecoration(
+                                                                                            color: Color(0xFFE3E6E0),
+                                                                                            borderRadius: BorderRadius.circular(15.0),
+                                                                                          ),
+                                                                                          child: Padding(
+                                                                                            padding: EdgeInsetsDirectional.fromSTEB(15.0, 5.0, 10.0, 5.0),
+                                                                                            child: Text(
+                                                                                              rejectedRidesNewRecord.googleStartAddress != null && rejectedRidesNewRecord.googleStartAddress != '' ? rejectedRidesNewRecord.googleStartAddress : rejectedRidesNewRecord.rideStartLocation,
+                                                                                              style: FlutterFlowTheme.of(context).bodyMedium.override(
+                                                                                                    font: GoogleFonts.inter(
+                                                                                                      fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
+                                                                                                      fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                                    ),
+                                                                                                    fontSize: 12.0,
+                                                                                                    letterSpacing: 0.0,
+                                                                                                    fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
+                                                                                                    fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                                  ),
+                                                                                            ),
+                                                                                          ),
+                                                                                        ),
+                                                                                      ],
+                                                                                    ),
+                                                                                  ].divide(SizedBox(width: 5.0)),
+                                                                                ),
+                                                                                Padding(
+                                                                                  padding: EdgeInsetsDirectional.fromSTEB(5.0, 0.0, 0.0, 0.0),
+                                                                                  child: Row(
+                                                                                    mainAxisSize: MainAxisSize.min,
+                                                                                    mainAxisAlignment: MainAxisAlignment.start,
+                                                                                    children: [
+                                                                                      if (rejectedRidesNewRecord.modeOfTransport == 'Bus')
+                                                                                        Padding(
+                                                                                          padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
+                                                                                          child: FaIcon(
+                                                                                            FontAwesomeIcons.bus,
+                                                                                            color: Color(0xFF919191),
+                                                                                            size: 20.0,
+                                                                                          ),
+                                                                                        ),
+                                                                                      if (rejectedRidesNewRecord.modeOfTransport == 'Bike')
+                                                                                        Padding(
+                                                                                          padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
+                                                                                          child: Icon(
+                                                                                            Icons.motorcycle_sharp,
+                                                                                            color: Color(0xFF8A8888),
+                                                                                            size: 30.0,
+                                                                                          ),
+                                                                                        ),
+                                                                                      if (rejectedRidesNewRecord.modeOfTransport == 'Train')
+                                                                                        Padding(
+                                                                                          padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
+                                                                                          child: Icon(
+                                                                                            Icons.train,
+                                                                                            color: Color(0xFF929090),
+                                                                                            size: 30.0,
+                                                                                          ),
+                                                                                        ),
+                                                                                      if (rejectedRidesNewRecord.modeOfTransport == 'Car')
+                                                                                        Padding(
+                                                                                          padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
+                                                                                          child: FaIcon(
+                                                                                            FontAwesomeIcons.carSide,
+                                                                                            color: Color(0xFF8F9192),
+                                                                                            size: 15.0,
+                                                                                          ),
+                                                                                        ),
+                                                                                      if (rejectedRidesNewRecord.modeOfTransport == 'Bike')
+                                                                                        Padding(
+                                                                                          padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
+                                                                                          child: Icon(
+                                                                                            Icons.motorcycle_sharp,
+                                                                                            color: Color(0xFF8A8888),
+                                                                                            size: 20.0,
+                                                                                          ),
+                                                                                        ),
+                                                                                      if (rejectedRidesNewRecord.modeOfTransport == 'Train')
+                                                                                        Padding(
+                                                                                          padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
+                                                                                          child: Icon(
+                                                                                            Icons.train,
+                                                                                            color: Color(0xFF929090),
+                                                                                            size: 20.0,
+                                                                                          ),
+                                                                                        ),
+                                                                                      if (rejectedRidesNewRecord.modeOfTransport == 'Bus')
+                                                                                        Padding(
+                                                                                          padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
+                                                                                          child: FaIcon(
+                                                                                            FontAwesomeIcons.bus,
+                                                                                            color: Color(0xFF919191),
+                                                                                            size: 15.0,
+                                                                                          ),
+                                                                                        ),
+                                                                                      Align(
+                                                                                        alignment: AlignmentDirectional(0.0, 0.0),
+                                                                                        child: Text(
+                                                                                          'Travel time: ',
+                                                                                          style: FlutterFlowTheme.of(context).labelMedium.override(
+                                                                                                font: GoogleFonts.inter(
+                                                                                                  fontWeight: FlutterFlowTheme.of(context).labelMedium.fontWeight,
+                                                                                                  fontStyle: FlutterFlowTheme.of(context).labelMedium.fontStyle,
+                                                                                                ),
+                                                                                                color: FlutterFlowTheme.of(context).secondaryText,
+                                                                                                fontSize: 12.0,
+                                                                                                letterSpacing: 0.0,
+                                                                                                fontWeight: FlutterFlowTheme.of(context).labelMedium.fontWeight,
+                                                                                                fontStyle: FlutterFlowTheme.of(context).labelMedium.fontStyle,
+                                                                                              ),
+                                                                                        ),
+                                                                                      ),
+                                                                                      Align(
+                                                                                        alignment: AlignmentDirectional(0.0, 0.0),
+                                                                                        child: Text(
+                                                                                          rejectedRidesNewRecord.travelTime,
+                                                                                          style: FlutterFlowTheme.of(context).labelMedium.override(
+                                                                                                font: GoogleFonts.inter(
+                                                                                                  fontWeight: FlutterFlowTheme.of(context).labelMedium.fontWeight,
+                                                                                                  fontStyle: FlutterFlowTheme.of(context).labelMedium.fontStyle,
+                                                                                                ),
+                                                                                                color: FlutterFlowTheme.of(context).secondaryText,
+                                                                                                fontSize: 12.0,
+                                                                                                letterSpacing: 0.0,
+                                                                                                fontWeight: FlutterFlowTheme.of(context).labelMedium.fontWeight,
+                                                                                                fontStyle: FlutterFlowTheme.of(context).labelMedium.fontStyle,
+                                                                                              ),
+                                                                                        ),
+                                                                                      ),
+                                                                                    ],
+                                                                                  ),
+                                                                                ),
+                                                                                Row(
+                                                                                  mainAxisSize: MainAxisSize.max,
+                                                                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                                                  children: [
+                                                                                    Row(
+                                                                                      mainAxisSize: MainAxisSize.min,
+                                                                                      children: [
+                                                                                        Icon(
+                                                                                          Icons.location_on_outlined,
+                                                                                          color: FlutterFlowTheme.of(context).primary,
+                                                                                          size: 24.0,
+                                                                                        ),
+                                                                                        Container(
+                                                                                          width: 200.0,
+                                                                                          decoration: BoxDecoration(
+                                                                                            color: Color(0xFFE3E6E0),
+                                                                                            borderRadius: BorderRadius.circular(15.0),
+                                                                                          ),
+                                                                                          child: Padding(
+                                                                                            padding: EdgeInsetsDirectional.fromSTEB(15.0, 5.0, 10.0, 5.0),
+                                                                                            child: Text(
+                                                                                              rejectedRidesNewRecord.googleEndAddress != null && rejectedRidesNewRecord.googleEndAddress != '' ? rejectedRidesNewRecord.googleEndAddress : rejectedRidesNewRecord.rideEndLocation,
+                                                                                              style: FlutterFlowTheme.of(context).bodyMedium.override(
+                                                                                                    font: GoogleFonts.inter(
+                                                                                                      fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
+                                                                                                      fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                                    ),
+                                                                                                    fontSize: 12.0,
+                                                                                                    letterSpacing: 0.0,
+                                                                                                    fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
+                                                                                                    fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                                  ),
+                                                                                            ),
+                                                                                          ),
+                                                                                        ),
+                                                                                      ],
+                                                                                    ),
+                                                                                  ].divide(SizedBox(width: 5.0)),
+                                                                                ),
+                                                                                Row(
+                                                                                  mainAxisSize: MainAxisSize.max,
+                                                                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                                                  children: [
+                                                                                    Row(
+                                                                                      mainAxisSize: MainAxisSize.min,
+                                                                                      children: [
+                                                                                        Container(
+                                                                                          width: 40.0,
+                                                                                          height: 40.0,
+                                                                                          decoration: BoxDecoration(
+                                                                                            color: FlutterFlowTheme.of(context).secondaryBackground,
+                                                                                            image: DecorationImage(
+                                                                                              fit: BoxFit.cover,
+                                                                                              image: Image.asset(
+                                                                                                "assets/images/profileIcon.png",
+                                                                                              ).image,
+                                                                                            ),
+                                                                                            shape: BoxShape.circle,
+                                                                                            border: Border.all(
+                                                                                              color: Color(0xFF4DABF7),
+                                                                                              width: 2.0,
+                                                                                            ),
+                                                                                          ),
+                                                                                          child: Builder(
+                                                                                            builder: (context) {
+                                                                                              if (containerUsersRecord.photoUrl != null && containerUsersRecord.photoUrl != '') {
+                                                                                                return Container(
+                                                                                                  width: 200.0,
+                                                                                                  height: 200.0,
+                                                                                                  clipBehavior: Clip.antiAlias,
+                                                                                                  decoration: BoxDecoration(
+                                                                                                    shape: BoxShape.circle,
+                                                                                                  ),
+                                                                                                  child: CachedNetworkImage(
+                                                                                                    fadeInDuration: Duration(milliseconds: 500),
+                                                                                                    fadeOutDuration: Duration(milliseconds: 500),
+                                                                                                    imageUrl: containerUsersRecord.photoUrl,
+                                                                                                    fit: BoxFit.cover,
+                                                                                                  ),
+                                                                                                );
+                                                                                              } else {
+                                                                                                return InkWell(
+                                                                                                  splashColor: Colors.transparent,
+                                                                                                  focusColor: Colors.transparent,
+                                                                                                  hoverColor: Colors.transparent,
+                                                                                                  highlightColor: Colors.transparent,
+                                                                                                  onTap: () async {
+                                                                                                    context.pushNamed(
+                                                                                                      DriverReviewWidget.routeName,
+                                                                                                      queryParameters: {
+                                                                                                        'userRef': serializeParam(
+                                                                                                          containerUsersRecord.reference,
+                                                                                                          ParamType.DocumentReference,
+                                                                                                        ),
+                                                                                                      }.withoutNulls,
+                                                                                                    );
+                                                                                                  },
+                                                                                                  child: Container(
+                                                                                                    width: 200.0,
+                                                                                                    height: 200.0,
+                                                                                                    clipBehavior: Clip.antiAlias,
+                                                                                                    decoration: BoxDecoration(
+                                                                                                      shape: BoxShape.circle,
+                                                                                                    ),
+                                                                                                    child: Image.asset(
+                                                                                                      'assets/images/userIconTr.png',
+                                                                                                      fit: BoxFit.cover,
+                                                                                                    ),
+                                                                                                  ),
+                                                                                                );
+                                                                                              }
+                                                                                            },
+                                                                                          ),
+                                                                                        ),
+                                                                                        Padding(
+                                                                                          padding: EdgeInsetsDirectional.fromSTEB(12.0, 0.0, 12.0, 0.0),
+                                                                                          child: Column(
+                                                                                            mainAxisSize: MainAxisSize.min,
+                                                                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                                                                            children: [
+                                                                                              Text(
+                                                                                                containerUsersRecord.displayName,
+                                                                                                style: FlutterFlowTheme.of(context).bodyMedium.override(
+                                                                                                      font: GoogleFonts.inter(
+                                                                                                        fontWeight: FontWeight.w600,
+                                                                                                        fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                                      ),
+                                                                                                      letterSpacing: 0.0,
+                                                                                                      fontWeight: FontWeight.w600,
+                                                                                                      fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                                    ),
+                                                                                              ),
+                                                                                            ],
+                                                                                          ),
+                                                                                        ),
+                                                                                      ],
+                                                                                    ),
+                                                                                    Padding(
+                                                                                      padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
+                                                                                      child: Stack(
+                                                                                        alignment: AlignmentDirectional(0.0, 0.0),
+                                                                                        children: [
+                                                                                          InkWell(
+                                                                                            splashColor: Colors.transparent,
+                                                                                            focusColor: Colors.transparent,
+                                                                                            hoverColor: Colors.transparent,
+                                                                                            highlightColor: Colors.transparent,
+                                                                                            onTap: () async {
+                                                                                              context.pushNamed(
+                                                                                                DriverReviewWidget.routeName,
+                                                                                                queryParameters: {
+                                                                                                  'userRef': serializeParam(
+                                                                                                    containerUsersRecord.reference,
+                                                                                                    ParamType.DocumentReference,
+                                                                                                  ),
+                                                                                                }.withoutNulls,
+                                                                                              );
+                                                                                            },
+                                                                                            child: ClipRRect(
+                                                                                              borderRadius: BorderRadius.circular(8.0),
+                                                                                              child: Image.asset(
+                                                                                                'assets/images/Ride_Search_Icons.png',
+                                                                                                width: 34.0,
+                                                                                                height: 35.8,
+                                                                                                fit: BoxFit.cover,
+                                                                                              ),
+                                                                                            ),
+                                                                                          ),
+                                                                                          Text(
+                                                                                            valueOrDefault<String>(
+                                                                                              formatNumber(
+                                                                                                functions.averageRating(containerUsersRecord.ratings.toList()),
+                                                                                                formatType: FormatType.compact,
+                                                                                              ),
+                                                                                              '0',
+                                                                                            ),
+                                                                                            style: FlutterFlowTheme.of(context).bodyMedium.override(
+                                                                                                  font: GoogleFonts.inter(
+                                                                                                    fontWeight: FontWeight.w900,
+                                                                                                    fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                                  ),
+                                                                                                  color: FlutterFlowTheme.of(context).accent4,
+                                                                                                  fontSize: 10.0,
+                                                                                                  letterSpacing: 0.0,
+                                                                                                  fontWeight: FontWeight.w900,
+                                                                                                  fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                                ),
+                                                                                          ),
+                                                                                        ],
+                                                                                      ),
+                                                                                    ),
+                                                                                  ],
+                                                                                ),
+                                                                                Row(
+                                                                                  mainAxisSize: MainAxisSize.max,
+                                                                                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                                                                  children: [
+                                                                                    Text(
+                                                                                      'Current Status:',
+                                                                                      style: FlutterFlowTheme.of(context).bodyMedium.override(
+                                                                                            font: GoogleFonts.inter(
+                                                                                              fontWeight: FontWeight.w600,
+                                                                                              fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                            ),
+                                                                                            fontSize: 16.0,
+                                                                                            letterSpacing: 0.0,
+                                                                                            fontWeight: FontWeight.w600,
+                                                                                            fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                          ),
+                                                                                    ),
+                                                                                    Text(
+                                                                                      rejectedRidesNewRecord.rideStatus,
+                                                                                      style: FlutterFlowTheme.of(context).bodyMedium.override(
+                                                                                            font: GoogleFonts.inter(
+                                                                                              fontWeight: FontWeight.w600,
+                                                                                              fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                            ),
+                                                                                            color: () {
+                                                                                              if (rejectedRidesNewRecord.rideStatus == 'Active') {
+                                                                                                return FlutterFlowTheme.of(context).success;
+                                                                                              } else if (rejectedRidesNewRecord.rideStatus == 'Rejected') {
+                                                                                                return FlutterFlowTheme.of(context).error;
+                                                                                              } else {
+                                                                                                return FlutterFlowTheme.of(context).warning;
+                                                                                              }
+                                                                                            }(),
+                                                                                            fontSize: 16.0,
+                                                                                            letterSpacing: 0.0,
+                                                                                            fontWeight: FontWeight.w600,
+                                                                                            fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                          ),
+                                                                                    ),
+                                                                                  ],
+                                                                                ),
+                                                                                Row(
+                                                                                  mainAxisSize: MainAxisSize.max,
+                                                                                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                                                                  children: [
+                                                                                    InkWell(
+                                                                                      splashColor: Colors.transparent,
+                                                                                      focusColor: Colors.transparent,
+                                                                                      hoverColor: Colors.transparent,
+                                                                                      highlightColor: Colors.transparent,
+                                                                                      onTap: () async {
+                                                                                        await rejectedRidesNewRecord.reference.delete();
+                                                                                      },
+                                                                                      child: Icon(
+                                                                                        Icons.delete,
+                                                                                        color: Color(0xFFDC0A46),
+                                                                                        size: 24.0,
+                                                                                      ),
+                                                                                    ),
+                                                                                    FFButtonWidget(
+                                                                                      onPressed: () async {
+                                                                                        context.pushNamed(
+                                                                                          RideEditPageWidget.routeName,
+                                                                                          queryParameters: {
+                                                                                            'rideEdit': serializeParam(
+                                                                                              rejectedRidesNewRecord.reference,
+                                                                                              ParamType.DocumentReference,
+                                                                                            ),
+                                                                                          }.withoutNulls,
+                                                                                        );
+                                                                                      },
+                                                                                      text: 'Edit',
+                                                                                      options: FFButtonOptions(
+                                                                                        width: 80.5,
+                                                                                        height: 26.2,
+                                                                                        padding: EdgeInsetsDirectional.fromSTEB(16.0, 0.0, 16.0, 0.0),
+                                                                                        iconPadding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
+                                                                                        color: FlutterFlowTheme.of(context).accent3,
+                                                                                        textStyle: FlutterFlowTheme.of(context).bodyMedium.override(
+                                                                                              font: GoogleFonts.inter(
+                                                                                                fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
+                                                                                                fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                              ),
+                                                                                              color: FlutterFlowTheme.of(context).primaryText,
+                                                                                              letterSpacing: 0.0,
+                                                                                              fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
+                                                                                              fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                            ),
+                                                                                        elevation: 0.0,
+                                                                                        borderSide: BorderSide(
+                                                                                          color: FlutterFlowTheme.of(context).accent3,
+                                                                                          width: 1.0,
+                                                                                        ),
+                                                                                        borderRadius: BorderRadius.circular(8.0),
+                                                                                      ),
+                                                                                    ),
+                                                                                    Align(
+                                                                                      alignment: AlignmentDirectional(0.0, 0.0),
+                                                                                      child: InkWell(
+                                                                                        splashColor: Colors.transparent,
+                                                                                        focusColor: Colors.transparent,
+                                                                                        hoverColor: Colors.transparent,
+                                                                                        highlightColor: Colors.transparent,
+                                                                                        onTap: () async {
+                                                                                          context.pushNamed(BookingsDriverWidget.routeName);
+                                                                                        },
+                                                                                        child: Container(
+                                                                                          width: 139.6,
+                                                                                          height: 28.0,
+                                                                                          decoration: BoxDecoration(
+                                                                                            color: Color(0x1F4CAF50),
+                                                                                            borderRadius: BorderRadius.circular(14.0),
+                                                                                          ),
+                                                                                          child: Padding(
+                                                                                            padding: EdgeInsets.all(4.0),
+                                                                                            child: Row(
+                                                                                              mainAxisSize: MainAxisSize.min,
+                                                                                              mainAxisAlignment: MainAxisAlignment.center,
+                                                                                              children: [
+                                                                                                Padding(
+                                                                                                  padding: EdgeInsetsDirectional.fromSTEB(4.0, 0.0, 4.0, 0.0),
+                                                                                                  child: Text(
+                                                                                                    'Booking Request',
+                                                                                                    style: FlutterFlowTheme.of(context).bodySmall.override(
+                                                                                                          font: GoogleFonts.inter(
+                                                                                                            fontWeight: FontWeight.w500,
+                                                                                                            fontStyle: FlutterFlowTheme.of(context).bodySmall.fontStyle,
+                                                                                                          ),
+                                                                                                          color: FlutterFlowTheme.of(context).success,
+                                                                                                          letterSpacing: 0.0,
+                                                                                                          fontWeight: FontWeight.w500,
+                                                                                                          fontStyle: FlutterFlowTheme.of(context).bodySmall.fontStyle,
+                                                                                                        ),
+                                                                                                  ),
+                                                                                                ),
+                                                                                              ],
+                                                                                            ),
+                                                                                          ),
+                                                                                        ),
+                                                                                      ),
+                                                                                    ),
+                                                                                  ],
+                                                                                ),
+                                                                                Row(
+                                                                                  mainAxisSize: MainAxisSize.max,
+                                                                                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                                                                  children: [
+                                                                                    Text(
+                                                                                      'Current Status:',
+                                                                                      style: FlutterFlowTheme.of(context).bodyMedium.override(
+                                                                                            font: GoogleFonts.inter(
+                                                                                              fontWeight: FontWeight.w600,
+                                                                                              fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                            ),
+                                                                                            fontSize: 16.0,
+                                                                                            letterSpacing: 0.0,
+                                                                                            fontWeight: FontWeight.w600,
+                                                                                            fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                          ),
+                                                                                    ),
+                                                                                    Text(
+                                                                                      rejectedRidesNewRecord.rideStatus,
+                                                                                      style: FlutterFlowTheme.of(context).bodyMedium.override(
+                                                                                            font: GoogleFonts.inter(
+                                                                                              fontWeight: FontWeight.w600,
+                                                                                              fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                            ),
+                                                                                            color: () {
+                                                                                              if (rejectedRidesNewRecord.rideStatus == 'Active') {
+                                                                                                return FlutterFlowTheme.of(context).success;
+                                                                                              } else if (rejectedRidesNewRecord.rideStatus == 'Rejected') {
+                                                                                                return FlutterFlowTheme.of(context).error;
+                                                                                              } else {
+                                                                                                return FlutterFlowTheme.of(context).warning;
+                                                                                              }
+                                                                                            }(),
+                                                                                            fontSize: 16.0,
+                                                                                            letterSpacing: 0.0,
+                                                                                            fontWeight: FontWeight.w600,
+                                                                                            fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                          ),
+                                                                                    ),
+                                                                                  ],
+                                                                                ),
+                                                                              ].divide(SizedBox(height: 12.0)),
+                                                                            ),
+                                                                          ),
+                                                                          Align(
+                                                                            alignment: AlignmentDirectional(0.97, -0.96),
+                                                                            child: Padding(
+                                                                              padding: EdgeInsetsDirectional.fromSTEB(0.0, 10.0, 5.0, 0.0),
+                                                                              child: Container(
+                                                                                width: 75.0,
+                                                                                height: 90.0,
+                                                                                decoration: BoxDecoration(
+                                                                                  color: Color(0xFFF97E4C),
+                                                                                  borderRadius: BorderRadius.circular(12.0),
+                                                                                ),
+                                                                                child: Column(
+                                                                                  mainAxisSize: MainAxisSize.max,
+                                                                                  children: [
+                                                                                    Padding(
+                                                                                      padding: EdgeInsetsDirectional.fromSTEB(0.0, 5.0, 0.0, 0.0),
+                                                                                      child: Text(
+                                                                                        'Ride',
+                                                                                        style: FlutterFlowTheme.of(context).bodyMedium.override(
+                                                                                              font: GoogleFonts.inter(
+                                                                                                fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
+                                                                                                fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                              ),
+                                                                                              color: FlutterFlowTheme.of(context).info,
+                                                                                              fontSize: 12.0,
+                                                                                              letterSpacing: 0.0,
+                                                                                              fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
+                                                                                              fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                            ),
+                                                                                      ),
+                                                                                    ),
+                                                                                    Padding(
+                                                                                      padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 4.0),
+                                                                                      child: Text(
+                                                                                        '₹${rejectedRidesNewRecord.rideCost.toString()}',
+                                                                                        style: FlutterFlowTheme.of(context).bodyMedium.override(
+                                                                                              font: GoogleFonts.inter(
+                                                                                                fontWeight: FontWeight.bold,
+                                                                                                fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                              ),
+                                                                                              color: FlutterFlowTheme.of(context).info,
+                                                                                              fontSize: 15.0,
+                                                                                              letterSpacing: 0.0,
+                                                                                              fontWeight: FontWeight.bold,
+                                                                                              fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                            ),
+                                                                                      ),
+                                                                                    ),
+                                                                                    Container(
+                                                                                      width: double.infinity,
+                                                                                      height: 50.0,
+                                                                                      decoration: BoxDecoration(
+                                                                                        color: Color(0xFFFF9561),
+                                                                                        borderRadius: BorderRadius.only(
+                                                                                          bottomLeft: Radius.circular(10.0),
+                                                                                          bottomRight: Radius.circular(10.0),
+                                                                                          topLeft: Radius.circular(10.0),
+                                                                                          topRight: Radius.circular(10.0),
+                                                                                        ),
+                                                                                      ),
+                                                                                      child: Column(
+                                                                                        mainAxisSize: MainAxisSize.min,
+                                                                                        mainAxisAlignment: MainAxisAlignment.start,
+                                                                                        children: [
+                                                                                          Padding(
+                                                                                            padding: EdgeInsetsDirectional.fromSTEB(0.0, 5.0, 0.0, 0.0),
+                                                                                            child: Text(
+                                                                                              'Parcel',
+                                                                                              textAlign: TextAlign.center,
+                                                                                              style: FlutterFlowTheme.of(context).labelSmall.override(
+                                                                                                    font: GoogleFonts.inter(
+                                                                                                      fontWeight: FontWeight.w500,
+                                                                                                      fontStyle: FlutterFlowTheme.of(context).labelSmall.fontStyle,
+                                                                                                    ),
+                                                                                                    color: FlutterFlowTheme.of(context).info,
+                                                                                                    fontSize: 12.0,
+                                                                                                    letterSpacing: 0.0,
+                                                                                                    fontWeight: FontWeight.w500,
+                                                                                                    fontStyle: FlutterFlowTheme.of(context).labelSmall.fontStyle,
+                                                                                                  ),
+                                                                                            ),
+                                                                                          ),
+                                                                                          Text(
+                                                                                            '₹${rejectedRidesNewRecord.totalDeliveryCost}',
+                                                                                            textAlign: TextAlign.center,
+                                                                                            style: FlutterFlowTheme.of(context).labelSmall.override(
+                                                                                                  font: GoogleFonts.inter(
+                                                                                                    fontWeight: FontWeight.bold,
+                                                                                                    fontStyle: FlutterFlowTheme.of(context).labelSmall.fontStyle,
+                                                                                                  ),
+                                                                                                  color: FlutterFlowTheme.of(context).info,
+                                                                                                  fontSize: 15.0,
+                                                                                                  letterSpacing: 0.0,
+                                                                                                  fontWeight: FontWeight.bold,
+                                                                                                  fontStyle: FlutterFlowTheme.of(context).labelSmall.fontStyle,
+                                                                                                ),
+                                                                                          ),
+                                                                                        ].divide(SizedBox(height: 4.0)),
+                                                                                      ),
+                                                                                    ),
+                                                                                  ],
+                                                                                ),
+                                                                              ),
+                                                                            ),
+                                                                          ),
+                                                                        ],
+                                                                      ),
+                                                                    ),
+                                                                  );
+                                                                },
+                                                              ),
+                                                            ],
+                                                          );
+                                                        },
+                                                      );
+                                                    },
+                                                  ),
+                                                ),
+                                              ),
+                                          ],
+                                        ),
                                       ),
                                     ],
                                   ),

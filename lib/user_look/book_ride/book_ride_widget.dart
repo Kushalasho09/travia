@@ -844,226 +844,311 @@ class _BookRideWidgetState extends State<BookRideWidget>
                                   ),
                                 ].divide(SizedBox(width: 12.0)),
                               ),
+                              /// OLD CODE HERE !!
+                              // FFButtonWidget(
+                              //   onPressed: () async {
+                              //     if (_model.bookingFor != null &&
+                              //         _model.bookingFor != '') {
+                              //       await showDialog(
+                              //         context: context,
+                              //         builder: (alertDialogContext) {
+                              //           return AlertDialog(
+                              //             title: Text('Attention Required'),
+                              //             content: Text(
+                              //                 'Please select the people you are booking the trip for. Such as yourself, your friends and family.'),
+                              //             actions: [
+                              //               TextButton(
+                              //                 onPressed: () => Navigator.pop(
+                              //                     alertDialogContext),
+                              //                 child: Text('Ok'),
+                              //               ),
+                              //             ],
+                              //           );
+                              //         },
+                              //       );
+                              //     } else if (_model.nameTextController.text !=
+                              //             null &&
+                              //         _model.nameTextController.text != '') {
+                              //       await showDialog(
+                              //         context: context,
+                              //         builder: (alertDialogContext) {
+                              //           return AlertDialog(
+                              //             title: Text('Attention Required'),
+                              //             content: Text(
+                              //                 'Please enter the full name of the passenger.'),
+                              //             actions: [
+                              //               TextButton(
+                              //                 onPressed: () => Navigator.pop(
+                              //                     alertDialogContext),
+                              //                 child: Text('Ok'),
+                              //               ),
+                              //             ],
+                              //           );
+                              //         },
+                              //       );
+                              //     } else if (_model
+                              //                 .contactNumberTextController.text !=
+                              //             null &&
+                              //         _model
+                              //                 .contactNumberTextController.text !=
+                              //             '') {
+                              //       await showDialog(
+                              //         context: context,
+                              //         builder: (alertDialogContext) {
+                              //           return AlertDialog(
+                              //             title: Text('Attention Required'),
+                              //             content: Text(
+                              //                 'Please enter passenger mobile number.'),
+                              //             actions: [
+                              //               TextButton(
+                              //                 onPressed: () => Navigator.pop(
+                              //                     alertDialogContext),
+                              //                 child: Text('Ok'),
+                              //               ),
+                              //             ],
+                              //           );
+                              //         },
+                              //       );
+                              //     } else if (_model.meetupAddressTextController
+                              //                 .text !=
+                              //             null &&
+                              //         _model.meetupAddressTextController
+                              //                 .text !=
+                              //             '') {
+                              //       await showDialog(
+                              //         context: context,
+                              //         builder: (alertDialogContext) {
+                              //           return AlertDialog(
+                              //             title: Text('Attention Required'),
+                              //             content: Text(
+                              //                 'Please enter the meetup address where passenger will meet the driver.'),
+                              //             actions: [
+                              //               TextButton(
+                              //                 onPressed: () => Navigator.pop(
+                              //                     alertDialogContext),
+                              //                 child: Text('Ok'),
+                              //               ),
+                              //             ],
+                              //           );
+                              //         },
+                              //       );
+                              //     } else if (_model.checkboxValue == true) {
+                              //       await showDialog(
+                              //         context: context,
+                              //         builder: (alertDialogContext) {
+                              //           return AlertDialog(
+                              //             title: Text('Attention Required'),
+                              //             content: Text(
+                              //                 'Please accept the Terms of Service and Privacy Policy.'),
+                              //             actions: [
+                              //               TextButton(
+                              //                 onPressed: () => Navigator.pop(
+                              //                     alertDialogContext),
+                              //                 child: Text('Ok'),
+                              //               ),
+                              //             ],
+                              //           );
+                              //         },
+                              //       );
+                              //     } else if (_model.bookingFor == 'NotSet') {
+                              //       ScaffoldMessenger.of(context).showSnackBar(
+                              //         SnackBar(
+                              //           content: Text(
+                              //             'Select whether you are booking for yourself or a friend.',
+                              //             style: TextStyle(
+                              //               color: FlutterFlowTheme.of(context)
+                              //                   .primaryText,
+                              //             ),
+                              //           ),
+                              //           duration: Duration(milliseconds: 4000),
+                              //           backgroundColor:
+                              //               FlutterFlowTheme.of(context)
+                              //                   .secondary,
+                              //         ),
+                              //       );
+                              //     } else if ((_model
+                              //                     .bookingFor !=
+                              //                 null &&
+                              //             _model.bookingFor != '') &&
+                              //         (_model
+                              //                     .nameTextController.text !=
+                              //                 null &&
+                              //             _model
+                              //                     .nameTextController.text !=
+                              //                 '') &&
+                              //         (_model
+                              //                     .contactNumberTextController.text !=
+                              //                 null &&
+                              //             _model.contactNumberTextController
+                              //                     .text !=
+                              //                 '') &&
+                              //         (_model.meetupAddressTextController
+                              //                     .text !=
+                              //                 null &&
+                              //             _model.meetupAddressTextController
+                              //                     .text !=
+                              //                 '') &&
+                              //         (_model.checkboxValue == true)) {
+                              //       await BookingsRecord.collection
+                              //           .doc()
+                              //           .set(createBookingsRecordData(
+                              //             bookingType: 'Ride',
+                              //             rideNameOfPerson:
+                              //                 _model.nameTextController.text,
+                              //             ridePersonContactNumber: _model
+                              //                 .contactNumberTextController.text,
+                              //             rideMeetupAddress: _model
+                              //                 .meetupAddressTextController.text,
+                              //             rideAdditionalInformation: _model
+                              //                 .additionalInformationTextController
+                              //                 .text,
+                              //             status: 'Pending',
+                              //             rideBookFor: _model.bookingFor,
+                              //             createdTime: getCurrentTimestamp,
+                              //             creator: currentUserReference,
+                              //             rideID: widget!.rideID,
+                              //             bookingFor: _model.bookingFor,
+                              //           ));
+                              //
+                              //       context.goNamed(
+                              //           RideBookingSentWidget.routeName);
+                              //     } else {
+                              //       await showDialog(
+                              //         context: context,
+                              //         builder: (alertDialogContext) {
+                              //           return AlertDialog(
+                              //             title: Text('Attention Required'),
+                              //             content: Text(
+                              //                 'Please fill in all the required details to book a ride.'),
+                              //             actions: [
+                              //               TextButton(
+                              //                 onPressed: () => Navigator.pop(
+                              //                     alertDialogContext),
+                              //                 child: Text('Ok'),
+                              //               ),
+                              //             ],
+                              //           );
+                              //         },
+                              //       );
+                              //     }
+                              //   },
+                              //   text: 'Book Now',
+                              //   options: FFButtonOptions(
+                              //     width: double.infinity,
+                              //     height: 56.0,
+                              //     padding: EdgeInsets.all(8.0),
+                              //     iconPadding: EdgeInsetsDirectional.fromSTEB(
+                              //         0.0, 0.0, 0.0, 0.0),
+                              //     color: Color(0xFFFF6B35),
+                              //     textStyle: FlutterFlowTheme.of(context)
+                              //         .titleMedium
+                              //         .override(
+                              //           font: GoogleFonts.interTight(
+                              //             fontWeight: FontWeight.w600,
+                              //             fontStyle:
+                              //                 FlutterFlowTheme.of(context)
+                              //                     .titleMedium
+                              //                     .fontStyle,
+                              //           ),
+                              //           color: Colors.white,
+                              //           letterSpacing: 0.0,
+                              //           fontWeight: FontWeight.w600,
+                              //           fontStyle: FlutterFlowTheme.of(context)
+                              //               .titleMedium
+                              //               .fontStyle,
+                              //         ),
+                              //     elevation: 0.0,
+                              //     borderSide: BorderSide(
+                              //       color: Colors.transparent,
+                              //       width: 1.0,
+                              //     ),
+                              //     borderRadius: BorderRadius.circular(12.0),
+                              //   ),
+                              // ),
+                              /// NEW CODE HERE !!
                               FFButtonWidget(
                                 onPressed: () async {
-                                  if (_model.bookingFor != null &&
-                                      _model.bookingFor != '') {
-                                    await showDialog(
-                                      context: context,
-                                      builder: (alertDialogContext) {
-                                        return AlertDialog(
-                                          title: Text('Attention Required'),
-                                          content: Text(
-                                              'Please select the people you are booking the trip for. Such as yourself, your friends and family.'),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () => Navigator.pop(
-                                                  alertDialogContext),
-                                              child: Text('Ok'),
-                                            ),
-                                          ],
-                                        );
-                                      },
-                                    );
-                                  } else if (_model.nameTextController.text !=
-                                          null &&
-                                      _model.nameTextController.text != '') {
-                                    await showDialog(
-                                      context: context,
-                                      builder: (alertDialogContext) {
-                                        return AlertDialog(
-                                          title: Text('Attention Required'),
-                                          content: Text(
-                                              'Please enter the full name of the passenger.'),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () => Navigator.pop(
-                                                  alertDialogContext),
-                                              child: Text('Ok'),
-                                            ),
-                                          ],
-                                        );
-                                      },
-                                    );
-                                  } else if (_model
-                                              .contactNumberTextController.text !=
-                                          null &&
-                                      _model
-                                              .contactNumberTextController.text !=
-                                          '') {
-                                    await showDialog(
-                                      context: context,
-                                      builder: (alertDialogContext) {
-                                        return AlertDialog(
-                                          title: Text('Attention Required'),
-                                          content: Text(
-                                              'Please enter passenger mobile number.'),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () => Navigator.pop(
-                                                  alertDialogContext),
-                                              child: Text('Ok'),
-                                            ),
-                                          ],
-                                        );
-                                      },
-                                    );
-                                  } else if (_model.meetupAddressTextController
-                                              .text !=
-                                          null &&
-                                      _model.meetupAddressTextController
-                                              .text !=
-                                          '') {
-                                    await showDialog(
-                                      context: context,
-                                      builder: (alertDialogContext) {
-                                        return AlertDialog(
-                                          title: Text('Attention Required'),
-                                          content: Text(
-                                              'Please enter the meetup address where passenger will meet the driver.'),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () => Navigator.pop(
-                                                  alertDialogContext),
-                                              child: Text('Ok'),
-                                            ),
-                                          ],
-                                        );
-                                      },
-                                    );
-                                  } else if (_model.checkboxValue == true) {
-                                    await showDialog(
-                                      context: context,
-                                      builder: (alertDialogContext) {
-                                        return AlertDialog(
-                                          title: Text('Attention Required'),
-                                          content: Text(
-                                              'Please accept the Terms of Service and Privacy Policy.'),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () => Navigator.pop(
-                                                  alertDialogContext),
-                                              child: Text('Ok'),
-                                            ),
-                                          ],
-                                        );
-                                      },
-                                    );
-                                  } else if (_model.bookingFor == 'NotSet') {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          'Select whether you are booking for yourself or a friend.',
-                                          style: TextStyle(
-                                            color: FlutterFlowTheme.of(context)
-                                                .primaryText,
-                                          ),
-                                        ),
-                                        duration: Duration(milliseconds: 4000),
-                                        backgroundColor:
-                                            FlutterFlowTheme.of(context)
-                                                .secondary,
-                                      ),
-                                    );
-                                  } else if ((_model
-                                                  .bookingFor !=
-                                              null &&
-                                          _model.bookingFor != '') &&
-                                      (_model
-                                                  .nameTextController.text !=
-                                              null &&
-                                          _model
-                                                  .nameTextController.text !=
-                                              '') &&
-                                      (_model
-                                                  .contactNumberTextController.text !=
-                                              null &&
-                                          _model.contactNumberTextController
-                                                  .text !=
-                                              '') &&
-                                      (_model.meetupAddressTextController
-                                                  .text !=
-                                              null &&
-                                          _model.meetupAddressTextController
-                                                  .text !=
-                                              '') &&
-                                      (_model.checkboxValue == true)) {
-                                    await BookingsRecord.collection
-                                        .doc()
-                                        .set(createBookingsRecordData(
-                                          bookingType: 'Ride',
-                                          rideNameOfPerson:
-                                              _model.nameTextController.text,
-                                          ridePersonContactNumber: _model
-                                              .contactNumberTextController.text,
-                                          rideMeetupAddress: _model
-                                              .meetupAddressTextController.text,
-                                          rideAdditionalInformation: _model
-                                              .additionalInformationTextController
-                                              .text,
-                                          status: 'Pending',
-                                          rideBookFor: _model.bookingFor,
-                                          createdTime: getCurrentTimestamp,
-                                          creator: currentUserReference,
-                                          rideID: widget!.rideID,
-                                          bookingFor: _model.bookingFor,
-                                        ));
-
-                                    context.goNamed(
-                                        RideBookingSentWidget.routeName);
-                                  } else {
-                                    await showDialog(
-                                      context: context,
-                                      builder: (alertDialogContext) {
-                                        return AlertDialog(
-                                          title: Text('Attention Required'),
-                                          content: Text(
-                                              'Please fill in all the required details to book a ride.'),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () => Navigator.pop(
-                                                  alertDialogContext),
-                                              child: Text('Ok'),
-                                            ),
-                                          ],
-                                        );
-                                      },
-                                    );
+                                  // ✅ 1. Check if bookingFor is NOT selected
+                                  if (_model.bookingFor == null || _model.bookingFor!.isEmpty) {
+                                    await showDialog(context: context, builder: (_) => AlertDialog(
+                                      title: Text('Attention Required'),
+                                      content: Text('Please select the people you are booking the trip for.'),
+                                      actions: [TextButton(onPressed: () => Navigator.pop(_), child: Text('Ok'))],
+                                    ));
+                                    return;  // ✅ STOP HERE
                                   }
+
+                                  // ✅ 2. Check name empty
+                                  if (_model.nameTextController.text.isEmpty) {
+                                    await showDialog(context: context, builder: (_) => AlertDialog(
+                                      title: Text('Attention Required'),
+                                      content: Text('Please enter the full name of the passenger.'),
+                                      actions: [TextButton(onPressed: () => Navigator.pop(_), child: Text('Ok'))],
+                                    ));
+                                    return;
+                                  }
+
+                                  // ✅ 3. Check contact empty
+                                  if (_model.contactNumberTextController.text.isEmpty) {
+                                    await showDialog(context: context, builder: (_) => AlertDialog(
+                                      title: Text('Attention Required'),
+                                      content: Text('Please enter passenger mobile number.'),
+                                      actions: [TextButton(onPressed: () => Navigator.pop(_), child: Text('Ok'))],
+                                    ));
+                                    return;
+                                  }
+
+                                  // ✅ 4. Check address empty
+                                  if (_model.meetupAddressTextController.text.isEmpty) {
+                                    await showDialog(context: context, builder: (_) => AlertDialog(
+                                      title: Text('Attention Required'),
+                                      content: Text('Please enter the meetup address.'),
+                                      actions: [TextButton(onPressed: () => Navigator.pop(_), child: Text('Ok'))],
+                                    ));
+                                    return;
+                                  }
+
+                                  // ✅ 5. Check checkbox NOT checked
+                                  if (_model.checkboxValue != true) {
+                                    await showDialog(context: context, builder: (_) => AlertDialog(
+                                      title: Text('Attention Required'),
+                                      content: Text('Please accept Terms & Conditions.'),
+                                      actions: [TextButton(onPressed: () => Navigator.pop(_), child: Text('Ok'))],
+                                    ));
+                                    return;
+                                  }
+
+                                  // ✅ ALL VALID → BOOK RIDE!
+                                  await BookingsRecord.collection.doc().set(createBookingsRecordData(
+                                    bookingType: 'Ride',
+                                    rideNameOfPerson: _model.nameTextController.text,
+                                    ridePersonContactNumber: _model.contactNumberTextController.text,
+                                    rideMeetupAddress: _model.meetupAddressTextController.text,
+                                    rideAdditionalInformation: _model.additionalInformationTextController.text,
+                                    status: 'Pending',
+                                    rideBookFor: _model.bookingFor,
+                                    createdTime: getCurrentTimestamp,
+                                    creator: currentUserReference,
+                                    rideID: widget.rideID,
+                                    bookingFor: _model.bookingFor,
+                                  ));
+
+                                  context.goNamed(RideBookingSentWidget.routeName);
                                 },
                                 text: 'Book Now',
                                 options: FFButtonOptions(
                                   width: double.infinity,
                                   height: 56.0,
                                   padding: EdgeInsets.all(8.0),
-                                  iconPadding: EdgeInsetsDirectional.fromSTEB(
-                                      0.0, 0.0, 0.0, 0.0),
                                   color: Color(0xFFFF6B35),
-                                  textStyle: FlutterFlowTheme.of(context)
-                                      .titleMedium
-                                      .override(
-                                        font: GoogleFonts.interTight(
-                                          fontWeight: FontWeight.w600,
-                                          fontStyle:
-                                              FlutterFlowTheme.of(context)
-                                                  .titleMedium
-                                                  .fontStyle,
-                                        ),
-                                        color: Colors.white,
-                                        letterSpacing: 0.0,
-                                        fontWeight: FontWeight.w600,
-                                        fontStyle: FlutterFlowTheme.of(context)
-                                            .titleMedium
-                                            .fontStyle,
-                                      ),
-                                  elevation: 0.0,
-                                  borderSide: BorderSide(
-                                    color: Colors.transparent,
-                                    width: 1.0,
+                                  textStyle: FlutterFlowTheme.of(context).titleMedium.override(
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
                                   ),
                                   borderRadius: BorderRadius.circular(12.0),
                                 ),
                               ),
+
                             ].divide(SizedBox(height: 24.0)),
                           ),
                         ),

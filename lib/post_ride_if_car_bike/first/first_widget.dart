@@ -157,127 +157,68 @@ class _FirstWidgetState extends State<FirstWidget> {
                                     .fontStyle,
                               ),
                     ),
+                    // SizedBox(height: 10.0),
                     FlutterFlowDropDown<String>(
-                      controller: _model.isCarryPassangerValueController ??=
-                          FormFieldController<String>(null),
+                      controller: _model.isCarryPassangerValueController ??= FormFieldController<String>(null),
                       options: ['Yes', 'No'],
                       onChanged: (val) async {
                         safeSetState(() => _model.isCarryPassangerValue = val);
-                        _model.isPassangerAllowed =
-                            _model.isCarryPassangerValue!;
+                        _model.isPassangerAllowed = _model.isCarryPassangerValue!;
                         safeSetState(() {});
                       },
-                      width: 360.1,
-                      height: 53.7,
-                      textStyle:
-                          FlutterFlowTheme.of(context).bodyMedium.override(
-                                font: GoogleFonts.inter(
-                                  fontWeight: FlutterFlowTheme.of(context)
-                                      .bodyMedium
-                                      .fontWeight,
-                                  fontStyle: FlutterFlowTheme.of(context)
-                                      .bodyMedium
-                                      .fontStyle,
-                                ),
-                                letterSpacing: 0.0,
-                                fontWeight: FlutterFlowTheme.of(context)
-                                    .bodyMedium
-                                    .fontWeight,
-                                fontStyle: FlutterFlowTheme.of(context)
-                                    .bodyMedium
-                                    .fontStyle,
-                              ),
+                      // ✅ RESPONSIVE SIZING
+                      width: MediaQuery.sizeOf(context).width * 0.9,
+                      // constraints: BoxConstraints(maxWidth: 360.0, minWidth: 280.0),
+                      height: 56.0,
+                      textStyle: FlutterFlowTheme.of(context).bodyMedium.override(fontSize: 16.0),
                       hintText: 'Select...',
-                      icon: Icon(
-                        Icons.keyboard_arrow_down_rounded,
-                        color: FlutterFlowTheme.of(context).secondaryText,
-                        size: 24.0,
-                      ),
-                      fillColor:
-                          FlutterFlowTheme.of(context).secondaryBackground,
+                      icon: Icon(Icons.keyboard_arrow_down_rounded, color: FlutterFlowTheme.of(context).secondaryText, size: 24.0),
+                      fillColor: FlutterFlowTheme.of(context).secondaryBackground,
                       elevation: 2.0,
                       borderColor: Color(0xFF4DABF7),
                       borderWidth: 2.0,
-                      borderRadius: 8.0,
-                      margin:
-                          EdgeInsetsDirectional.fromSTEB(12.0, 0.0, 12.0, 0.0),
+                      borderRadius: 12.0,
+                      margin: EdgeInsetsDirectional.fromSTEB(14.0, 20.0, 14.0, 20.0),
                       hidesUnderline: true,
                       isOverButton: false,
                       isSearchable: false,
                       isMultiSelect: false,
                     ),
+
+                    // ✅ PARCEL DROPDOWN - RESPONSIVE
                     Text(
                       'Would you like to carry parcels \non this trip?',
                       textAlign: TextAlign.center,
-                      style: FlutterFlowTheme.of(context).titleMedium.override(
-                            font: GoogleFonts.interTight(
-                              fontWeight: FontWeight.w600,
-                              fontStyle: FlutterFlowTheme.of(context)
-                                  .titleMedium
-                                  .fontStyle,
-                            ),
-                            letterSpacing: 0.0,
-                            fontWeight: FontWeight.w600,
-                            fontStyle: FlutterFlowTheme.of(context)
-                                .titleMedium
-                                .fontStyle,
-                          ),
+                      style: FlutterFlowTheme.of(context).titleMedium.override(fontWeight: FontWeight.w600),
                     ),
-                    Row(
-                      mainAxisSize: MainAxisSize.max,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        FlutterFlowDropDown<String>(
-                          controller: _model.carryParcelValueController ??=
-                              FormFieldController<String>(null),
-                          options: ['Yes', 'No'],
-                          onChanged: (val) async {
-                            safeSetState(() => _model.carryParcelValue = val);
-                            _model.isPassangerAllowed =
-                                _model.carryParcelValue!;
-                            safeSetState(() {});
-                          },
-                          width: 360.1,
-                          height: 53.7,
-                          textStyle:
-                              FlutterFlowTheme.of(context).bodyMedium.override(
-                                    font: GoogleFonts.inter(
-                                      fontWeight: FlutterFlowTheme.of(context)
-                                          .bodyMedium
-                                          .fontWeight,
-                                      fontStyle: FlutterFlowTheme.of(context)
-                                          .bodyMedium
-                                          .fontStyle,
-                                    ),
-                                    letterSpacing: 0.0,
-                                    fontWeight: FlutterFlowTheme.of(context)
-                                        .bodyMedium
-                                        .fontWeight,
-                                    fontStyle: FlutterFlowTheme.of(context)
-                                        .bodyMedium
-                                        .fontStyle,
-                                  ),
-                          hintText: 'Select...',
-                          icon: Icon(
-                            Icons.keyboard_arrow_down_rounded,
-                            color: FlutterFlowTheme.of(context).secondaryText,
-                            size: 24.0,
-                          ),
-                          fillColor:
-                              FlutterFlowTheme.of(context).secondaryBackground,
-                          elevation: 2.0,
-                          borderColor: Color(0xFF4DABF7),
-                          borderWidth: 2.0,
-                          borderRadius: 8.0,
-                          margin: EdgeInsetsDirectional.fromSTEB(
-                              12.0, 0.0, 12.0, 0.0),
-                          hidesUnderline: true,
-                          isOverButton: false,
-                          isSearchable: false,
-                          isMultiSelect: false,
-                        ),
-                      ].divide(SizedBox(width: 16.0)),
+                    // SizedBox(height: 10.0),
+                    FlutterFlowDropDown<String>(
+                      controller: _model.carryParcelValueController ??= FormFieldController<String>(null),
+                      options: ['Yes', 'No'],
+                      onChanged: (val) async {
+                        safeSetState(() => _model.carryParcelValue = val);
+                        _model.isPassangerAllowed = _model.carryParcelValue!;
+                        safeSetState(() {});
+                      },
+                      // ✅ RESPONSIVE SIZING
+                      width: MediaQuery.sizeOf(context).width * 0.9,
+                      // constraints: BoxConstraints(maxWidth: 360.0, minWidth: 280.0),
+                      height: 56.0,
+                      textStyle: FlutterFlowTheme.of(context).bodyMedium.override(fontSize: 16.0),
+                      hintText: 'Select...',
+                      icon: Icon(Icons.keyboard_arrow_down_rounded, color: FlutterFlowTheme.of(context).secondaryText, size: 24.0),
+                      fillColor: FlutterFlowTheme.of(context).secondaryBackground,
+                      elevation: 2.0,
+                      borderColor: Color(0xFF4DABF7),
+                      borderWidth: 2.0,
+                      borderRadius: 12.0,
+                      margin: EdgeInsetsDirectional.fromSTEB(14.0, 20.0, 14.0, 20.0),
+                      hidesUnderline: true,
+                      isOverButton: false,
+                      isSearchable: false,
+                      isMultiSelect: false,
                     ),
+
                     if (_model.isCarryPassangerValue != null &&
                         _model.isCarryPassangerValue != '')
                       Align(

@@ -59,7 +59,7 @@ class _MarketPlaceCustomerWidgetState extends State<MarketPlaceCustomerWidget>
       length: 3,
       initialIndex: min(
           valueOrDefault<int>(
-            widget!.tabNumberRef,
+            widget.tabNumberRef,
             0,
           ),
           2),
@@ -105,6 +105,7 @@ class _MarketPlaceCustomerWidgetState extends State<MarketPlaceCustomerWidget>
         key: scaffoldKey,
         backgroundColor: Colors.white,
         drawer: Drawer(
+          width: MediaQuery.of(context).size.width * 0.88,
           elevation: 16.0,
           child: wrapWithModel(
             model: _model.sidebarMenuModel,
@@ -124,8 +125,9 @@ class _MarketPlaceCustomerWidgetState extends State<MarketPlaceCustomerWidget>
               size: 27.0,
             ),
             onPressed: () async {
-              scaffoldKey.currentState!.openDrawer();
-            },
+              if (scaffoldKey.currentState != null) {
+                scaffoldKey.currentState!.openDrawer();
+              }            },
           ),
           title: Padding(
             padding: EdgeInsets.all(5.0),
@@ -144,36 +146,41 @@ class _MarketPlaceCustomerWidgetState extends State<MarketPlaceCustomerWidget>
               child: Padding(
                 padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
                 child: Row(
-                  mainAxisSize: MainAxisSize.max,
+                  mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     InkWell(
-                      splashColor: Colors.transparent,
-                      focusColor: Colors.transparent,
-                      hoverColor: Colors.transparent,
-                      highlightColor: Colors.transparent,
-                      onTap: () async {
-                        context.pushNamed(MarketRideWidget.routeName);
-                      },
-                      child: Icon(
-                        Icons.add_circle_outline_outlined,
-                        color: FlutterFlowTheme.of(context).primaryText,
-                        size: 33.0,
-                      ),
-                    ),
+                        splashColor: Colors.transparent,
+                        focusColor: Colors.transparent,
+                        hoverColor: Colors.transparent,
+                        highlightColor: Colors.transparent,
+                        onTap: () async {
+                          context.pushNamed(PlansWidget.routeName);
+                        },
+                        child: CircleAvatar(
+                          radius: 20, // adjust size
+                          backgroundColor: Color(0xFF283B5E), // circle color
+                          child: Padding(
+                            padding: const EdgeInsets.only(right: 2),
+                            child: Icon(
+                              FontAwesomeIcons.crown,
+                              color: Colors.white, // icon color
+                              size: 18.0,
+                            ),
+                          ),
+                        )),
                     Padding(
-                      padding:
-                          EdgeInsetsDirectional.fromSTEB(10.0, 0.0, 0.0, 0.0),
+                      padding: EdgeInsetsDirectional.fromSTEB(10.0, 0.0, 0.0, 0.0),
                       child: Container(
                         width: 40.0,
                         height: 40.0,
                         decoration: BoxDecoration(
-                          image: DecorationImage(
-                            fit: BoxFit.cover,
-                            image: Image.network(
-                              '500x500?person',
-                            ).image,
-                          ),
+                          // image: DecorationImage(
+                          //   fit: BoxFit.cover,
+                          //   image: Image.asset(
+                          //     "assets/images/profileIcon.png",
+                          //   ).image,
+                          // ),
                           shape: BoxShape.circle,
                           border: Border.all(
                             color: Color(0xFF283B5E),
@@ -190,8 +197,7 @@ class _MarketPlaceCustomerWidgetState extends State<MarketPlaceCustomerWidget>
                           },
                           child: Builder(
                             builder: (context) {
-                              if (currentUserPhoto != null &&
-                                  currentUserPhoto != '') {
+                              if (currentUserPhoto != null && currentUserPhoto != '') {
                                 return Container(
                                   width: 200.0,
                                   height: 200.0,
@@ -1458,83 +1464,51 @@ class _MarketPlaceCustomerWidgetState extends State<MarketPlaceCustomerWidget>
                             ],
                           ),
                           Column(
-                            mainAxisSize: MainAxisSize.max,
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               Padding(
-                                padding: EdgeInsetsDirectional.fromSTEB(
-                                    10.0, 5.0, 5.0, 5.0),
+                                padding: EdgeInsetsDirectional.fromSTEB(10.0, 5.0, 5.0, 5.0),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.max,
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    FlutterFlowDropDown<String>(
-                                      controller: _model
-                                              .bookingsDropDownValueController ??=
-                                          FormFieldController<String>(null),
-                                      options: [
-                                        'All ',
-                                        'Pending',
-                                        'Accepted',
-                                        'Completed',
-                                        'Rejected'
-                                      ],
-                                      onChanged: (val) async {
-                                        safeSetState(() =>
-                                            _model.bookingsDropDownValue = val);
-                                        _model.showMyBookings =
-                                            _model.showMyBookings;
-                                        safeSetState(() {});
-                                      },
-                                      width: 383.5,
-                                      height: 40.0,
-                                      textStyle: FlutterFlowTheme.of(context)
-                                          .bodyMedium
-                                          .override(
-                                            font: GoogleFonts.inter(
-                                              fontWeight:
-                                                  FlutterFlowTheme.of(context)
-                                                      .bodyMedium
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  FlutterFlowTheme.of(context)
-                                                      .bodyMedium
-                                                      .fontStyle,
-                                            ),
-                                            letterSpacing: 0.0,
-                                            fontWeight:
-                                                FlutterFlowTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontWeight,
-                                            fontStyle:
-                                                FlutterFlowTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontStyle,
-                                          ),
-                                      hintText: 'Filter by Status...',
-                                      icon: Icon(
-                                        Icons.keyboard_arrow_down_rounded,
-                                        color: FlutterFlowTheme.of(context)
-                                            .secondaryText,
-                                        size: 24.0,
+                                    // ✅ RESPONSIVE DROPDOWN - Takes available space!
+                                    Expanded(
+                                      child: FlutterFlowDropDown<String>(
+                                        controller: _model.bookingsDropDownValueController ??= FormFieldController<String>(null),
+                                        options: ['All', 'Pending', 'Accepted', 'Completed', 'Rejected'],
+                                        onChanged: (val) async {
+                                          safeSetState(() => _model.bookingsDropDownValue = val);
+                                          _model.showMyBookings = _model.showMyBookings;
+                                          safeSetState(() {});
+                                        },
+                                        // ✅ REMOVED width: 383.5 → RESPONSIVE!
+                                        height: 40.0,
+                                        textStyle: FlutterFlowTheme.of(context).bodyMedium.override(
+                                          font: GoogleFonts.inter(),
+                                          fontSize: 14.0,
+                                        ),
+                                        hintText: 'Filter by Status...',
+                                        icon: Icon(Icons.keyboard_arrow_down_rounded,
+                                            color: FlutterFlowTheme.of(context).secondaryText,
+                                            size: 24.0
+                                        ),
+                                        fillColor: FlutterFlowTheme.of(context).secondaryBackground,
+                                        elevation: 2.0,
+                                        borderColor: FlutterFlowTheme.of(context).primary,
+                                        borderWidth: 0.0,
+                                        borderRadius: 8.0,
+                                        margin: EdgeInsetsDirectional.fromSTEB(12.0, 0.0, 12.0, 0.0),
+                                        hidesUnderline: true,
+                                        isOverButton: false,
+                                        isSearchable: false,
+                                        isMultiSelect: false,
                                       ),
-                                      fillColor: FlutterFlowTheme.of(context)
-                                          .secondaryBackground,
-                                      elevation: 2.0,
-                                      borderColor:
-                                          FlutterFlowTheme.of(context).primary,
-                                      borderWidth: 0.0,
-                                      borderRadius: 8.0,
-                                      margin: EdgeInsetsDirectional.fromSTEB(
-                                          12.0, 0.0, 12.0, 0.0),
-                                      hidesUnderline: true,
-                                      isOverButton: false,
-                                      isSearchable: false,
-                                      isMultiSelect: false,
                                     ),
                                   ],
                                 ),
                               ),
+
                               if (_model.showMyBookings == 'All')
                                 Expanded(
                                   child: Padding(

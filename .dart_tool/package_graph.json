@@ -45,6 +45,7 @@
         "flutter_animate",
         "flutter_cache_manager",
         "flutter_google_places",
+        "flutter_google_places_sdk",
         "flutter_localizations",
         "flutter_native_splash",
         "flutter_plugin_android_lifecycle",
@@ -65,6 +66,7 @@
         "google_maps_flutter_platform_interface",
         "google_maps_flutter_web",
         "google_mobile_ads",
+        "google_places_flutter",
         "google_sign_in",
         "google_sign_in_android",
         "google_sign_in_ios",
@@ -1378,6 +1380,29 @@
       ]
     },
     {
+      "name": "geocoding",
+      "version": "4.0.0",
+      "dependencies": [
+        "flutter",
+        "geocoding_android",
+        "geocoding_ios",
+        "geocoding_platform_interface"
+      ]
+    },
+    {
+      "name": "geolocator",
+      "version": "14.0.2",
+      "dependencies": [
+        "flutter",
+        "geolocator_android",
+        "geolocator_apple",
+        "geolocator_linux",
+        "geolocator_platform_interface",
+        "geolocator_web",
+        "geolocator_windows"
+      ]
+    },
+    {
       "name": "flutter_web_plugins",
       "version": "0.0.0",
       "dependencies": [
@@ -1799,6 +1824,89 @@
       ]
     },
     {
+      "name": "geocoding_ios",
+      "version": "3.1.0",
+      "dependencies": [
+        "flutter",
+        "geocoding_platform_interface"
+      ]
+    },
+    {
+      "name": "geocoding_android",
+      "version": "4.0.1",
+      "dependencies": [
+        "flutter",
+        "geocoding_platform_interface"
+      ]
+    },
+    {
+      "name": "geocoding_platform_interface",
+      "version": "3.2.0",
+      "dependencies": [
+        "flutter",
+        "meta",
+        "plugin_platform_interface"
+      ]
+    },
+    {
+      "name": "geolocator_linux",
+      "version": "0.2.3",
+      "dependencies": [
+        "dbus",
+        "flutter",
+        "geoclue",
+        "geolocator_platform_interface",
+        "gsettings",
+        "package_info_plus"
+      ]
+    },
+    {
+      "name": "geolocator_windows",
+      "version": "0.2.5",
+      "dependencies": [
+        "flutter",
+        "geolocator_platform_interface"
+      ]
+    },
+    {
+      "name": "geolocator_web",
+      "version": "4.1.3",
+      "dependencies": [
+        "flutter",
+        "flutter_web_plugins",
+        "geolocator_platform_interface",
+        "web"
+      ]
+    },
+    {
+      "name": "geolocator_apple",
+      "version": "2.3.13",
+      "dependencies": [
+        "flutter",
+        "geolocator_platform_interface"
+      ]
+    },
+    {
+      "name": "geolocator_android",
+      "version": "5.0.2",
+      "dependencies": [
+        "flutter",
+        "geolocator_platform_interface",
+        "meta",
+        "uuid"
+      ]
+    },
+    {
+      "name": "geolocator_platform_interface",
+      "version": "4.2.6",
+      "dependencies": [
+        "flutter",
+        "meta",
+        "plugin_platform_interface",
+        "vector_math"
+      ]
+    },
+    {
       "name": "sky_engine",
       "version": "0.0.0",
       "dependencies": []
@@ -1865,68 +1973,11 @@
       ]
     },
     {
-      "name": "vm_service",
-      "version": "15.0.2",
-      "dependencies": []
-    },
-    {
-      "name": "geocoding",
-      "version": "4.0.0",
-      "dependencies": [
-        "flutter",
-        "geocoding_android",
-        "geocoding_ios",
-        "geocoding_platform_interface"
-      ]
-    },
-    {
-      "name": "geocoding_android",
-      "version": "4.0.1",
-      "dependencies": [
-        "flutter",
-        "geocoding_platform_interface"
-      ]
-    },
-    {
-      "name": "geocoding_platform_interface",
-      "version": "3.2.0",
-      "dependencies": [
-        "flutter",
-        "meta",
-        "plugin_platform_interface"
-      ]
-    },
-    {
-      "name": "geocoding_ios",
-      "version": "3.1.0",
-      "dependencies": [
-        "flutter",
-        "geocoding_platform_interface"
-      ]
-    },
-    {
-      "name": "geolocator",
-      "version": "14.0.2",
-      "dependencies": [
-        "flutter",
-        "geolocator_android",
-        "geolocator_apple",
-        "geolocator_linux",
-        "geolocator_platform_interface",
-        "geolocator_web",
-        "geolocator_windows"
-      ]
-    },
-    {
-      "name": "geolocator_linux",
-      "version": "0.2.3",
+      "name": "gsettings",
+      "version": "0.2.8",
       "dependencies": [
         "dbus",
-        "flutter",
-        "geoclue",
-        "geolocator_platform_interface",
-        "gsettings",
-        "package_info_plus"
+        "xdg_directories"
       ]
     },
     {
@@ -1935,52 +1986,6 @@
       "dependencies": [
         "dbus",
         "meta"
-      ]
-    },
-    {
-      "name": "geolocator_windows",
-      "version": "0.2.5",
-      "dependencies": [
-        "flutter",
-        "geolocator_platform_interface"
-      ]
-    },
-    {
-      "name": "geolocator_web",
-      "version": "4.1.3",
-      "dependencies": [
-        "flutter",
-        "flutter_web_plugins",
-        "geolocator_platform_interface",
-        "web"
-      ]
-    },
-    {
-      "name": "geolocator_platform_interface",
-      "version": "4.2.6",
-      "dependencies": [
-        "flutter",
-        "meta",
-        "plugin_platform_interface",
-        "vector_math"
-      ]
-    },
-    {
-      "name": "geolocator_android",
-      "version": "5.0.2",
-      "dependencies": [
-        "flutter",
-        "geolocator_platform_interface",
-        "meta",
-        "uuid"
-      ]
-    },
-    {
-      "name": "gsettings",
-      "version": "0.2.8",
-      "dependencies": [
-        "dbus",
-        "xdg_directories"
       ]
     },
     {
@@ -1994,11 +1999,147 @@
       ]
     },
     {
-      "name": "geolocator_apple",
-      "version": "2.3.13",
+      "name": "vm_service",
+      "version": "15.0.2",
+      "dependencies": []
+    },
+    {
+      "name": "google_places_flutter",
+      "version": "2.1.0",
+      "dependencies": [
+        "dio",
+        "flutter",
+        "rxdart"
+      ]
+    },
+    {
+      "name": "dio",
+      "version": "5.9.0",
+      "dependencies": [
+        "async",
+        "collection",
+        "dio_web_adapter",
+        "http_parser",
+        "meta",
+        "mime",
+        "path"
+      ]
+    },
+    {
+      "name": "dio_web_adapter",
+      "version": "2.1.1",
+      "dependencies": [
+        "dio",
+        "http_parser",
+        "meta",
+        "web"
+      ]
+    },
+    {
+      "name": "flutter_google_places_sdk",
+      "version": "0.4.2+1",
       "dependencies": [
         "flutter",
-        "geolocator_platform_interface"
+        "flutter_google_places_sdk_android",
+        "flutter_google_places_sdk_ios",
+        "flutter_google_places_sdk_linux",
+        "flutter_google_places_sdk_macos",
+        "flutter_google_places_sdk_platform_interface",
+        "flutter_google_places_sdk_web",
+        "flutter_google_places_sdk_windows"
+      ]
+    },
+    {
+      "name": "flutter_google_places_sdk_windows",
+      "version": "0.2.1",
+      "dependencies": [
+        "flutter",
+        "flutter_google_places_sdk_http",
+        "flutter_google_places_sdk_platform_interface"
+      ]
+    },
+    {
+      "name": "flutter_google_places_sdk_web",
+      "version": "0.2.0",
+      "dependencies": [
+        "collection",
+        "flutter",
+        "flutter_google_places_sdk_platform_interface",
+        "flutter_web_plugins",
+        "google_maps",
+        "web"
+      ]
+    },
+    {
+      "name": "flutter_google_places_sdk_platform_interface",
+      "version": "0.3.2+1",
+      "dependencies": [
+        "flutter",
+        "freezed_annotation",
+        "json_annotation",
+        "plugin_platform_interface"
+      ]
+    },
+    {
+      "name": "flutter_google_places_sdk_macos",
+      "version": "0.2.1",
+      "dependencies": [
+        "flutter",
+        "flutter_google_places_sdk_http",
+        "flutter_google_places_sdk_platform_interface"
+      ]
+    },
+    {
+      "name": "flutter_google_places_sdk_linux",
+      "version": "0.2.1",
+      "dependencies": [
+        "flutter",
+        "flutter_google_places_sdk_http",
+        "flutter_google_places_sdk_platform_interface"
+      ]
+    },
+    {
+      "name": "flutter_google_places_sdk_ios",
+      "version": "0.2.0",
+      "dependencies": [
+        "flutter",
+        "flutter_google_places_sdk_platform_interface"
+      ]
+    },
+    {
+      "name": "flutter_google_places_sdk_android",
+      "version": "0.2.0",
+      "dependencies": [
+        "flutter",
+        "flutter_google_places_sdk_platform_interface"
+      ]
+    },
+    {
+      "name": "flutter_google_places_sdk_http",
+      "version": "0.2.1",
+      "dependencies": [
+        "flutter",
+        "flutter_google_places_sdk_platform_interface",
+        "freezed_annotation",
+        "http",
+        "json_annotation",
+        "latlong2"
+      ]
+    },
+    {
+      "name": "latlong2",
+      "version": "0.9.1",
+      "dependencies": [
+        "intl"
+      ]
+    },
+    {
+      "name": "freezed_annotation",
+      "version": "3.1.0",
+      "dependencies": [
+        "collection",
+        "json_annotation",
+        "meta"
       ]
     }
   ],

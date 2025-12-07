@@ -1,3 +1,8 @@
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:travia/pages/sidebar_menu/sidebar_menu_widget.dart';
+import 'package:travia/profile/drive_profile/drive_profile_widget.dart';
+import 'package:travia/wallet/plans/plans_widget.dart';
+
 import '/auth/firebase_auth/auth_util.dart';
 import '/backend/backend.dart';
 import '/backend/firebase_storage/storage.dart';
@@ -42,20 +47,41 @@ class _ChatWidgetState extends State<ChatWidget> {
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
+  /// Old Code here !!
+  // void initState() {
+  //   super.initState();
+  //   _model = createModel(context, () => ChatModel());
+  //
+  //   // On page load action.
+  //   SchedulerBinding.instance.addPostFrameCallback((_) async {
+  //     await widget!.reciveChats!.update({
+  //       ...mapToFirestore(
+  //         {
+  //           'lastMessagesSeenBy': FieldValue.arrayUnion([currentUserReference]),
+  //         },
+  //       ),
+  //     });
+  //     context.safePop();
+  //   });
+  //
+  //   _model.messageBoxTextController ??= TextEditingController();
+  //   _model.messageBoxFocusNode ??= FocusNode();
+  // }
+
+  /// New code here !!
+  @override
   void initState() {
     super.initState();
     _model = createModel(context, () => ChatModel());
 
-    // On page load action.
+    // ✅ REMOVE context.safePop() - PUT IN BACK BUTTON ONLY
     SchedulerBinding.instance.addPostFrameCallback((_) async {
       await widget!.reciveChats!.update({
-        ...mapToFirestore(
-          {
-            'lastMessagesSeenBy': FieldValue.arrayUnion([currentUserReference]),
-          },
-        ),
+        ...mapToFirestore({
+          'lastMessagesSeenBy': FieldValue.arrayUnion([currentUserReference]),
+        }),
       });
-      context.safePop();
+      // ✅ NO context.safePop() HERE!
     });
 
     _model.messageBoxTextController ??= TextEditingController();
@@ -101,118 +127,138 @@ class _ChatWidgetState extends State<ChatWidget> {
           child: Scaffold(
             key: scaffoldKey,
             backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
+            drawer: Drawer(
+              width: MediaQuery.of(context).size.width * 0.88,
+              elevation: 16.0,
+              child: wrapWithModel(
+                model: _model.sidebarMenuModel,
+                updateCallback: () => safeSetState(() {}),
+                child: SidebarMenuWidget(),
+              ),
+            ),
             appBar: AppBar(
-              backgroundColor: FlutterFlowTheme.of(context).secondaryBackground,
+              backgroundColor: Color(0xFFF4F4F4),
               automaticallyImplyLeading: false,
               leading: FlutterFlowIconButton(
-                borderRadius: 20.0,
+                borderRadius: 18.0,
                 buttonSize: 40.0,
-                icon: Icon(
-                  Icons.arrow_back_rounded,
-                  color: FlutterFlowTheme.of(context).primaryText,
-                  size: 30.0,
+                icon: FaIcon(
+                  FontAwesomeIcons.bars,
+                  color: Color(0xFF283B5E),
+                  size: 27.0,
                 ),
                 onPressed: () async {
-                  await widget!.reciveChats!.update({
-                    ...mapToFirestore(
-                      {
-                        'lastMessagesSeenBy':
-                            FieldValue.arrayUnion([currentUserReference]),
-                      },
-                    ),
-                  });
-                  context.safePop();
-                },
+                  if (scaffoldKey.currentState != null) {
+                    scaffoldKey.currentState!.openDrawer();
+                  }            },
               ),
-              title: StreamBuilder<UsersRecord>(
-                stream: UsersRecord.getDocument(functions.getOtherUserRef(
-                    chatChatsRecord.userIDs.toList(), currentUserReference!)),
-                builder: (context, snapshot) {
-                  // Customize what your widget looks like when it's loading.
-                  if (!snapshot.hasData) {
-                    return Center(
-                      child: SizedBox(
-                        width: 50.0,
-                        height: 50.0,
-                        child: SpinKitFadingCircle(
-                          color: Color(0xFF2B3C58),
-                          size: 50.0,
-                        ),
-                      ),
-                    );
-                  }
-
-                  final containerUsersRecord = snapshot.data!;
-
-                  return Container(
-                    decoration: BoxDecoration(),
+              title: Padding(
+                padding: EdgeInsets.all(5.0),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8.0),
+                  child: Image.asset(
+                    'assets/images/logoTraviaJi.png',
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+              actions: [
+                Align(
+                  alignment: AlignmentDirectional(0.0, 0.0),
+                  child: Padding(
+                    padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
                     child: Row(
-                      mainAxisSize: MainAxisSize.max,
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Builder(
-                          builder: (context) {
-                            if (containerUsersRecord.photoUrl != null &&
-                                containerUsersRecord.photoUrl != '') {
-                              return Container(
-                                width: 40.0,
-                                height: 40.0,
-                                clipBehavior: Clip.antiAlias,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
+                        InkWell(
+                            splashColor: Colors.transparent,
+                            focusColor: Colors.transparent,
+                            hoverColor: Colors.transparent,
+                            highlightColor: Colors.transparent,
+                            onTap: () async {
+                              context.pushNamed(PlansWidget.routeName);
+                            },
+                            child: CircleAvatar(
+                              radius: 20, // adjust size
+                              backgroundColor: Color(0xFF283B5E), // circle color
+                              child: Padding(
+                                padding: const EdgeInsets.only(right: 2),
+                                child: Icon(
+                                  FontAwesomeIcons.crown,
+                                  color: Colors.white, // icon color
+                                  size: 18.0,
                                 ),
-                                child: Image.network(
-                                  containerUsersRecord.photoUrl,
-                                  fit: BoxFit.cover,
-                                ),
-                              );
-                            } else {
-                              return Container(
-                                width: 40.0,
-                                height: 40.0,
-                                clipBehavior: Clip.antiAlias,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Image.asset(
-                                  'assets/images/userIconTr.png',
-                                  fit: BoxFit.cover,
-                                ),
-                              );
-                            }
-                          },
-                        ),
-                        Column(
-                          mainAxisSize: MainAxisSize.max,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              containerUsersRecord.displayName,
-                              style: FlutterFlowTheme.of(context)
-                                  .titleMedium
-                                  .override(
-                                    font: GoogleFonts.interTight(
-                                      fontWeight: FontWeight.w600,
-                                      fontStyle: FlutterFlowTheme.of(context)
-                                          .titleMedium
-                                          .fontStyle,
-                                    ),
-                                    letterSpacing: 0.0,
-                                    fontWeight: FontWeight.w600,
-                                    fontStyle: FlutterFlowTheme.of(context)
-                                        .titleMedium
-                                        .fontStyle,
-                                  ),
+                              ),
+                            )),
+                        Padding(
+                          padding: EdgeInsetsDirectional.fromSTEB(10.0, 0.0, 0.0, 0.0),
+                          child: Container(
+                            width: 40.0,
+                            height: 40.0,
+                            decoration: BoxDecoration(
+                              // image: DecorationImage(
+                              //   fit: BoxFit.cover,
+                              //   image: Image.asset(
+                              //     "assets/images/profileIcon.png",
+                              //   ).image,
+                              // ),
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Color(0xFF283B5E),
+                                width: 1.0,
+                              ),
                             ),
-                          ].divide(SizedBox(height: 2.0)),
+                            child: InkWell(
+                              splashColor: Colors.transparent,
+                              focusColor: Colors.transparent,
+                              hoverColor: Colors.transparent,
+                              highlightColor: Colors.transparent,
+                              onTap: () async {
+                                context.pushNamed(DriveProfileWidget.routeName);
+                              },
+                              child: Builder(
+                                builder: (context) {
+                                  if (currentUserPhoto != null && currentUserPhoto != '') {
+                                    return Container(
+                                      width: 200.0,
+                                      height: 200.0,
+                                      clipBehavior: Clip.antiAlias,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Image.network(
+                                        currentUserPhoto,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    );
+                                  } else {
+                                    return Container(
+                                      width: 200.0,
+                                      height: 200.0,
+                                      clipBehavior: Clip.antiAlias,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Image.asset(
+                                        'assets/images/userIconTravia.png',
+                                        fit: BoxFit.cover,
+                                      ),
+                                    );
+                                  }
+                                },
+                              ),
+                            ),
+                          ),
                         ),
-                      ].divide(SizedBox(width: 12.0)),
+                      ],
                     ),
-                  );
-                },
-              ),
-              actions: [],
+                  ),
+                ),
+              ],
               centerTitle: false,
-              elevation: 2.0,
+              elevation: 5.0,
             ),
             body: SafeArea(
               top: true,

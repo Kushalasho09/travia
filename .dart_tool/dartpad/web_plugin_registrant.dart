@@ -14,6 +14,7 @@ import 'package:firebase_core_web/firebase_core_web.dart';
 import 'package:firebase_messaging_web/firebase_messaging_web.dart';
 import 'package:firebase_performance_web/firebase_performance_web.dart';
 import 'package:firebase_storage_web/firebase_storage_web.dart';
+import 'package:flutter_google_places_sdk_web/flutter_google_places_sdk_web.dart';
 import 'package:flutter_native_splash/flutter_native_splash_web.dart';
 import 'package:geolocator_web/geolocator_web.dart';
 import 'package:google_maps_flutter_web/google_maps_flutter_web.dart';
@@ -37,6 +38,7 @@ void registerPlugins([final Registrar? pluginRegistrar]) {
   FirebaseMessagingWeb.registerWith(registrar);
   FirebasePerformanceWeb.registerWith(registrar);
   FirebaseStorageWeb.registerWith(registrar);
+  FlutterGooglePlacesSdkWebPlugin.registerWith(registrar);
   FlutterNativeSplashWeb.registerWith(registrar);
   GeolocatorPlugin.registerWith(registrar);
   GoogleMapsPlugin.registerWith(registrar);

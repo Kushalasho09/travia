@@ -29,6 +29,9 @@ dependencies:
     sdk: flutter
   geolocator:
   geocoding:
+  google_places_flutter:
+  flutter_google_places_sdk:
+
   auto_size_text: 3.0.0
   blurhash_dart: 1.2.1
   cached_network_image: 3.4.1

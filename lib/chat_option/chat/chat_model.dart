@@ -1,3 +1,5 @@
+import 'package:travia/pages/sidebar_menu/sidebar_menu_model.dart';
+
 import '/auth/firebase_auth/auth_util.dart';
 import '/backend/backend.dart';
 import '/backend/firebase_storage/storage.dart';
@@ -32,13 +34,20 @@ class ChatModel extends FlutterFlowModel<ChatWidget> {
   FocusNode? messageBoxFocusNode;
   TextEditingController? messageBoxTextController;
   String? Function(BuildContext, String?)? messageBoxTextControllerValidator;
+  late SidebarMenuModel sidebarMenuModel;
+
 
   @override
-  void initState(BuildContext context) {}
+  void initState(BuildContext context) {
+    sidebarMenuModel = createModel(context, () => SidebarMenuModel());
+
+  }
 
   @override
   void dispose() {
     messageBoxFocusNode?.dispose();
     messageBoxTextController?.dispose();
+    sidebarMenuModel.dispose();
+
   }
 }

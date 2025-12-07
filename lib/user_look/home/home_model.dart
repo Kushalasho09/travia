@@ -36,6 +36,11 @@ class HomeModel extends FlutterFlowModel<HomeWidget> {
 
   String myBookingStatus = 'All Bookings';
 
+  String? searchStartLocation;
+  String? searchEndLocation;
+  bool isSearchActive = false;
+
+
   ///  State fields for stateful widgets in this page.
 
   // State field(s) for TabBar widget.
@@ -47,11 +52,16 @@ class HomeModel extends FlutterFlowModel<HomeWidget> {
 
   // State field(s) for startLocation widget.
   FocusNode? startLocationFocusNode;
-  TextEditingController? startLocationTextController;
+  // TextEditingController? startLocationTextController;
+  // TextEditingController? startLocationTextController;
+  late TextEditingController startLocationTextController;
+  late TextEditingController endLocationTextController;
+
+
   String? Function(BuildContext, String?)? startLocationTextControllerValidator;
   // State field(s) for EndLocation widget.
   FocusNode? endLocationFocusNode;
-  TextEditingController? endLocationTextController;
+  // TextEditingController? endLocationTextController;
   String? Function(BuildContext, String?)? endLocationTextControllerValidator;
   // State field(s) for BookingDropDown widget.
   String? bookingDropDownValue;
@@ -74,10 +84,10 @@ class HomeModel extends FlutterFlowModel<HomeWidget> {
   void dispose() {
     tabBarController?.dispose();
     startLocationFocusNode?.dispose();
-    startLocationTextController?.dispose();
+    startLocationTextController.dispose();
 
     endLocationFocusNode?.dispose();
-    endLocationTextController?.dispose();
+    endLocationTextController.dispose();
 
     mainFooterModel.dispose();
     sidebarMenuModel.dispose();

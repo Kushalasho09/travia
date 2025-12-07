@@ -328,218 +328,116 @@ class _DriverReviewWidgetState extends State<DriverReviewWidget> {
                                     return Material(
                                       color: Colors.transparent,
                                       elevation: 1.0,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(12.0),
-                                      ),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
                                       child: Container(
                                         width: double.infinity,
+                                        // ✅ RESPONSIVE HEIGHT CONSTRAINTS
+                                        constraints: BoxConstraints(minHeight: 100.0, maxHeight: 140.0),
                                         decoration: BoxDecoration(
-                                          color: FlutterFlowTheme.of(context)
-                                              .secondaryBackground,
-                                          borderRadius:
-                                              BorderRadius.circular(12.0),
+                                          color: FlutterFlowTheme.of(context).secondaryBackground,
+                                          borderRadius: BorderRadius.circular(12.0),
                                           border: Border.all(
-                                            color: FlutterFlowTheme.of(context)
-                                                .alternate,
+                                            color: FlutterFlowTheme.of(context).alternate,
                                             width: 1.0,
                                           ),
                                         ),
                                         child: Padding(
-                                          padding: EdgeInsets.all(16.0),
+                                          padding: EdgeInsets.all(14.0),  // ✅ Responsive padding
                                           child: Column(
-                                            mainAxisSize: MainAxisSize.max,
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
+                                            mainAxisSize: MainAxisSize.min,  // ✅ KEY FIX
+                                            crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
+                                              // ✅ RESPONSIVE HEADER ROW
                                               Row(
                                                 mainAxisSize: MainAxisSize.max,
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment
-                                                        .spaceBetween,
+                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                crossAxisAlignment: CrossAxisAlignment.center,
                                                 children: [
-                                                  Row(
-                                                    mainAxisSize:
-                                                        MainAxisSize.max,
-                                                    children: [
-                                                      Builder(
-                                                        builder: (context) {
-                                                          if (driverReviewUsersRecord
-                                                                      .photoUrl !=
-                                                                  null &&
-                                                              driverReviewUsersRecord
-                                                                      .photoUrl !=
-                                                                  '') {
-                                                            return Container(
-                                                              width: 45.0,
-                                                              height: 45.0,
-                                                              clipBehavior: Clip
-                                                                  .antiAlias,
-                                                              decoration:
-                                                                  BoxDecoration(
-                                                                shape: BoxShape
-                                                                    .circle,
-                                                              ),
-                                                              child:
-                                                                  Image.network(
-                                                                driverReviewUsersRecord
-                                                                    .photoUrl,
-                                                                fit: BoxFit
-                                                                    .cover,
-                                                              ),
-                                                            );
-                                                          } else {
-                                                            return Container(
-                                                              width: 45.0,
-                                                              height: 45.0,
-                                                              clipBehavior: Clip
-                                                                  .antiAlias,
-                                                              decoration:
-                                                                  BoxDecoration(
-                                                                shape: BoxShape
-                                                                    .circle,
-                                                              ),
-                                                              child:
-                                                                  Image.asset(
-                                                                'assets/images/userIconTr.png',
-                                                                fit: BoxFit
-                                                                    .cover,
-                                                              ),
-                                                            );
-                                                          }
-                                                        },
-                                                      ),
-                                                      Column(
-                                                        mainAxisSize:
-                                                            MainAxisSize.max,
-                                                        crossAxisAlignment:
-                                                            CrossAxisAlignment
-                                                                .start,
-                                                        children: [
-                                                          Text(
-                                                            driverReviewUsersRecord
-                                                                .displayName,
-                                                            style: FlutterFlowTheme
-                                                                    .of(context)
-                                                                .bodyLarge
-                                                                .override(
-                                                                  font:
-                                                                      GoogleFonts
-                                                                          .inter(
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .w600,
-                                                                    fontStyle: FlutterFlowTheme.of(
-                                                                            context)
-                                                                        .bodyLarge
-                                                                        .fontStyle,
-                                                                  ),
-                                                                  letterSpacing:
-                                                                      0.0,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .w600,
-                                                                  fontStyle: FlutterFlowTheme.of(
-                                                                          context)
-                                                                      .bodyLarge
-                                                                      .fontStyle,
+                                                  // Left: Avatar + Info
+                                                  Expanded(
+                                                    child: Row(
+                                                      mainAxisSize: MainAxisSize.max,
+                                                      children: [
+                                                        Builder(
+                                                          builder: (context) {
+                                                            if (driverReviewUsersRecord.photoUrl != null &&
+                                                                driverReviewUsersRecord.photoUrl != '') {
+                                                              return Container(
+                                                                width: 40.0,  // ✅ Responsive avatar
+                                                                height: 40.0,
+                                                                clipBehavior: Clip.antiAlias,
+                                                                decoration: BoxDecoration(shape: BoxShape.circle),
+                                                                child: Image.network(
+                                                                  driverReviewUsersRecord.photoUrl,
+                                                                  fit: BoxFit.cover,
+                                                                  errorBuilder: (context, error, stackTrace) =>
+                                                                      Image.asset('assets/images/userIconTr.png', fit: BoxFit.cover),
                                                                 ),
-                                                          ),
-                                                          Text(
-                                                            dateTimeFormat(
-                                                                "relative",
-                                                                listViewReviewRecord
-                                                                    .dateCreated!),
-                                                            style: FlutterFlowTheme
-                                                                    .of(context)
-                                                                .labelMedium
-                                                                .override(
-                                                                  font:
-                                                                      GoogleFonts
-                                                                          .inter(
-                                                                    fontWeight: FlutterFlowTheme.of(
-                                                                            context)
-                                                                        .labelMedium
-                                                                        .fontWeight,
-                                                                    fontStyle: FlutterFlowTheme.of(
-                                                                            context)
-                                                                        .labelMedium
-                                                                        .fontStyle,
-                                                                  ),
-                                                                  color: FlutterFlowTheme.of(
-                                                                          context)
-                                                                      .secondaryText,
-                                                                  letterSpacing:
-                                                                      0.0,
-                                                                  fontWeight: FlutterFlowTheme.of(
-                                                                          context)
-                                                                      .labelMedium
-                                                                      .fontWeight,
-                                                                  fontStyle: FlutterFlowTheme.of(
-                                                                          context)
-                                                                      .labelMedium
-                                                                      .fontStyle,
+                                                              );
+                                                            } else {
+                                                              return Container(
+                                                                width: 40.0,
+                                                                height: 40.0,
+                                                                clipBehavior: Clip.antiAlias,
+                                                                decoration: BoxDecoration(shape: BoxShape.circle),
+                                                                child: Image.asset('assets/images/userIconTr.png', fit: BoxFit.cover),
+                                                              );
+                                                            }
+                                                          },
+                                                        ),
+                                                        SizedBox(width: 10.0),
+                                                        // ✅ RESPONSIVE TEXT COLUMN
+                                                        Expanded(
+                                                          child: Column(
+                                                            mainAxisSize: MainAxisSize.min,
+                                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                                            children: [
+                                                              Text(
+                                                                driverReviewUsersRecord.displayName ?? 'Driver',
+                                                                style: FlutterFlowTheme.of(context).bodyLarge.override(
+                                                                  fontWeight: FontWeight.w600,
+                                                                  fontSize: 14.0,  // ✅ Smaller responsive font
                                                                 ),
+                                                                overflow: TextOverflow.ellipsis,
+                                                                maxLines: 1,
+                                                              ),
+                                                              SizedBox(height: 2.0),
+                                                              Text(
+                                                                dateTimeFormat("relative", listViewReviewRecord.dateCreated!),
+                                                                style: FlutterFlowTheme.of(context).labelMedium.override(
+                                                                  color: FlutterFlowTheme.of(context).secondaryText,
+                                                                  fontSize: 12.0,
+                                                                ),
+                                                                overflow: TextOverflow.ellipsis,
+                                                                maxLines: 1,
+                                                              ),
+                                                            ],
                                                           ),
-                                                        ],
-                                                      ),
-                                                    ].divide(
-                                                        SizedBox(width: 12.0)),
-                                                  ),
-                                                  RatingBarIndicator(
-                                                    itemBuilder:
-                                                        (context, index) =>
-                                                            Icon(
-                                                      Icons.star_rounded,
-                                                      color: Color(0xFFF9CF58),
+                                                        ),
+                                                      ],
                                                     ),
+                                                  ),
+                                                  // Right: Stars
+                                                  SizedBox(width: 8.0),
+                                                  RatingBarIndicator(
+                                                    itemBuilder: (context, index) => Icon(Icons.star_rounded, color: Color(0xFFF9CF58)),
                                                     direction: Axis.horizontal,
-                                                    rating: listViewReviewRecord
-                                                        .rating,
-                                                    unratedColor:
-                                                        Color(0xFFE8E6E6),
+                                                    rating: listViewReviewRecord.rating,
+                                                    unratedColor: Color(0xFFE8E6E6),
                                                     itemCount: 5,
-                                                    itemSize: 24.0,
+                                                    itemSize: 20.0,  // ✅ Smaller responsive stars
                                                   ),
                                                 ],
                                               ),
+
+                                              // ✅ REVIEW TEXT - RESPONSIVE
                                               Padding(
-                                                padding: EdgeInsetsDirectional
-                                                    .fromSTEB(
-                                                        0.0, 12.0, 0.0, 0.0),
+                                                padding: EdgeInsetsDirectional.fromSTEB(0.0, 12.0, 0.0, 0.0),
                                                 child: Text(
-                                                  valueOrDefault<String>(
-                                                    listViewReviewRecord.review,
-                                                    'No comment!',
-                                                  ),
-                                                  style: FlutterFlowTheme.of(
-                                                          context)
-                                                      .bodyMedium
-                                                      .override(
-                                                        font: GoogleFonts.inter(
-                                                          fontWeight:
-                                                              FlutterFlowTheme.of(
-                                                                      context)
-                                                                  .bodyMedium
-                                                                  .fontWeight,
-                                                          fontStyle:
-                                                              FlutterFlowTheme.of(
-                                                                      context)
-                                                                  .bodyMedium
-                                                                  .fontStyle,
-                                                        ),
-                                                        letterSpacing: 0.0,
-                                                        fontWeight:
-                                                            FlutterFlowTheme.of(
-                                                                    context)
-                                                                .bodyMedium
-                                                                .fontWeight,
-                                                        fontStyle:
-                                                            FlutterFlowTheme.of(
-                                                                    context)
-                                                                .bodyMedium
-                                                                .fontStyle,
-                                                      ),
+                                                  valueOrDefault<String>(listViewReviewRecord.review, 'No comment!'),
+                                                  style: FlutterFlowTheme.of(context).bodyMedium.override(fontSize: 14.0),
+                                                  overflow: TextOverflow.ellipsis,
+                                                  maxLines: 3,  // ✅ Limited lines
                                                 ),
                                               ),
                                             ],
@@ -547,6 +445,7 @@ class _DriverReviewWidgetState extends State<DriverReviewWidget> {
                                         ),
                                       ),
                                     );
+
                                   },
                                 ),
                               );

@@ -14,12 +14,14 @@ class RideLocation1Model extends FlutterFlowModel<RideLocation1Widget> {
 
   // State field(s) for RideStartLocation widget.
   FocusNode? rideStartLocationFocusNode;
-  TextEditingController? rideStartLocationTextController;
+  // TextEditingController? rideStartLocationTextController;
+  late TextEditingController rideStartLocationTextController;
+  late TextEditingController rideEndLocationTextController;
   String? Function(BuildContext, String?)?
       rideStartLocationTextControllerValidator;
   // State field(s) for RideEndLocation widget.
   FocusNode? rideEndLocationFocusNode;
-  TextEditingController? rideEndLocationTextController;
+  // TextEditingController? rideEndLocationTextController;
   String? Function(BuildContext, String?)?
       rideEndLocationTextControllerValidator;
 
@@ -29,10 +31,10 @@ class RideLocation1Model extends FlutterFlowModel<RideLocation1Widget> {
   @override
   void dispose() {
     rideStartLocationFocusNode?.dispose();
-    rideStartLocationTextController?.dispose();
+    rideStartLocationTextController.dispose();
 
     rideEndLocationFocusNode?.dispose();
-    rideEndLocationTextController?.dispose();
+    rideEndLocationTextController.dispose();
   }
 
   /// Action blocks.

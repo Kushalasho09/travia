@@ -1,3 +1,5 @@
+import 'package:google_places_flutter/google_places_flutter.dart';
+
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
@@ -30,13 +32,21 @@ class _RideLocation1WidgetState extends State<RideLocation1Widget> {
     super.initState();
     _model = createModel(context, () => RideLocation1Model());
 
-    _model.rideStartLocationTextController ??=
-        TextEditingController(text: FFAppState().RideStartLocaction);
+    // _model.rideStartLocationTextController ??=
+    //     TextEditingController(text: FFAppState().RideStartLocaction);
+    // _model.rideStartLocationFocusNode ??= FocusNode();
+    //
+    // _model.rideEndLocationTextController ??=
+    //     TextEditingController(text: FFAppState().RideEndLocaction);
+    // _model.rideEndLocationFocusNode ??= FocusNode();
+
+    _model.rideStartLocationTextController = TextEditingController();
+    _model.rideEndLocationTextController = TextEditingController();
     _model.rideStartLocationFocusNode ??= FocusNode();
 
-    _model.rideEndLocationTextController ??=
-        TextEditingController(text: FFAppState().RideEndLocaction);
+    // _model.endLocationTextController ??= TextEditingController();
     _model.rideEndLocationFocusNode ??= FocusNode();
+
   }
 
   @override
@@ -91,221 +101,245 @@ class _RideLocation1WidgetState extends State<RideLocation1Widget> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Padding(
-                                padding: EdgeInsetsDirectional.fromSTEB(
-                                    0.0, 5.0, 0.0, 0.0),
+                                padding: EdgeInsetsDirectional.fromSTEB(0.0, 5.0, 0.0, 0.0),
                                 child: Container(
-                                  width: 310.0,
-                                  child: TextFormField(
-                                    controller:
-                                        _model.rideStartLocationTextController,
-                                    focusNode:
-                                        _model.rideStartLocationFocusNode,
-                                    autofocus: false,
-                                    obscureText: false,
-                                    decoration: InputDecoration(
+                                  // ✅ RESPONSIVE WIDTH
+                                  width: MediaQuery.sizeOf(context).width * 0.85,  // 85% screen width
+                                  constraints: BoxConstraints(maxWidth: 350.0, minWidth: 280.0),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(12.0),
+                                    border: Border.all(color: Color(0xFF4DABF7), width: 1.0),
+                                  ),
+                                  child: GooglePlaceAutoCompleteTextField(
+                                    focusNode: _model.rideStartLocationFocusNode,
+                                    textEditingController: _model.rideStartLocationTextController,
+                                    googleAPIKey: "AIzaSyDZkxRpoy0BOIAPwMaMIvAd5xpCe-6ZYvs",
+                                    inputDecoration: InputDecoration(
                                       labelText: 'Ride Start Location',
                                       hintText: 'Ride Start Location',
-                                      hintStyle: FlutterFlowTheme.of(context)
-                                          .bodyMedium
-                                          .override(
-                                            font: GoogleFonts.inter(
-                                              fontWeight:
-                                                  FlutterFlowTheme.of(context)
-                                                      .bodyMedium
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  FlutterFlowTheme.of(context)
-                                                      .bodyMedium
-                                                      .fontStyle,
-                                            ),
-                                            color: Color(0xFF999999),
-                                            letterSpacing: 0.0,
-                                            fontWeight:
-                                                FlutterFlowTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontWeight,
-                                            fontStyle:
-                                                FlutterFlowTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontStyle,
-                                          ),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color: Color(0xFF4DABF7),
-                                          width: 1.0,
-                                        ),
-                                        borderRadius:
-                                            BorderRadius.circular(12.0),
+                                      hintStyle: FlutterFlowTheme.of(context).bodyMedium.override(
+                                        font: GoogleFonts.inter(),
+                                        color: Color(0xFF999999),
                                       ),
-                                      focusedBorder: OutlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color: Color(0xFF4DABF7),
-                                          width: 1.0,
-                                        ),
-                                        borderRadius:
-                                            BorderRadius.circular(12.0),
-                                      ),
-                                      errorBorder: OutlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color: Color(0x00000000),
-                                          width: 1.0,
-                                        ),
-                                        borderRadius:
-                                            BorderRadius.circular(12.0),
-                                      ),
-                                      focusedErrorBorder: OutlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color: Color(0x00000000),
-                                          width: 1.0,
-                                        ),
-                                        borderRadius:
-                                            BorderRadius.circular(12.0),
-                                      ),
-                                      contentPadding:
-                                          EdgeInsetsDirectional.fromSTEB(
-                                              16.0, 0.0, 16.0, 0.0),
+                                      // ✅ NO INNER BORDER
+                                      border: InputBorder.none,
+                                      enabledBorder: InputBorder.none,
+                                      focusedBorder: InputBorder.none,
+                                      errorBorder: InputBorder.none,
+                                      focusedErrorBorder: InputBorder.none,
+                                      contentPadding: EdgeInsetsDirectional.fromSTEB(16.0, 12.0, 16.0, 12.0),
                                     ),
-                                    style: FlutterFlowTheme.of(context)
-                                        .bodyMedium
-                                        .override(
-                                          font: GoogleFonts.inter(
-                                            fontWeight:
-                                                FlutterFlowTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontWeight,
-                                            fontStyle:
-                                                FlutterFlowTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontStyle,
-                                          ),
-                                          letterSpacing: 0.0,
-                                          fontWeight:
-                                              FlutterFlowTheme.of(context)
-                                                  .bodyMedium
-                                                  .fontWeight,
-                                          fontStyle:
-                                              FlutterFlowTheme.of(context)
-                                                  .bodyMedium
-                                                  .fontStyle,
+                                    textStyle: FlutterFlowTheme.of(context).bodyMedium.override(fontSize: 14.0),
+                                    debounceTime: 600,
+                                    countries: ["in"],
+                                    isLatLngRequired: false,
+                                    itemClick: (prediction) {
+                                      _model.rideStartLocationTextController.text = prediction.description ?? "";
+                                      _model.rideStartLocationTextController.selection = TextSelection.fromPosition(
+                                        TextPosition(offset: prediction.description?.length ?? 0),
+                                      );
+                                    },
+                                    itemBuilder: (context, index, prediction) {
+                                      return Container(
+                                        padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.location_on_outlined, size: 18.0, color: Color(0xFF4DABF7),),
+                                            SizedBox(width: 10.0),
+                                            Expanded(
+                                              child: Text(
+                                                prediction.description ?? "",
+                                                style: FlutterFlowTheme.of(context).bodyMedium.override(fontSize: 14.0),
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                    maxLines: null,
-                                    validator: _model
-                                        .rideStartLocationTextControllerValidator
-                                        .asValidator(context),
+                                      );
+                                    },
+                                    seperatedBuilder: Divider(height: 1.0, thickness: 0.5),
+                                    isCrossBtnShown: true,
                                   ),
                                 ),
                               ),
                             ],
                           ),
+                          // Row(
+                          //   mainAxisSize: MainAxisSize.max,
+                          //   mainAxisAlignment: MainAxisAlignment.center,
+                          //   children: [
+                          //     Padding(
+                          //       padding: EdgeInsetsDirectional.fromSTEB(
+                          //           0.0, 5.0, 0.0, 0.0),
+                          //       child: Container(
+                          //         width: 310.0,
+                          //         child: TextFormField(
+                          //           controller:
+                          //               _model.rideEndLocationTextController,
+                          //           focusNode: _model.rideEndLocationFocusNode,
+                          //           autofocus: false,
+                          //           obscureText: false,
+                          //           decoration: InputDecoration(
+                          //             labelText: 'Ride End Location',
+                          //             hintText: 'Ride End Location',
+                          //             hintStyle: FlutterFlowTheme.of(context)
+                          //                 .bodyMedium
+                          //                 .override(
+                          //                   font: GoogleFonts.inter(
+                          //                     fontWeight:
+                          //                         FlutterFlowTheme.of(context)
+                          //                             .bodyMedium
+                          //                             .fontWeight,
+                          //                     fontStyle:
+                          //                         FlutterFlowTheme.of(context)
+                          //                             .bodyMedium
+                          //                             .fontStyle,
+                          //                   ),
+                          //                   color: Color(0xFF999999),
+                          //                   letterSpacing: 0.0,
+                          //                   fontWeight:
+                          //                       FlutterFlowTheme.of(context)
+                          //                           .bodyMedium
+                          //                           .fontWeight,
+                          //                   fontStyle:
+                          //                       FlutterFlowTheme.of(context)
+                          //                           .bodyMedium
+                          //                           .fontStyle,
+                          //                 ),
+                          //             enabledBorder: OutlineInputBorder(
+                          //               borderSide: BorderSide(
+                          //                 color: Color(0xFF4DABF7),
+                          //                 width: 1.0,
+                          //               ),
+                          //               borderRadius:
+                          //                   BorderRadius.circular(12.0),
+                          //             ),
+                          //             focusedBorder: OutlineInputBorder(
+                          //               borderSide: BorderSide(
+                          //                 color: Color(0xFF4DABF7),
+                          //                 width: 1.0,
+                          //               ),
+                          //               borderRadius:
+                          //                   BorderRadius.circular(12.0),
+                          //             ),
+                          //             errorBorder: OutlineInputBorder(
+                          //               borderSide: BorderSide(
+                          //                 color: Color(0x00000000),
+                          //                 width: 1.0,
+                          //               ),
+                          //               borderRadius:
+                          //                   BorderRadius.circular(12.0),
+                          //             ),
+                          //             focusedErrorBorder: OutlineInputBorder(
+                          //               borderSide: BorderSide(
+                          //                 color: Color(0x00000000),
+                          //                 width: 1.0,
+                          //               ),
+                          //               borderRadius:
+                          //                   BorderRadius.circular(12.0),
+                          //             ),
+                          //             contentPadding:
+                          //                 EdgeInsetsDirectional.fromSTEB(
+                          //                     16.0, 0.0, 16.0, 0.0),
+                          //           ),
+                          //           style: FlutterFlowTheme.of(context)
+                          //               .bodyMedium
+                          //               .override(
+                          //                 font: GoogleFonts.inter(
+                          //                   fontWeight:
+                          //                       FlutterFlowTheme.of(context)
+                          //                           .bodyMedium
+                          //                           .fontWeight,
+                          //                   fontStyle:
+                          //                       FlutterFlowTheme.of(context)
+                          //                           .bodyMedium
+                          //                           .fontStyle,
+                          //                 ),
+                          //                 letterSpacing: 0.0,
+                          //                 fontWeight:
+                          //                     FlutterFlowTheme.of(context)
+                          //                         .bodyMedium
+                          //                         .fontWeight,
+                          //                 fontStyle:
+                          //                     FlutterFlowTheme.of(context)
+                          //                         .bodyMedium
+                          //                         .fontStyle,
+                          //               ),
+                          //           validator: _model
+                          //               .rideEndLocationTextControllerValidator
+                          //               .asValidator(context),
+                          //         ),
+                          //       ),
+                          //     ),
+                          //   ],
+                          // ),
                           Row(
                             mainAxisSize: MainAxisSize.max,
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Padding(
-                                padding: EdgeInsetsDirectional.fromSTEB(
-                                    0.0, 5.0, 0.0, 0.0),
+                                padding: EdgeInsetsDirectional.fromSTEB(0.0, 5.0, 0.0, 0.0),
                                 child: Container(
-                                  width: 310.0,
-                                  child: TextFormField(
-                                    controller:
-                                        _model.rideEndLocationTextController,
+                                  // ✅ RESPONSIVE WIDTH
+                                  width: MediaQuery.sizeOf(context).width * 0.85,  // 85% screen width
+                                  constraints: BoxConstraints(maxWidth: 350.0, minWidth: 280.0),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(12.0),
+                                    border: Border.all(color: Color(0xFF4DABF7), width: 1.0),
+                                  ),
+                                  child: GooglePlaceAutoCompleteTextField(
                                     focusNode: _model.rideEndLocationFocusNode,
-                                    autofocus: false,
-                                    obscureText: false,
-                                    decoration: InputDecoration(
-                                      labelText: 'Ride End Location',
-                                      hintText: 'Ride End Location',
-                                      hintStyle: FlutterFlowTheme.of(context)
-                                          .bodyMedium
-                                          .override(
-                                            font: GoogleFonts.inter(
-                                              fontWeight:
-                                                  FlutterFlowTheme.of(context)
-                                                      .bodyMedium
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  FlutterFlowTheme.of(context)
-                                                      .bodyMedium
-                                                      .fontStyle,
-                                            ),
-                                            color: Color(0xFF999999),
-                                            letterSpacing: 0.0,
-                                            fontWeight:
-                                                FlutterFlowTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontWeight,
-                                            fontStyle:
-                                                FlutterFlowTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontStyle,
-                                          ),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color: Color(0xFF4DABF7),
-                                          width: 1.0,
-                                        ),
-                                        borderRadius:
-                                            BorderRadius.circular(12.0),
+                                    textEditingController: _model.rideEndLocationTextController,
+                                    googleAPIKey: "AIzaSyDZkxRpoy0BOIAPwMaMIvAd5xpCe-6ZYvs",
+                                    inputDecoration: InputDecoration(
+                                      labelText: 'Ride Start Location',
+                                      hintText: 'Ride Start Location',
+                                      hintStyle: FlutterFlowTheme.of(context).bodyMedium.override(
+                                        font: GoogleFonts.inter(),
+                                        color: Color(0xFF999999),
                                       ),
-                                      focusedBorder: OutlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color: Color(0xFF4DABF7),
-                                          width: 1.0,
-                                        ),
-                                        borderRadius:
-                                            BorderRadius.circular(12.0),
-                                      ),
-                                      errorBorder: OutlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color: Color(0x00000000),
-                                          width: 1.0,
-                                        ),
-                                        borderRadius:
-                                            BorderRadius.circular(12.0),
-                                      ),
-                                      focusedErrorBorder: OutlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color: Color(0x00000000),
-                                          width: 1.0,
-                                        ),
-                                        borderRadius:
-                                            BorderRadius.circular(12.0),
-                                      ),
-                                      contentPadding:
-                                          EdgeInsetsDirectional.fromSTEB(
-                                              16.0, 0.0, 16.0, 0.0),
+                                      // ✅ NO INNER BORDER
+                                      border: InputBorder.none,
+                                      enabledBorder: InputBorder.none,
+                                      focusedBorder: InputBorder.none,
+                                      errorBorder: InputBorder.none,
+                                      focusedErrorBorder: InputBorder.none,
+                                      contentPadding: EdgeInsetsDirectional.fromSTEB(16.0, 12.0, 16.0, 12.0),
                                     ),
-                                    style: FlutterFlowTheme.of(context)
-                                        .bodyMedium
-                                        .override(
-                                          font: GoogleFonts.inter(
-                                            fontWeight:
-                                                FlutterFlowTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontWeight,
-                                            fontStyle:
-                                                FlutterFlowTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontStyle,
-                                          ),
-                                          letterSpacing: 0.0,
-                                          fontWeight:
-                                              FlutterFlowTheme.of(context)
-                                                  .bodyMedium
-                                                  .fontWeight,
-                                          fontStyle:
-                                              FlutterFlowTheme.of(context)
-                                                  .bodyMedium
-                                                  .fontStyle,
+                                    textStyle: FlutterFlowTheme.of(context).bodyMedium.override(fontSize: 14.0),
+                                    debounceTime: 600,
+                                    countries: ["in"],
+                                    isLatLngRequired: false,
+                                    itemClick: (prediction) {
+                                      _model.rideEndLocationTextController.text = prediction.description ?? "";
+                                      _model.rideEndLocationTextController.selection = TextSelection.fromPosition(
+                                        TextPosition(offset: prediction.description?.length ?? 0),
+                                      );
+                                    },
+                                    itemBuilder: (context, index, prediction) {
+                                      return Container(
+                                        padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.location_on_outlined, size: 18.0, color: Color(0xFF4DABF7),),
+                                            SizedBox(width: 10.0),
+                                            Expanded(
+                                              child: Text(
+                                                prediction.description ?? "",
+                                                style: FlutterFlowTheme.of(context).bodyMedium.override(fontSize: 14.0),
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                    validator: _model
-                                        .rideEndLocationTextControllerValidator
-                                        .asValidator(context),
+                                      );
+                                    },
+                                    seperatedBuilder: Divider(height: 1.0, thickness: 0.5),
+                                    isCrossBtnShown: true,
                                   ),
                                 ),
                               ),
                             ],
                           ),
+
                         ].divide(SizedBox(height: 45.0)),
                       ),
                     ),
