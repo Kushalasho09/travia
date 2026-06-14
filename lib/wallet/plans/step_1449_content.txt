@@ -1,0 +1,64 @@
+Created At: 2026-06-07T11:44:48Z
+Completed At: 2026-06-07T11:44:48Z
+File Path: `file:///Volumes/SSD/kushal_flutter/travia-dev/lib/chat_option/chat/chat_widget.dart`
+Total Lines: 1889
+Total Bytes: 85096
+Showing lines 1 to 800
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1: import 'dart:convert';
+2: 
+3: import 'package:cloud_functions/cloud_functions.dart';
+4: import 'package:firebase_auth/firebase_auth.dart';
+5: import 'package:firebase_messaging/firebase_messaging.dart';
+6: import 'package:flutter/services.dart';
+7: import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+8: import 'package:http/http.dart' as http;
+9: import 'package:travia/pages/sidebar_menu/sidebar_menu_widget.dart';
+10: import 'package:travia/profile/drive_profile/drive_profile_widget.dart';
+11: import 'package:travia/wallet/plans/plans_widget.dart';
+12: 
+13: import '/auth/firebase_auth/auth_util.dart';
+14: import '/backend/backend.dart';
+15: import '/backend/firebase_storage/storage.dart';
+16: import '/flutter_flow/flutter_flow_expanded_image_view.dart';
+17: import '/flutter_flow/flutter_flow_icon_button.dart';
+18: import '/flutter_flow/flutter_flow_theme.dart';
+19: import '/flutter_flow/flutter_flow_util.dart';
+20: import '/flutter_flow/flutter_flow_widgets.dart';
+21: import '/flutter_flow/upload_data.dart';
+22: import 'dart:ui';
+23: import '/flutter_flow/custom_functions.dart' as functions;
+24: import 'package:cached_network_image/cached_network_image.dart';
+25: import 'package:cloud_firestore/cloud_firestore.dart';
+26: import 'package:easy_debounce/easy_debounce.dart';
+27: import 'package:flutter/material.dart';
+28: import 'package:flutter/scheduler.dart';
+29: import 'package:flutter_spinkit/flutter_spinkit.dart';
+30: import 'package:google_fonts/google_fonts.dart';
+31: import 'package:page_transition/page_transition.dart';
+32: import 'pa
+<truncated 35846 bytes>
+8:                                             child: ConstrainedBox(
+779:                                               constraints: BoxConstraints(
+780:                                                 maxWidth: MediaQuery.of(context).size.width * 0.75,
+781:                                               ),
+782:                                               child: Container(
+783:                                                 decoration: BoxDecoration(
+784:                                                   color: Color(0xFFF2F4EF),
+785:                                                   borderRadius: BorderRadius.only(
+786:                                                     topLeft: Radius.circular(16.0),
+787:                                                     topRight: Radius.circular(16.0),
+788:                                                     bottomLeft: Radius.circular(16.0),
+789:                                                     bottomRight: Radius.circular(4.0),
+790:                                                   ),
+791:                                                 ),
+792:                                                 child: Padding(
+793:                                                   padding: EdgeInsets.all(12.0),
+794:                                                   child: Column(
+795:                                                     crossAxisAlignment: CrossAxisAlignment.end,
+796:                                                     children: [
+797:                                                       if (listViewChatsMessagesRecord.image != null &&
+798:                                                           listViewChatsMessagesRecord.image != '')
+799:                                                         InkWell(
+800:                                                           onTap: () async {
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.
