@@ -258,9 +258,9 @@ class _BookingsDriverWidgetState extends State<BookingsDriverWidget>
                           alignment: Alignment(0.0, 0),
                           child: TabBar(
                             labelColor:
-                                FlutterFlowTheme.of(context).primaryText,
+                                FlutterFlowTheme.of(context).tertiary,
                             unselectedLabelColor:
-                                FlutterFlowTheme.of(context).secondaryText,
+                                const Color(0xFF64748B),
                             labelStyle: FlutterFlowTheme.of(context)
                                 .titleMedium
                                 .override(
@@ -302,7 +302,7 @@ class _BookingsDriverWidgetState extends State<BookingsDriverWidget>
                                       .fontStyle,
                                 ),
                             indicatorColor:
-                                FlutterFlowTheme.of(context).primary,
+                                FlutterFlowTheme.of(context).tertiary,
                             tabs: [
                               Tab(
                                 text: 'Pending',

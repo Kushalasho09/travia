@@ -1,15 +1,12 @@
 import '/auth/firebase_auth/auth_util.dart';
-import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
-import '/flutter_flow/flutter_flow_widgets.dart';
-import 'dart:ui';
 import '/index.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
-import 'package:provider/provider.dart';
 import 'phone_number_login_model.dart';
 export 'phone_number_login_model.dart';
 
@@ -25,6 +22,7 @@ class PhoneNumberLoginWidget extends StatefulWidget {
 
 class _PhoneNumberLoginWidgetState extends State<PhoneNumberLoginWidget> {
   late PhoneNumberLoginModel _model;
+  bool _isLoading = false;
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -56,6 +54,442 @@ class _PhoneNumberLoginWidgetState extends State<PhoneNumberLoginWidget> {
       },
       child: Scaffold(
         key: scaffoldKey,
+        backgroundColor: Colors.white,
+        body: SafeArea(
+          top: true,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Top Header / Travia Logo
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0, bottom: 20.0),
+                  child: Image.asset(
+                    'assets/images/logoTraviaJi.png',
+                    height: 52.0,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Text(
+                        'Travia',
+                        style: GoogleFonts.outfit(
+                          fontSize: 32.0,
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFF2C3550),
+                        ),
+                      );
+                    },
+                  ),
+                ).animate().fade(duration: 400.ms).slideY(begin: -0.1, end: 0),
+                const SizedBox(height: 10.0),
+
+                // Top Hero Section (Banner & Illustration)
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Left Text & Description
+                        Expanded(
+                          flex: 12,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              RichText(
+                                text: TextSpan(
+                                  children: [
+                                    TextSpan(
+                                      text: 'Travel ',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 22.0,
+                                        fontWeight: FontWeight.bold,
+                                        color: const Color(0xFF111827),
+                                      ),
+                                    ),
+                                    TextSpan(
+                                      text: 'Smarter.',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 22.0,
+                                        fontWeight: FontWeight.bold,
+                                        color: const Color(0xFFEE7B4D),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              RichText(
+                                text: TextSpan(
+                                  children: [
+                                    TextSpan(
+                                      text: 'Connect ',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 22.0,
+                                        fontWeight: FontWeight.bold,
+                                        color: const Color(0xFF111827),
+                                      ),
+                                    ),
+                                    TextSpan(
+                                      text: 'Better',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 22.0,
+                                        fontWeight: FontWeight.bold,
+                                        color: const Color(0xFFEE7B4D),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 12.0),
+                              Text(
+                                'Carry Items, Send Packages\nCarpool or Bikepool-or find\nwhat you need with trusted\ntravellers',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12.0,
+                                  fontWeight: FontWeight.w400,
+                                  color: const Color(0xFF4B5563),
+                                  height: 1.4,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ).animate().fade(delay: 100.ms, duration: 500.ms).slideX(begin: -0.05, end: 0),
+                        const SizedBox(width: 8.0),
+                        // Right Illustration with gentle floating loop animation
+                        Expanded(
+                          flex: 11,
+                          child: Container(
+                            alignment: Alignment.topRight,
+                            child: Image.asset(
+                              'assets/images/login_phone_illustration.png',
+                              fit: BoxFit.contain,
+                              height: 160.0,
+                            ).animate(onPlay: (controller) => controller.repeat(reverse: true))
+                             .moveY(begin: -6.0, end: 6.0, duration: 2400.ms, curve: Curves.easeInOut),
+                          ),
+                        ),
+                      ],
+                    ),
+                    // Floating Badge with bounce-in animation
+                    Positioned(
+                      right: 10.0,
+                      bottom: -16.0,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14.0,
+                          vertical: 7.0,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(30.0),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x14000000),
+                              blurRadius: 12.0,
+                              offset: Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(2.0),
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFFFF0E9),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.check_circle_rounded,
+                                color: Color(0xFFEE7B4D),
+                                size: 16.0,
+                              ),
+                            ),
+                            const SizedBox(width: 6.0),
+                            Text(
+                              'Safe • Verified • Reliable',
+                              style: GoogleFonts.inter(
+                                fontSize: 11.0,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF1F2937),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ).animate().fade(delay: 250.ms, duration: 500.ms).scale(begin: const Offset(0.8, 0.8), end: const Offset(1.0, 1.0), curve: Curves.easeOutBack),
+                  ],
+                ),
+
+                const SizedBox(height: 45.0),
+
+                // Card Container for Phone Login Form
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(22.0),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF9FAFB),
+                    borderRadius: BorderRadius.circular(24.0),
+                    border: Border.all(
+                      color: const Color(0xFFE5E7EB),
+                      width: 1.0,
+                    ),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x0A000000),
+                        blurRadius: 16.0,
+                        offset: Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Login or Sign Up',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.inter(
+                          fontSize: 20.0,
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFF111827),
+                        ),
+                      ),
+                      const SizedBox(height: 8.0),
+                      Text(
+                        'Enter your phone number to receive a 6-digit verification code',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.inter(
+                          fontSize: 13.0,
+                          fontWeight: FontWeight.w400,
+                          color: const Color(0xFF6B7280),
+                          height: 1.4,
+                        ),
+                      ),
+                      const SizedBox(height: 24.0),
+
+                      // Phone Input Field
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Phone Number',
+                          style: GoogleFonts.inter(
+                            fontSize: 13.0,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF374151),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 6.0),
+                      TextFormField(
+                        controller: _model.phoneNumberTextController,
+                        focusNode: _model.phoneNumberFocusNode,
+                        onFieldSubmitted: (_) async {
+                          _model.phoneNumber = int.tryParse(
+                              _model.phoneNumberTextController.text);
+                          safeSetState(() {});
+                        },
+                        autofocus: true,
+                        obscureText: false,
+                        keyboardType: TextInputType.phone,
+                        cursorColor: const Color(0xFFEE7B4D),
+                        inputFormatters: [_model.phoneNumberMask],
+                        style: GoogleFonts.inter(
+                          fontSize: 16.0,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF111827),
+                        ),
+                        decoration: InputDecoration(
+                          hintText: 'Enter your phone number (+91...)',
+                          hintStyle: GoogleFonts.inter(
+                            fontSize: 14.0,
+                            color: const Color(0xFF9CA3AF),
+                          ),
+                          filled: true,
+                          fillColor: Colors.white,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16.0,
+                            vertical: 16.0,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderSide: const BorderSide(
+                              color: Color(0xFFD1D5DB),
+                              width: 1.0,
+                            ),
+                            borderRadius: BorderRadius.circular(12.0),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderSide: const BorderSide(
+                              color: Color(0xFFEE7B4D),
+                              width: 1.5,
+                            ),
+                            borderRadius: BorderRadius.circular(12.0),
+                          ),
+                        ),
+                        validator: _model.phoneNumberTextControllerValidator
+                            .asValidator(context),
+                      ),
+
+                      const SizedBox(height: 24.0),
+
+                      // Send OTP Button with active Loader
+                      SizedBox(
+                        width: double.infinity,
+                        height: 52.0,
+                        child: ElevatedButton(
+                          onPressed: _isLoading
+                              ? null
+                              : () async {
+                                  final phoneNumberVal =
+                                      _model.phoneNumberTextController.text;
+                                  if (phoneNumberVal.isEmpty ||
+                                      !phoneNumberVal.startsWith('+')) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                            'Phone Number is required and has to start with +.'),
+                                      ),
+                                    );
+                                    return;
+                                  }
+                                  setState(() {
+                                    _isLoading = true;
+                                  });
+                                  try {
+                                    await authManager.beginPhoneAuth(
+                                      context: context,
+                                      phoneNumber: phoneNumberVal,
+                                      onCodeSent: (context) async {
+                                        if (mounted) {
+                                          setState(() {
+                                            _isLoading = false;
+                                          });
+                                        }
+                                        context.goNamedAuth(
+                                          VerifyOTPWidget.routeName,
+                                          context.mounted,
+                                          ignoreRedirect: true,
+                                        );
+                                      },
+                                    );
+                                  } catch (e) {
+                                    if (mounted) {
+                                      setState(() {
+                                        _isLoading = false;
+                                      });
+                                    }
+                                  }
+                                },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFEE7B4D),
+                            disabledBackgroundColor: const Color(0xB2EE7B4D),
+                            foregroundColor: Colors.white,
+                            elevation: 2.0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16.0),
+                            ),
+                          ),
+                          child: _isLoading
+                              ? const SpinKitThreeBounce(
+                                  color: Colors.white,
+                                  size: 22.0,
+                                )
+                              : Text(
+                                  'Send OTP',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 16.0,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                        ),
+                      ),
+                      const SizedBox(height: 20.0),
+
+                      // Terms & Privacy Footer
+                      RichText(
+                        textAlign: TextAlign.center,
+                        text: TextSpan(
+                          children: [
+                            TextSpan(
+                              text: 'By continuing, you agree to our ',
+                              style: GoogleFonts.inter(
+                                fontSize: 11.0,
+                                color: const Color(0xFF9CA3AF),
+                              ),
+                            ),
+                            TextSpan(
+                              text: 'Terms of service',
+                              style: GoogleFonts.inter(
+                                fontSize: 11.0,
+                                color: const Color(0xFF6B7280),
+                                decoration: TextDecoration.underline,
+                              ),
+                              mouseCursor: SystemMouseCursors.click,
+                              recognizer: TapGestureRecognizer()
+                                ..onTap = () async {
+                                  context.pushNamed(
+                                    TCPagesWidget.routeName,
+                                    queryParameters: {
+                                      'categoryRef': serializeParam(
+                                        'Terms Of Service',
+                                        ParamType.String,
+                                      ),
+                                    }.withoutNulls,
+                                  );
+                                },
+                            ),
+                            TextSpan(
+                              text: ' & ',
+                              style: GoogleFonts.inter(
+                                fontSize: 11.0,
+                                color: const Color(0xFF9CA3AF),
+                              ),
+                            ),
+                            TextSpan(
+                              text: 'Privacy policy',
+                              style: GoogleFonts.inter(
+                                fontSize: 11.0,
+                                color: const Color(0xFF6B7280),
+                                decoration: TextDecoration.underline,
+                              ),
+                              mouseCursor: SystemMouseCursors.click,
+                              recognizer: TapGestureRecognizer()
+                                ..onTap = () async {
+                                  context.pushNamed(
+                                    TCPagesWidget.routeName,
+                                    queryParameters: {
+                                      'categoryRef': serializeParam(
+                                        'Privacy policy',
+                                        ParamType.String,
+                                      ),
+                                    }.withoutNulls,
+                                  );
+                                },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ).animate().fade(delay: 300.ms, duration: 600.ms).slideY(begin: 0.1, end: 0),
+                const SizedBox(height: 24.0),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /*
+  // PREVIOUS BUILD IMPLEMENTATION (COMMENTED FOR REFERENCE)
+  Widget _oldBuild(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        FocusScope.of(context).unfocus();
+        FocusManager.instance.primaryFocus?.unfocus();
+      },
+      child: Scaffold(
+        key: scaffoldKey,
         backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
         body: SafeArea(
           top: true,
@@ -66,410 +500,10 @@ class _PhoneNumberLoginWidgetState extends State<PhoneNumberLoginWidget> {
               child: SingleChildScrollView(
                 primary: false,
                 child: Column(
-                  mainAxisSize: MainAxisSize.max,
-                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Column(
-                      mainAxisSize: MainAxisSize.max,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Column(
-                          mainAxisSize: MainAxisSize.max,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Padding(
-                              padding: EdgeInsetsDirectional.fromSTEB(
-                                  0.0, 0.0, 0.0, 22.0),
-                              child: RichText(
-                                textScaler: MediaQuery.of(context).textScaler,
-                                text: TextSpan(
-                                  children: [
-                                    TextSpan(
-                                      text: 'Made with ',
-                                      style: FlutterFlowTheme.of(context)
-                                          .bodyMedium
-                                          .override(
-                                            font: GoogleFonts.inter(
-                                              fontWeight: FontWeight.w500,
-                                              fontStyle:
-                                                  FlutterFlowTheme.of(context)
-                                                      .bodyMedium
-                                                      .fontStyle,
-                                            ),
-                                            color: FlutterFlowTheme.of(context)
-                                                .primaryText,
-                                            fontSize: 16.0,
-                                            letterSpacing: 0.0,
-                                            fontWeight: FontWeight.w500,
-                                            fontStyle:
-                                                FlutterFlowTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontStyle,
-                                          ),
-                                    ),
-                                    TextSpan(
-                                      text: '♥️',
-                                      style: TextStyle(
-                                        color: Color(0xFFE51919),
-                                        fontSize: 20.0,
-                                      ),
-                                    ),
-                                    TextSpan(
-                                      text: ' in India',
-                                      style: TextStyle(),
-                                    )
-                                  ],
-                                  style: FlutterFlowTheme.of(context)
-                                      .bodyMedium
-                                      .override(
-                                        font: GoogleFonts.inter(
-                                          fontWeight: FontWeight.w500,
-                                          fontStyle:
-                                              FlutterFlowTheme.of(context)
-                                                  .bodyMedium
-                                                  .fontStyle,
-                                        ),
-                                        color: FlutterFlowTheme.of(context)
-                                            .primaryText,
-                                        fontSize: 16.0,
-                                        letterSpacing: 0.0,
-                                        fontWeight: FontWeight.w500,
-                                        fontStyle: FlutterFlowTheme.of(context)
-                                            .bodyMedium
-                                            .fontStyle,
-                                      ),
-                                ),
-                              ),
-                            ),
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(8.0),
-                              child: Image.asset(
-                                'assets/images/appploucg.gif',
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                            Text(
-                              'Login or Sign Up',
-                              textAlign: TextAlign.center,
-                              style: FlutterFlowTheme.of(context)
-                                  .headlineMedium
-                                  .override(
-                                    font: GoogleFonts.interTight(
-                                      fontWeight: FontWeight.w600,
-                                      fontStyle: FlutterFlowTheme.of(context)
-                                          .headlineMedium
-                                          .fontStyle,
-                                    ),
-                                    color: FlutterFlowTheme.of(context)
-                                        .otherColour,
-                                    fontSize: 25.0,
-                                    letterSpacing: 0.0,
-                                    fontWeight: FontWeight.w600,
-                                    fontStyle: FlutterFlowTheme.of(context)
-                                        .headlineMedium
-                                        .fontStyle,
-                                  ),
-                            ),
-                          ].divide(SizedBox(height: 16.0)),
-                        ),
-                        Column(
-                          mainAxisSize: MainAxisSize.max,
-                          children: [
-                            Column(
-                              mainAxisSize: MainAxisSize.max,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Phone Number',
-                                  style: FlutterFlowTheme.of(context)
-                                      .titleSmall
-                                      .override(
-                                        font: GoogleFonts.interTight(
-                                          fontWeight: FontWeight.w600,
-                                          fontStyle:
-                                              FlutterFlowTheme.of(context)
-                                                  .titleSmall
-                                                  .fontStyle,
-                                        ),
-                                        letterSpacing: 0.0,
-                                        fontWeight: FontWeight.w600,
-                                        fontStyle: FlutterFlowTheme.of(context)
-                                            .titleSmall
-                                            .fontStyle,
-                                      ),
-                                ),
-                                Row(
-                                  mainAxisSize: MainAxisSize.max,
-                                  children: [
-                                    Expanded(
-                                      child: TextFormField(
-                                        controller:
-                                            _model.phoneNumberTextController,
-                                        focusNode: _model.phoneNumberFocusNode,
-                                        onFieldSubmitted: (_) async {
-                                          _model.phoneNumber = int.tryParse(
-                                              _model.phoneNumberTextController
-                                                  .text);
-                                          safeSetState(() {});
-                                        },
-                                        autofocus: true,
-                                        obscureText: false,
-                                        decoration: InputDecoration(
-                                          hintText: 'Enter your phone number',
-                                          hintStyle: FlutterFlowTheme.of(
-                                                  context)
-                                              .bodyMedium
-                                              .override(
-                                                font: GoogleFonts.inter(
-                                                  fontWeight:
-                                                      FlutterFlowTheme.of(
-                                                              context)
-                                                          .bodyMedium
-                                                          .fontWeight,
-                                                  fontStyle:
-                                                      FlutterFlowTheme.of(
-                                                              context)
-                                                          .bodyMedium
-                                                          .fontStyle,
-                                                ),
-                                                color:
-                                                    FlutterFlowTheme.of(context)
-                                                        .secondaryText,
-                                                letterSpacing: 0.0,
-                                                fontWeight:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodyMedium
-                                                        .fontWeight,
-                                                fontStyle:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodyMedium
-                                                        .fontStyle,
-                                              ),
-                                          enabledBorder: OutlineInputBorder(
-                                            borderSide: BorderSide(
-                                              color:
-                                                  FlutterFlowTheme.of(context)
-                                                      .secondaryText,
-                                              width: 1.0,
-                                            ),
-                                            borderRadius:
-                                                BorderRadius.circular(8.0),
-                                          ),
-                                          focusedBorder: OutlineInputBorder(
-                                            borderSide: BorderSide(
-                                              color:
-                                                  FlutterFlowTheme.of(context)
-                                                      .primary,
-                                              width: 1.0,
-                                            ),
-                                            borderRadius:
-                                                BorderRadius.circular(8.0),
-                                          ),
-                                          errorBorder: OutlineInputBorder(
-                                            borderSide: BorderSide(
-                                              color: Color(0x00000000),
-                                              width: 1.0,
-                                            ),
-                                            borderRadius:
-                                                BorderRadius.circular(8.0),
-                                          ),
-                                          focusedErrorBorder:
-                                              OutlineInputBorder(
-                                            borderSide: BorderSide(
-                                              color: Color(0x00000000),
-                                              width: 1.0,
-                                            ),
-                                            borderRadius:
-                                                BorderRadius.circular(8.0),
-                                          ),
-                                          filled: true,
-                                          fillColor:
-                                              FlutterFlowTheme.of(context)
-                                                  .secondaryBackground,
-                                          contentPadding:
-                                              EdgeInsetsDirectional.fromSTEB(
-                                                  16.0, 16.0, 16.0, 16.0),
-                                        ),
-                                        style: FlutterFlowTheme.of(context)
-                                            .bodyMedium
-                                            .override(
-                                              font: GoogleFonts.inter(
-                                                fontWeight:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodyMedium
-                                                        .fontWeight,
-                                                fontStyle:
-                                                    FlutterFlowTheme.of(context)
-                                                        .bodyMedium
-                                                        .fontStyle,
-                                              ),
-                                              fontSize: 16.0,
-                                              letterSpacing: 0.0,
-                                              fontWeight:
-                                                  FlutterFlowTheme.of(context)
-                                                      .bodyMedium
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  FlutterFlowTheme.of(context)
-                                                      .bodyMedium
-                                                      .fontStyle,
-                                            ),
-                                        keyboardType: TextInputType.phone,
-                                        cursorColor:
-                                            FlutterFlowTheme.of(context)
-                                                .primary,
-                                        validator: _model
-                                            .phoneNumberTextControllerValidator
-                                            .asValidator(context),
-                                        inputFormatters: [
-                                          _model.phoneNumberMask
-                                        ],
-                                      ),
-                                    ),
-                                  ].divide(SizedBox(width: 12.0)),
-                                ),
-                              ].divide(SizedBox(height: 8.0)),
-                            ),
-                            FFButtonWidget(
-                              onPressed: () async {
-                                final phoneNumberVal =
-                                    _model.phoneNumberTextController.text;
-                                if (phoneNumberVal == null ||
-                                    phoneNumberVal.isEmpty ||
-                                    !phoneNumberVal.startsWith('+')) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                          'Phone Number is required and has to start with +.'),
-                                    ),
-                                  );
-                                  return;
-                                }
-                                await authManager.beginPhoneAuth(
-                                  context: context,
-                                  phoneNumber: phoneNumberVal,
-                                  onCodeSent: (context) async {
-                                    context.goNamedAuth(
-                                      VerifyOTPWidget.routeName,
-                                      context.mounted,
-                                      ignoreRedirect: true,
-                                    );
-                                  },
-                                );
-                              },
-                              text: 'Send OTP',
-                              options: FFButtonOptions(
-                                width: double.infinity,
-                                height: 56.0,
-                                padding: EdgeInsets.all(8.0),
-                                iconPadding: EdgeInsetsDirectional.fromSTEB(
-                                    0.0, 0.0, 0.0, 0.0),
-                                color: FlutterFlowTheme.of(context).otherColour,
-                                textStyle: FlutterFlowTheme.of(context)
-                                    .titleSmall
-                                    .override(
-                                      font: GoogleFonts.interTight(
-                                        fontWeight: FontWeight.w600,
-                                        fontStyle: FlutterFlowTheme.of(context)
-                                            .titleSmall
-                                            .fontStyle,
-                                      ),
-                                      color: FlutterFlowTheme.of(context).info,
-                                      letterSpacing: 0.0,
-                                      fontWeight: FontWeight.w600,
-                                      fontStyle: FlutterFlowTheme.of(context)
-                                          .titleSmall
-                                          .fontStyle,
-                                    ),
-                                elevation: 0.0,
-                                borderSide: BorderSide(
-                                  color: Colors.transparent,
-                                ),
-                                borderRadius: BorderRadius.circular(8.0),
-                              ),
-                            ),
-                          ].divide(SizedBox(height: 20.0)),
-                        ),
-                        Column(
-                          mainAxisSize: MainAxisSize.max,
-                          children: [
-                            Row(
-                              mainAxisSize: MainAxisSize.max,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Expanded(
-                                  child: Container(
-                                    height: 1.0,
-                                    decoration: BoxDecoration(
-                                      color: FlutterFlowTheme.of(context)
-                                          .alternate,
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: Container(
-                                    height: 1.0,
-                                    decoration: BoxDecoration(
-                                      color: FlutterFlowTheme.of(context)
-                                          .alternate,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ].divide(SizedBox(height: 16.0)),
-                        ),
-                      ].divide(SizedBox(height: 32.0)),
-                    ),
-                    Padding(
-                      padding: EdgeInsetsDirectional.fromSTEB(0.0, 20.0, 0.0, 32.0),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.max,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Flexible(  // 👈 WRAP RichText in Flexible
-                            child: RichText(
-                              textScaler: MediaQuery.of(context).textScaler,
-                              text: TextSpan(
-                                children: [
-                                  TextSpan(
-                                    text: 'By continuing, you agree to our ',
-                                    style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                      fontSize: 11.0,  // 👈 Keep small
-                                      color: FlutterFlowTheme.of(context).secondaryText,
-                                    ),
-                                  ),
-                                  TextSpan(
-                                    text: 'Terms of service',
-                                    style: TextStyle(decoration: TextDecoration.underline),
-                                    mouseCursor: SystemMouseCursors.click,
-                                    recognizer: TapGestureRecognizer()
-                                      ..onTap = () => context.pushNamed(
-                                        TCPagesWidget.routeName,
-                                        queryParameters: {'categoryRef': serializeParam('Terms Of Service', ParamType.String)},
-                                      ),
-                                  ),
-                                  TextSpan(text: ' & '),
-                                  TextSpan(
-                                    text: 'Privacy policy',
-                                    style: TextStyle(decoration: TextDecoration.underline),
-                                    mouseCursor: SystemMouseCursors.click,
-                                    recognizer: TapGestureRecognizer()
-                                      ..onTap = () => context.pushNamed(
-                                        TCPagesWidget.routeName,
-                                        queryParameters: {'categoryRef': serializeParam('Privacy policy', ParamType.String)},
-                                      ),
-                                  ),
-                                ],
-                                style: FlutterFlowTheme.of(context).bodyMedium.override(fontSize: 11.0),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  ].divide(SizedBox(height: 5.0)),
+                    Text('Login or Sign Up'),
+                    // ...
+                  ],
                 ),
               ),
             ),
@@ -478,4 +512,7 @@ class _PhoneNumberLoginWidgetState extends State<PhoneNumberLoginWidget> {
       ),
     );
   }
+  */
 }
+
+

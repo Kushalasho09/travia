@@ -1108,8 +1108,7 @@ class _DriveProfileWidgetState extends State<DriveProfileWidget> {
                                         child: Text(
                                           dateTimeFormat(
                                               "yMMMd",
-                                              currentUserDocument!
-                                                  .createdTime!),
+                                              currentUserDocument?.createdTime),
                                           style: FlutterFlowTheme.of(context)
                                               .bodyMedium
                                               .override(

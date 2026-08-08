@@ -1439,9 +1439,9 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                               borderRadius: BorderRadius.circular(14.0),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
-                                  blurRadius: 8.0,
-                                  offset: Offset(0, 2),
+                                  color: Colors.black.withOpacity(0.06),
+                                  blurRadius: 10.0,
+                                  offset: const Offset(0, 3),
                                 ),
                               ],
                             ),
@@ -1450,61 +1450,60 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                               onTap: () async {
                                 context.pushNamed(PageNotificationWidget.routeName);
                               },
-                              child: Center(
+                              child: const Center(
                                 child: Icon(
-                                  Icons.notifications_outlined,
-                                  color: Color(0xFF283B5E),
+                                  Icons.notifications_none_rounded,
+                                  color: Color(0xFF1E293B),
                                   size: 24.0,
                                 ),
                               ),
                             ),
                           ),
-                          if (unreadCount > 0)
-                            Positioned(
-                              right: -2,
-                              top: -2,
-                              child: Container(
-                                constraints: BoxConstraints(
-                                  minWidth: 20.0,
-                                  minHeight: 20.0,
+                          Positioned(
+                            right: -1,
+                            top: -1,
+                            child: Container(
+                              constraints: const BoxConstraints(
+                                minWidth: 18.0,
+                                minHeight: 18.0,
+                              ),
+                              padding: const EdgeInsets.all(3.0),
+                              decoration: BoxDecoration(
+                                color: FlutterFlowTheme.of(context).tertiary,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 2.0,
                                 ),
-                                padding: EdgeInsets.all(4.0),
-                                decoration: BoxDecoration(
-                                  color: Color(0xFFE74C3C),
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: Color(0xFFF4F4F4),
-                                    width: 2.0,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: FlutterFlowTheme.of(context).tertiary.withOpacity(0.3),
+                                    blurRadius: 4.0,
+                                    offset: const Offset(0, 2),
                                   ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.red.withOpacity(0.3),
-                                      blurRadius: 4.0,
-                                      offset: Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    unreadCount > 9 ? '9+' : unreadCount.toString(),
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: unreadCount > 9 ? 8.0 : 10.0,
-                                      fontWeight: FontWeight.w700,
-                                      height: 1.0,
-                                    ),
+                                ],
+                              ),
+                              child: Center(
+                                child: Text(
+                                  unreadCount > 9 ? '9+' : unreadCount.toString(),
+                                  style: GoogleFonts.inter(
+                                    color: Colors.white,
+                                    fontSize: unreadCount > 9 ? 8.0 : 9.5,
+                                    fontWeight: FontWeight.bold,
+                                    height: 1.0,
                                   ),
                                 ),
                               ),
                             ),
+                          ),
                         ],
                       );
                     },
                   ),
 
-                  SizedBox(width: 12.0),
+                  const SizedBox(width: 10.0),
 
-                  // Crown Icon (Plans)
+                  // Orange Crown Icon (Plans)
                   Container(
                     width: 44.0,
                     height: 44.0,
@@ -1513,9 +1512,9 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                       borderRadius: BorderRadius.circular(14.0),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 8.0,
-                          offset: Offset(0, 2),
+                          color: Colors.black.withOpacity(0.06),
+                          blurRadius: 10.0,
+                          offset: const Offset(0, 3),
                         ),
                       ],
                     ),
@@ -1527,7 +1526,7 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                       child: Center(
                         child: FaIcon(
                           FontAwesomeIcons.crown,
-                          color: Color(0xFF283B5E),
+                          color: FlutterFlowTheme.of(context).tertiary,
                           size: 20.0,
                         ),
                       ),
@@ -1556,29 +1555,30 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                         Align(
                           alignment: Alignment(0.0, 0),
                           child: TabBar(
-                            labelColor: FlutterFlowTheme.of(context).primaryText,
-                            unselectedLabelColor: FlutterFlowTheme.of(context).secondaryText,
+                            labelColor: FlutterFlowTheme.of(context).tertiary,
+                            unselectedLabelColor: const Color(0xFF64748B),
                             labelStyle: FlutterFlowTheme.of(context).titleMedium.override(
                                   font: GoogleFonts.interTight(
-                                    fontWeight: FlutterFlowTheme.of(context).titleMedium.fontWeight,
+                                    fontWeight: FontWeight.w700,
                                     fontStyle: FlutterFlowTheme.of(context).titleMedium.fontStyle,
                                   ),
                                   fontSize: 15.0,
                                   letterSpacing: 0.0,
-                                  fontWeight: FlutterFlowTheme.of(context).titleMedium.fontWeight,
+                                  fontWeight: FontWeight.w700,
                                   fontStyle: FlutterFlowTheme.of(context).titleMedium.fontStyle,
                                 ),
                             unselectedLabelStyle: FlutterFlowTheme.of(context).titleMedium.override(
                                   font: GoogleFonts.interTight(
-                                    fontWeight: FlutterFlowTheme.of(context).titleMedium.fontWeight,
+                                    fontWeight: FontWeight.w500,
                                     fontStyle: FlutterFlowTheme.of(context).titleMedium.fontStyle,
                                   ),
                                   fontSize: 15.0,
                                   letterSpacing: 0.0,
-                                  fontWeight: FlutterFlowTheme.of(context).titleMedium.fontWeight,
+                                  fontWeight: FontWeight.w500,
                                   fontStyle: FlutterFlowTheme.of(context).titleMedium.fontStyle,
                                 ),
-                            indicatorColor: FlutterFlowTheme.of(context).primary,
+                            indicatorColor: FlutterFlowTheme.of(context).tertiary,
+                            indicatorWeight: 3.0,
                             tabs: [
                               Tab(
                                 text: 'All Rides',
@@ -1685,11 +1685,18 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                                           // ),
                                           Expanded(
                                             child: Container(
-                                              height: 45,
+                                              height: 46,
                                               decoration: BoxDecoration(
-                                                color: FlutterFlowTheme.of(context).alternate,
-                                                borderRadius: BorderRadius.circular(12),
-                                                border: Border.all(color: Color(0xFFE69A6A), width: 1),
+                                                color: Colors.white,
+                                                borderRadius: BorderRadius.circular(16),
+                                                border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: Colors.black.withOpacity(0.04),
+                                                    blurRadius: 8,
+                                                    offset: const Offset(0, 2),
+                                                  ),
+                                                ],
                                               ),
                                               child: StatefulBuilder(
                                                 builder: (context, setStateLocal) {
@@ -1699,14 +1706,23 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                                                     googleAPIKey: "AIzaSyDZkxRpoy0BOIAPwMaMIvAd5xpCe-6ZYvs",
                                                     inputDecoration: InputDecoration(
                                                       hintText: 'Start From...',
-                                                      isDense: false,
-                                                      filled: false,
-                                                      contentPadding: EdgeInsets.only(
-                                                        left: 14,
-                                                        right: 14,
-                                                        top: 14,
-                                                        bottom: 12,
+                                                      hintStyle: GoogleFonts.inter(
+                                                        fontSize: 13.5,
+                                                        fontWeight: FontWeight.w400,
+                                                        color: const Color(0xFF94A3B8),
                                                       ),
+                                                      prefixIcon: const Padding(
+                                                        padding: EdgeInsets.only(left: 12.0, right: 6.0),
+                                                        child: Icon(
+                                                          Icons.location_on_rounded,
+                                                          color: Color(0xFF0F9D58),
+                                                          size: 20.0,
+                                                        ),
+                                                      ),
+                                                      prefixIconConstraints: const BoxConstraints(minWidth: 36, minHeight: 20),
+                                                      isDense: true,
+                                                      filled: false,
+                                                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
                                                       border: InputBorder.none,
                                                       enabledBorder: InputBorder.none,
                                                       focusedBorder: InputBorder.none,
@@ -1792,27 +1808,42 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                                           ),
                                           Expanded(
                                             child: Container(
-                                              height: 45,
+                                              height: 46,
                                               decoration: BoxDecoration(
-                                                color: FlutterFlowTheme.of(context).alternate,
-                                                borderRadius: BorderRadius.circular(12),
+                                                color: Colors.white,
+                                                borderRadius: BorderRadius.circular(16),
                                                 border: Border.all(
-                                                  color: const Color(0xFFE69A6A),
+                                                  color: const Color(0xFFE2E8F0),
                                                   width: 1,
                                                 ),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: Colors.black.withOpacity(0.04),
+                                                    blurRadius: 8,
+                                                    offset: const Offset(0, 2),
+                                                  ),
+                                                ],
                                               ),
                                               child: GooglePlaceAutoCompleteTextField(
                                                 focusNode: _model.endLocationFocusNode,
                                                 textEditingController: _model.endLocationTextController,
                                                 googleAPIKey: "AIzaSyDZkxRpoy0BOIAPwMaMIvAd5xpCe-6ZYvs",
-                                                inputDecoration: const InputDecoration(
-                                                  hintText: 'End To...',
-                                                  isDense: false,
-                                                  filled: false,
-                                                  contentPadding: EdgeInsets.symmetric(
-                                                    horizontal: 14,
-                                                    vertical: 14,
+                                                inputDecoration: InputDecoration(
+                                                  hintText: 'End to...',
+                                                  hintStyle: GoogleFonts.inter(
+                                                    fontSize: 13.5,
+                                                    fontWeight: FontWeight.w400,
+                                                    color: const Color(0xFF94A3B8),
                                                   ),
+                                                  prefixIcon: Icon(
+                                                    Icons.location_on_rounded,
+                                                    color: FlutterFlowTheme.of(context).tertiary,
+                                                    size: 20.0,
+                                                  ),
+                                                  prefixIconConstraints: const BoxConstraints(minWidth: 36, minHeight: 20),
+                                                  isDense: true,
+                                                  filled: false,
+                                                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
 
                                                   // ✅ NO INNER BORDER
                                                   border: InputBorder.none,
@@ -2130,18 +2161,24 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
 */
 
                                             child: Container(
-                                              width: 40.0,
-                                              height: 40.0,
+                                              width: 44.0,
+                                              height: 44.0,
                                               decoration: BoxDecoration(
                                                 color: FlutterFlowTheme.of(context).tertiary,
                                                 shape: BoxShape.circle,
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: FlutterFlowTheme.of(context).tertiary.withOpacity(0.35),
+                                                    blurRadius: 8.0,
+                                                    offset: const Offset(0, 3),
+                                                  ),
+                                                ],
                                               ),
-                                              child: Align(
-                                                alignment: AlignmentDirectional(0.0, 0.0),
+                                              child: const Center(
                                                 child: Icon(
-                                                  Icons.arrow_forward,
+                                                  Icons.arrow_forward_rounded,
                                                   color: Colors.white,
-                                                  size: 20.0,
+                                                  size: 22.0,
                                                 ),
                                               ),
                                             ),
@@ -2408,10 +2445,9 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                                                               separatorBuilder: (_, __) => SizedBox(height: 10.0),
                                                               itemBuilder: (context, listViewIndex) {
                                                                 final listViewRidesNewRecord = listViewRidesNewRecordList[listViewIndex];
-                                                                // Keep your existing ride card Stack widget here
-                                                                return Stack(
-                                                                  children: [
-                                                                    InkWell(
+                                                                  return Padding(
+                                                                    padding: const EdgeInsets.only(bottom: 10.0),
+                                                                    child: InkWell(
                                                                       splashColor: Colors.transparent,
                                                                       focusColor: Colors.transparent,
                                                                       hoverColor: Colors.transparent,
@@ -2427,449 +2463,247 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                                                                           }.withoutNulls,
                                                                         );
                                                                       },
-                                                                      child: Material(
-                                                                        color: Colors.transparent,
-                                                                        elevation: 10.0,
-                                                                        shape: RoundedRectangleBorder(
-                                                                          borderRadius: BorderRadius.circular(12.0),
-                                                                        ),
-                                                                        child: ClipRRect(
-                                                                          borderRadius: BorderRadius.circular(12.0),
-                                                                          child: Container(
-                                                                            width: double.infinity,
-                                                                            decoration: BoxDecoration(
-                                                                              color: FlutterFlowTheme.of(context).primaryBackground,
-                                                                              boxShadow: [
-                                                                                BoxShadow(
-                                                                                  blurRadius: 4.0,
-                                                                                  color: Color(0x1A000000),
-                                                                                  offset: Offset(
-                                                                                    0.0,
-                                                                                    2.0,
-                                                                                  ),
-                                                                                )
-                                                                              ],
-                                                                              borderRadius: BorderRadius.circular(12.0),
-                                                                              border: Border.all(
-                                                                                color: FlutterFlowTheme.of(context).tertiary,
-                                                                              ),
+                                                                      child: Container(
+                                                                        width: double.infinity,
+                                                                        padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 12.0),
+                                                                        decoration: BoxDecoration(
+                                                                          color: Colors.white,
+                                                                          borderRadius: BorderRadius.circular(18.0),
+                                                                          boxShadow: const [
+                                                                            BoxShadow(
+                                                                              color: Color(0x0E000000),
+                                                                              blurRadius: 12.0,
+                                                                              offset: Offset(0.0, 3.0),
                                                                             ),
-                                                                            alignment: AlignmentDirectional(1.0, 0.0),
-                                                                            child: Padding(
-                                                                              padding: EdgeInsetsDirectional.fromSTEB(10.0, 10.0, 5.0, 10.0),
-                                                                              child: SizedBox(
-                                                                                child: Column(
-                                                                                  mainAxisSize: MainAxisSize.min,
-                                                                                  mainAxisAlignment: MainAxisAlignment.center,
-                                                                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                                                                  children: [
-                                                                                    Row(
-                                                                                      mainAxisSize: MainAxisSize.max,
-                                                                                      mainAxisAlignment: MainAxisAlignment.start,
-                                                                                      children: [
-                                                                                        Row(
-                                                                                          mainAxisSize: MainAxisSize.max,
+                                                                          ],
+                                                                        ),
+                                                                        child: Row(
+                                                                          crossAxisAlignment: CrossAxisAlignment.center,
+                                                                          children: [
+                                                                            // Left Content Column
+                                                                            Expanded(
+                                                                              child: Column(
+                                                                                mainAxisSize: MainAxisSize.min,
+                                                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                                                children: [
+                                                                                  // Start Location Row
+                                                                                  Row(
+                                                                                    children: [
+                                                                                      const Icon(
+                                                                                        Icons.location_on_rounded,
+                                                                                        color: Color(0xFF0F9D58),
+                                                                                        size: 20.0,
+                                                                                      ),
+                                                                                      const SizedBox(width: 8.0),
+                                                                                      Expanded(
+                                                                                        child: Text(
+                                                                                          _truncateAddress(listViewRidesNewRecord.rideStartLocation),
+                                                                                          style: GoogleFonts.inter(
+                                                                                            fontSize: 14.0,
+                                                                                            fontWeight: FontWeight.w600,
+                                                                                            color: const Color(0xFF1E293B),
+                                                                                          ),
+                                                                                          maxLines: 1,
+                                                                                          overflow: TextOverflow.ellipsis,
+                                                                                        ),
+                                                                                      ),
+                                                                                    ],
+                                                                                  ),
+                                                                                  const SizedBox(height: 6.0),
+
+                                                                                  // Transport Mode & Date/Time Row
+                                                                                  Row(
+                                                                                    children: [
+                                                                                      if (listViewRidesNewRecord.modeOfTransport == 'Bike')
+                                                                                        const Icon(Icons.two_wheeler_rounded, color: Color(0xFF9CA3AF), size: 18.0)
+                                                                                      else if (listViewRidesNewRecord.modeOfTransport == 'Train')
+                                                                                        const Icon(Icons.train_rounded, color: Color(0xFF9CA3AF), size: 18.0)
+                                                                                      else if (listViewRidesNewRecord.modeOfTransport == 'Car')
+                                                                                        const FaIcon(FontAwesomeIcons.carSide, color: Color(0xFF9CA3AF), size: 15.0)
+                                                                                      else
+                                                                                        const FaIcon(FontAwesomeIcons.bus, color: Color(0xFF9CA3AF), size: 15.0),
+                                                                                      const SizedBox(width: 8.0),
+                                                                                      Expanded(
+                                                                                        child: Text(
+                                                                                          '${dateTimeFormat("hh:mm a", listViewRidesNewRecord.pickupTime)} | ${dateTimeFormat("yMMMd", listViewRidesNewRecord.pickupTime)}',
+                                                                                          style: GoogleFonts.inter(
+                                                                                            fontSize: 12.5,
+                                                                                            fontWeight: FontWeight.w400,
+                                                                                            color: const Color(0xFF64748B),
+                                                                                          ),
+                                                                                          maxLines: 1,
+                                                                                          overflow: TextOverflow.ellipsis,
+                                                                                        ),
+                                                                                      ),
+                                                                                    ],
+                                                                                  ),
+                                                                                  const SizedBox(height: 6.0),
+
+                                                                                  // End Location Row
+                                                                                  Row(
+                                                                                    children: [
+                                                                                      Icon(
+                                                                                        Icons.location_on_rounded,
+                                                                                        color: FlutterFlowTheme.of(context).tertiary,
+                                                                                        size: 20.0,
+                                                                                      ),
+                                                                                      const SizedBox(width: 8.0),
+                                                                                      Expanded(
+                                                                                        child: Text(
+                                                                                          _truncateAddress(listViewRidesNewRecord.rideEndLocation),
+                                                                                          style: GoogleFonts.inter(
+                                                                                            fontSize: 14.0,
+                                                                                            fontWeight: FontWeight.w600,
+                                                                                            color: const Color(0xFF1E293B),
+                                                                                          ),
+                                                                                          maxLines: 1,
+                                                                                          overflow: TextOverflow.ellipsis,
+                                                                                        ),
+                                                                                      ),
+                                                                                    ],
+                                                                                  ),
+                                                                                  const SizedBox(height: 10.0),
+
+                                                                                  // Driver Avatar, Name & Rating Star
+                                                                                  if (listViewRidesNewRecord.creatorID != null)
+                                                                                    StreamBuilder<UsersRecord>(
+                                                                                      stream: UsersRecord.getDocument(listViewRidesNewRecord.creatorID!),
+                                                                                      builder: (context, snapshot) {
+                                                                                        final rowUsersRecord = snapshot.data;
+                                                                                        final driverName = rowUsersRecord?.displayName?.isNotEmpty == true
+                                                                                            ? rowUsersRecord!.displayName!
+                                                                                            : 'Driver';
+
+                                                                                        return Row(
                                                                                           children: [
-                                                                                            Icon(
-                                                                                              Icons.location_on_outlined,
-                                                                                              color: Colors.grey,
-                                                                                              size: 24.0,
-                                                                                            ),
-                                                                                            ClipRRect(
-                                                                                              borderRadius: BorderRadius.circular(15.0),
+                                                                                            InkWell(
+                                                                                              onTap: () {
+                                                                                                if (rowUsersRecord != null) {
+                                                                                                  context.pushNamed(
+                                                                                                    DriverReviewWidget.routeName,
+                                                                                                    queryParameters: {
+                                                                                                      'userRef': serializeParam(
+                                                                                                        rowUsersRecord.reference,
+                                                                                                        ParamType.DocumentReference,
+                                                                                                      ),
+                                                                                                    }.withoutNulls,
+                                                                                                  );
+                                                                                                }
+                                                                                              },
                                                                                               child: Container(
-                                                                                                width: 170.0,
-                                                                                                decoration: BoxDecoration(
-                                                                                                  color: Color(0xFFE3E6E0),
-                                                                                                  borderRadius: BorderRadius.circular(15.0),
-                                                                                                ),
-                                                                                                child: Padding(
-                                                                                                  padding: EdgeInsetsDirectional.fromSTEB(15.0, 5.0, 10.0, 5.0),
-                                                                                                  child: Text(
-                                                                                                    _truncateAddress(listViewRidesNewRecord.rideStartLocation),
-                                                                                                    style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                                                                      font: GoogleFonts.inter(
-                                                                                                        fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
-                                                                                                        fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                                width: 32.0,
+                                                                                                height: 32.0,
+                                                                                                clipBehavior: Clip.antiAlias,
+                                                                                                decoration: const BoxDecoration(shape: BoxShape.circle),
+                                                                                                child: rowUsersRecord?.photoUrl?.isNotEmpty == true
+                                                                                                    ? Image.network(
+                                                                                                        rowUsersRecord!.photoUrl!,
+                                                                                                        fit: BoxFit.cover,
+                                                                                                        errorBuilder: (_, __, ___) => Image.asset(
+                                                                                                          'assets/images/userIconTr.png',
+                                                                                                          fit: BoxFit.cover,
+                                                                                                        ),
+                                                                                                      )
+                                                                                                    : Image.asset(
+                                                                                                        'assets/images/userIconTr.png',
+                                                                                                        fit: BoxFit.cover,
                                                                                                       ),
-                                                                                                      fontSize: 12.0,
-                                                                                                      letterSpacing: 0.0,
-                                                                                                      fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
-                                                                                                      fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                                    ),
-                                                                                                  ),
-                                                                                                ),
                                                                                               ),
+                                                                                            ),
+                                                                                            const SizedBox(width: 8.0),
+                                                                                            Expanded(
+                                                                                              child: Text(
+                                                                                                driverName,
+                                                                                                style: GoogleFonts.inter(
+                                                                                                  fontSize: 13.5,
+                                                                                                  fontWeight: FontWeight.w600,
+                                                                                                  color: const Color(0xFF1E293B),
+                                                                                                ),
+                                                                                                maxLines: 1,
+                                                                                                overflow: TextOverflow.ellipsis,
+                                                                                              ),
+                                                                                            ),
+                                                                                            const Icon(
+                                                                                              Icons.star_outline_rounded,
+                                                                                              color: Color(0xFFFBBF24),
+                                                                                              size: 22.0,
                                                                                             ),
                                                                                           ],
-                                                                                        ),
-                                                                                      ].divide(SizedBox(width: 5.0)),
+                                                                                        );
+                                                                                      },
                                                                                     ),
-                                                                                    Align(
-                                                                                      alignment: AlignmentDirectional(-1.0, 0.0),
-                                                                                      child: Padding(
-                                                                                        padding: EdgeInsetsDirectional.fromSTEB(25.0, 0.0, 0.0, 0.0),
-                                                                                        child: Container(
-                                                                                          width: 184.9,
-                                                                                          height: 16.8,
-                                                                                          decoration: BoxDecoration(),
-                                                                                          child: Row(
-                                                                                            mainAxisSize: MainAxisSize.min,  // 👈 CRITICAL: min not max!
-                                                                                            mainAxisAlignment: MainAxisAlignment.start,
-                                                                                            children: [
-                                                                                              // 👈 TRANSPORT ICONS (only ONE shows)
-                                                                                              if (listViewRidesNewRecord.modeOfTransport == 'Bike')
-                                                                                                Padding(
-                                                                                                  padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 8.0, 0.0),  // 👈 Reduced padding
-                                                                                                  child: Icon(Icons.motorcycle_sharp, color: Color(0xFF8A8888), size: 18.0),  // 👈 Smaller
-                                                                                                ),
-                                                                                              if (listViewRidesNewRecord.modeOfTransport == 'Train')
-                                                                                                Padding(
-                                                                                                  padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 8.0, 0.0),
-                                                                                                  child: Icon(Icons.train, color: Color(0xFF929090), size: 18.0),
-                                                                                                ),
-                                                                                              if (listViewRidesNewRecord.modeOfTransport == 'Car')
-                                                                                                Padding(
-                                                                                                  padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 8.0, 0.0),
-                                                                                                  child: FaIcon(FontAwesomeIcons.carSide, color: Color(0xFF8F9192), size: 14.0),  // 👈 Smaller
-                                                                                                ),
-                                                                                              if (listViewRidesNewRecord.modeOfTransport == 'Bus')
-                                                                                                Padding(
-                                                                                                  padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 8.0, 0.0),
-                                                                                                  child: FaIcon(FontAwesomeIcons.bus, color: Color(0xFF919191), size: 14.0),
-                                                                                                ),
-
-                                                                                              // 👈 FLEXIBLE TIME TEXT
-                                                                                              Flexible(
-                                                                                                child: Text(
-                                                                                                  '${dateTimeFormat("hh:mm a", listViewRidesNewRecord.pickupTime).toLowerCase()} । ${dateTimeFormat("yMMMd", listViewRidesNewRecord.pickupTime)}',
-                                                                                                  style: FlutterFlowTheme.of(context).labelMedium.override(
-                                                                                                    fontSize: 11.5,
-                                                                                                    color: FlutterFlowTheme.of(context).secondaryText,
-                                                                                                  ),
-                                                                                                  maxLines: 1,
-                                                                                                  overflow: TextOverflow.ellipsis,
-                                                                                                ),
-                                                                                              ),
-                                                                                            ],
-                                                                                          ),
-
-                                                                                        ),
-                                                                                      ),
-                                                                                    ),
-                                                                                    Row(
-                                                                                      mainAxisSize: MainAxisSize.max,
-                                                                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                                                      children: [
-                                                                                        Row(
-                                                                                          mainAxisSize: MainAxisSize.min,
-                                                                                          children: [
-                                                                                            Icon(
-                                                                                              Icons.location_on_outlined,
-                                                                                              color: Colors.grey,
-                                                                                              size: 24.0,
-                                                                                            ),
-                                                                                            Container(
-                                                                                              width: 170.0,
-                                                                                              decoration: BoxDecoration(
-                                                                                                color: Color(0xFFE3E6E0),
-                                                                                                borderRadius: BorderRadius.circular(15.0),
-                                                                                              ),
-                                                                                              child: Padding(
-                                                                                                padding: EdgeInsetsDirectional.fromSTEB(15.0, 5.0, 10.0, 5.0),
-                                                                                                child: Text(
-                                                                                                  _truncateAddress(listViewRidesNewRecord.rideEndLocation),
-                                                                                                  style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                                                                    font: GoogleFonts.inter(
-                                                                                                      fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
-                                                                                                      fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                                    ),
-                                                                                                    fontSize: 12.0,
-                                                                                                    letterSpacing: 0.0,
-                                                                                                    fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
-                                                                                                    fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                                                                  ),
-                                                                                                ),
-                                                                                              ),
-                                                                                            ),
-                                                                                          ],
-                                                                                        ),
-                                                                                      ].divide(SizedBox(width: 5.0)),
-                                                                                    ),
-                                                                                    if (listViewRidesNewRecord.creatorID != null)
-                                                                                      Padding(
-                                                                                        padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
-                                                                                        child: StreamBuilder<UsersRecord>(
-                                                                                          stream: UsersRecord.getDocument(listViewRidesNewRecord.creatorID!),
-                                                                                          builder: (context, snapshot) {
-                                                                                            // Customize what your widget looks like when it's loading.
-                                                                                            if (!snapshot.hasData) {
-                                                                                              return Center(
-                                                                                                child: SizedBox(
-                                                                                                  width: 50.0,
-                                                                                                  height: 50.0,
-                                                                                                  child: SpinKitFadingCircle(
-                                                                                                    color: Color(0xFF2B3C58),
-                                                                                                    size: 50.0,
-                                                                                                  ),
-                                                                                                ),
-                                                                                              );
-                                                                                            }
-
-                                                                                            final rowUsersRecord = snapshot.data!;
-
-                                                                                            return Row(
-                                                                                              mainAxisSize: MainAxisSize.max,
-                                                                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                                                              children: [
-                                                                                                // Left section with profile image and name
-                                                                                                Expanded(  // 👈 CHANGED: Use Expanded to take available space
-                                                                                                  child: Align(
-                                                                                                    alignment: AlignmentDirectional(-1.0, 0.0),
-                                                                                                    child: Container(
-                                                                                                      constraints: BoxConstraints(maxWidth: double.infinity),  // 👈 CHANGED: Allow full width
-                                                                                                      decoration: BoxDecoration(),
-                                                                                                      child: Row(
-                                                                                                        mainAxisSize: MainAxisSize.min,
-                                                                                                        mainAxisAlignment: MainAxisAlignment.start,
-                                                                                                        children: [
-                                                                                                          InkWell(
-                                                                                                            splashColor: Colors.transparent,
-                                                                                                            focusColor: Colors.transparent,
-                                                                                                            hoverColor: Colors.transparent,
-                                                                                                            highlightColor: Colors.transparent,
-                                                                                                            onTap: () => context.pushNamed(
-                                                                                                              DriverReviewWidget.routeName,
-                                                                                                              queryParameters: {
-                                                                                                                'userRef': serializeParam(rowUsersRecord.reference, ParamType.DocumentReference),
-                                                                                                              }.withoutNulls,
-                                                                                                            ),
-                                                                                                            child: Builder(
-                                                                                                              builder: (context) {
-                                                                                                                if (rowUsersRecord.photoUrl != null && rowUsersRecord.photoUrl!.isNotEmpty) {
-                                                                                                                  return Container(
-                                                                                                                    width: 30.0,
-                                                                                                                    height: 30.0,
-                                                                                                                    clipBehavior: Clip.antiAlias,
-                                                                                                                    decoration: const BoxDecoration(shape: BoxShape.circle),
-                                                                                                                    child: Image.network(
-                                                                                                                      rowUsersRecord.photoUrl!,
-                                                                                                                      fit: BoxFit.cover,
-                                                                                                                      errorBuilder: (context, error, stackTrace) => Container(
-                                                                                                                        width: 30.0,
-                                                                                                                        height: 30.0,
-                                                                                                                        decoration: BoxDecoration(
-                                                                                                                          shape: BoxShape.circle,
-                                                                                                                          color: Colors.grey.shade300,
-                                                                                                                        ),
-                                                                                                                        child: Icon(Icons.person, size: 16, color: Colors.grey),
-                                                                                                                      ),
-                                                                                                                    ),
-                                                                                                                  );
-                                                                                                                }
-                                                                                                                return Container(
-                                                                                                                  width: 30.0,
-                                                                                                                  height: 30.0,
-                                                                                                                  clipBehavior: Clip.antiAlias,
-                                                                                                                  decoration: const BoxDecoration(shape: BoxShape.circle),
-                                                                                                                  child: Image.asset('assets/images/userIconTr.png', fit: BoxFit.cover),
-                                                                                                                );
-                                                                                                              },
-                                                                                                            ),
-                                                                                                          ),
-                                                                                                          SizedBox(width: 12.0),
-                                                                                                          // 👈 CHANGED: Use Expanded here too for the name
-                                                                                                          Expanded(
-                                                                                                            child: Column(
-                                                                                                              mainAxisSize: MainAxisSize.min,
-                                                                                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                                                                                              children: [
-                                                                                                                Text(
-                                                                                                                  rowUsersRecord.displayName?.isNotEmpty == true
-                                                                                                                      ? rowUsersRecord.displayName!
-                                                                                                                      : 'Driver',
-                                                                                                                  style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                                                                                    fontFamily: GoogleFonts.inter().fontFamily,
-                                                                                                                    fontWeight: FontWeight.w600,
-                                                                                                                    fontSize: 12.0,  // 👈 CHANGED: Slightly larger font
-                                                                                                                  ),
-                                                                                                                  maxLines: 2,  // 👈 CHANGED: Allow 2 lines if needed
-                                                                                                                  softWrap: true,  // 👈 ADDED: Allow text to wrap
-                                                                                                                  overflow: TextOverflow.visible,  // 👈 CHANGED: No ellipsis
-                                                                                                                ),
-                                                                                                              ],
-                                                                                                            ),
-                                                                                                          ),
-                                                                                                        ],
-                                                                                                      ),
-                                                                                                    ),
-                                                                                                  ),
-                                                                                                ),
-
-                                                                                                // Right section with rating
-                                                                                                Align(
-                                                                                                  alignment: AlignmentDirectional(0.0, 0.0),
-                                                                                                  child: Container(
-                                                                                                    width: 40.0,  // 👈 CHANGED: Slightly wider
-                                                                                                    decoration: BoxDecoration(),
-                                                                                                    child: Padding(
-                                                                                                      padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 5.0, 0.0),
-                                                                                                      child: Stack(
-                                                                                                        alignment: AlignmentDirectional(0.0, 0.0),
-                                                                                                        children: [
-                                                                                                          ClipRRect(
-                                                                                                            borderRadius: BorderRadius.circular(8.0),
-                                                                                                            child: Image.asset(
-                                                                                                              'assets/images/Ride_Search_Icons.png',
-                                                                                                              width: 30.0,  // 👈 CHANGED: Slightly larger
-                                                                                                              height: 30.0,
-                                                                                                              fit: BoxFit.cover,
-                                                                                                            ),
-                                                                                                          ),
-                                                                                                          Text(
-                                                                                                            valueOrDefault<String>(
-                                                                                                              formatNumber(
-                                                                                                                functions.averageRating(rowUsersRecord.ratings.toList()),
-                                                                                                                formatType: FormatType.compact,
-                                                                                                              ),
-                                                                                                              '0',
-                                                                                                            ),
-                                                                                                            style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                                                                              font: GoogleFonts.inter(
-                                                                                                                fontWeight: FontWeight.w900,
-                                                                                                              ),
-                                                                                                              color: FlutterFlowTheme.of(context).primaryBackground,
-                                                                                                              fontSize: 10.0,  // 👈 CHANGED: Slightly larger
-                                                                                                              letterSpacing: 0.0,
-                                                                                                              fontWeight: FontWeight.w900,
-                                                                                                            ),
-                                                                                                          ),
-                                                                                                        ],
-                                                                                                      ),
-                                                                                                    ),
-                                                                                                  ),
-                                                                                                ),
-                                                                                              ],
-                                                                                            );
-                                                                                          },
-                                                                                        ),
-                                                                                      ),
-                                                                                  ].divide(SizedBox(height: 12.0)),
-                                                                                ),
+                                                                                ],
                                                                               ),
                                                                             ),
-                                                                          ),
-                                                                        ),
-                                                                      ),
-                                                                    ).animateOnPageLoad(animationsMap['containerOnPageLoadAnimation2']!),
-                                                                    Align(
-                                                                      alignment: AlignmentDirectional(0.97, -0.96),
-                                                                      child: Padding(
-                                                                        padding: EdgeInsetsDirectional.fromSTEB(10.0, 10.0, 5.0, 0.0),
-                                                                        child: Container(
-                                                                          // ✅ RESPONSIVE SIZING
-                                                                          width: MediaQuery.sizeOf(context).width * 0.12, // 12% of screen width
-                                                                          constraints: BoxConstraints(
-                                                                            minWidth: 55.0, // Minimum width
-                                                                            maxWidth: 70.0, // Maximum width
-                                                                            minHeight: 85.0, // Minimum height
-                                                                            maxHeight: 100.0, // Maximum height
-                                                                          ),
-                                                                          decoration: BoxDecoration(
-                                                                            color: Color(0xFFF97E4C),
-                                                                            borderRadius: BorderRadius.circular(12.0),
-                                                                          ),
-                                                                          child: Column(
-                                                                            mainAxisSize: MainAxisSize.min,
-                                                                            mainAxisAlignment: MainAxisAlignment.center,
-                                                                            children: [
-                                                                              Padding(
-                                                                                padding: EdgeInsetsDirectional.fromSTEB(0.0, 5.0, 0.0, 0.0),
-                                                                                child: Text(
-                                                                                  'Ride',
-                                                                                  style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                                                    font: GoogleFonts.inter(
-                                                                                      fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
-                                                                                      fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+
+                                                                            const SizedBox(width: 12.0),
+
+                                                                            // Right Price Pillar Badge
+                                                                            Container(
+                                                                              width: 80.0,
+                                                                              padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 6.0),
+                                                                              decoration: BoxDecoration(
+                                                                                color: FlutterFlowTheme.of(context).tertiary,
+                                                                                borderRadius: BorderRadius.circular(16.0),
+                                                                              ),
+                                                                              child: Column(
+                                                                                mainAxisSize: MainAxisSize.min,
+                                                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                                                children: [
+                                                                                  Text(
+                                                                                    'Ride',
+                                                                                    style: GoogleFonts.inter(
+                                                                                      fontSize: 11.5,
+                                                                                      fontWeight: FontWeight.w400,
+                                                                                      color: Colors.white.withOpacity(0.95),
                                                                                     ),
-                                                                                    color: FlutterFlowTheme.of(context).info,
-                                                                                    fontSize: 12.0,
-                                                                                    letterSpacing: 0.0,
                                                                                   ),
-                                                                                ),
-                                                                              ),
-                                                                              Padding(
-                                                                                padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 4.0),
-                                                                                child: AutoSizeText(
-                                                                                  '₹${formatNumber(listViewRidesNewRecord.pricePerPassengers, formatType: FormatType.custom, format: '', locale: '')}',
-                                                                                  style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                                                    font: GoogleFonts.inter(
-                                                                                      fontWeight: FontWeight.bold,
-                                                                                      fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                                                  const SizedBox(height: 1.0),
+                                                                                  AutoSizeText(
+                                                                                    '₹${formatNumber(listViewRidesNewRecord.pricePerPassengers, formatType: FormatType.custom, format: '', locale: '')}',
+                                                                                    style: GoogleFonts.inter(
+                                                                                      fontSize: 18.0,
+                                                                                      fontWeight: FontWeight.w700,
+                                                                                      color: Colors.white,
                                                                                     ),
-                                                                                    color: FlutterFlowTheme.of(context).info,
-                                                                                    fontSize: 15.0,
-                                                                                    letterSpacing: 0.0,
-                                                                                    fontWeight: FontWeight.bold,
+                                                                                    maxLines: 1,
+                                                                                    minFontSize: 11,
                                                                                   ),
-                                                                                  maxLines: 1,
-                                                                                  minFontSize: 12,
-                                                                                ),
-                                                                              ),
-                                                                              // ✅ Parcel section also responsive
-                                                                              Container(
-                                                                                width: double.infinity,
-                                                                                // ✅ Flexible height
-                                                                                constraints: BoxConstraints(minHeight: 48.0, maxHeight: 55.0),
-                                                                                decoration: BoxDecoration(
-                                                                                  color: Color(0xFFFF9561),
-                                                                                  borderRadius: BorderRadius.circular(10.0),
-                                                                                ),
-                                                                                child: Column(
-                                                                                  mainAxisSize: MainAxisSize.min,
-                                                                                  mainAxisAlignment: MainAxisAlignment.center,
-                                                                                  children: [
-                                                                                    Padding(
-                                                                                      padding: EdgeInsetsDirectional.fromSTEB(0.0, 3.0, 0.0, 0.0),
-                                                                                      child: Text(
-                                                                                        'Parcel',
-                                                                                        textAlign: TextAlign.center,
-                                                                                        style: FlutterFlowTheme.of(context).labelSmall.override(
-                                                                                          font: GoogleFonts.inter(
-                                                                                            fontWeight: FontWeight.w500,
-                                                                                            fontStyle: FlutterFlowTheme.of(context).labelSmall.fontStyle,
-                                                                                          ),
-                                                                                          color: FlutterFlowTheme.of(context).info,
-                                                                                          fontSize: 11.0,
-                                                                                          letterSpacing: 0.0,
-                                                                                        ),
-                                                                                      ),
+                                                                                  Padding(
+                                                                                    padding: const EdgeInsets.symmetric(vertical: 4.0),
+                                                                                    child: Container(
+                                                                                      height: 0.8,
+                                                                                      width: double.infinity,
+                                                                                      color: Colors.white.withOpacity(0.3),
                                                                                     ),
-                                                                                    AutoSizeText(
-                                                                                      '₹${listViewRidesNewRecord.totalDeliveryCost}',
-                                                                                      textAlign: TextAlign.center,
-                                                                                      style: FlutterFlowTheme.of(context).labelSmall.override(
-                                                                                        font: GoogleFonts.inter(
-                                                                                          fontWeight: FontWeight.bold,
-                                                                                          fontStyle: FlutterFlowTheme.of(context).labelSmall.fontStyle,
-                                                                                        ),
-                                                                                        color: FlutterFlowTheme.of(context).info,
-                                                                                        fontSize: 14.0,
-                                                                                        letterSpacing: 0.0,
-                                                                                      ),
-                                                                                      maxLines: 1,
-                                                                                      minFontSize: 11,
+                                                                                  ),
+                                                                                  Text(
+                                                                                    'Parcel',
+                                                                                    style: GoogleFonts.inter(
+                                                                                      fontSize: 11.5,
+                                                                                      fontWeight: FontWeight.w400,
+                                                                                      color: Colors.white.withOpacity(0.95),
                                                                                     ),
-                                                                                  ],
-                                                                                ),
+                                                                                  ),
+                                                                                  const SizedBox(height: 1.0),
+                                                                                  AutoSizeText(
+                                                                                    '₹${listViewRidesNewRecord.totalDeliveryCost}',
+                                                                                    style: GoogleFonts.inter(
+                                                                                      fontSize: 18.0,
+                                                                                      fontWeight: FontWeight.w700,
+                                                                                      color: Colors.white,
+                                                                                    ),
+                                                                                    maxLines: 1,
+                                                                                    minFontSize: 11,
+                                                                                  ),
+                                                                                ],
                                                                               ),
-                                                                            ],
-                                                                          ),
+                                                                            ),
+                                                                          ],
                                                                         ),
                                                                       ),
                                                                     ),
-                                                                  ],
-                                                                );
+                                                                  ).animateOnPageLoad(animationsMap['containerOnPageLoadAnimation2']!);
                                                               },
                                                             ).animateOnPageLoad(animationsMap['listViewOnPageLoadAnimation']!);
                                                           }

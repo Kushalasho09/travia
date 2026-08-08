@@ -402,9 +402,9 @@ class _MarketPlaceCustomerWidgetState extends State<MarketPlaceCustomerWidget>
                                   borderRadius: BorderRadius.circular(14.0),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.05),
-                                      blurRadius: 8.0,
-                                      offset: Offset(0, 2),
+                                      color: Colors.black.withOpacity(0.06),
+                                      blurRadius: 10.0,
+                                      offset: const Offset(0, 3),
                                     ),
                                   ],
                                 ),
@@ -414,64 +414,60 @@ class _MarketPlaceCustomerWidgetState extends State<MarketPlaceCustomerWidget>
                                     context.pushNamed(
                                         PageNotificationWidget.routeName);
                                   },
-                                  child: Center(
+                                  child: const Center(
                                     child: Icon(
-                                      Icons.notifications_outlined,
-                                      color: Color(0xFF283B5E),
+                                      Icons.notifications_none_rounded,
+                                      color: Color(0xFF1E293B),
                                       size: 24.0,
                                     ),
                                   ),
                                 ),
                               ),
-                              if (unreadCount > 0)
-                                Positioned(
-                                  right: -2,
-                                  top: -2,
-                                  child: Container(
-                                    constraints: BoxConstraints(
-                                      minWidth: 20.0,
-                                      minHeight: 20.0,
+                              Positioned(
+                                right: -1,
+                                top: -1,
+                                child: Container(
+                                  constraints: const BoxConstraints(
+                                    minWidth: 18.0,
+                                    minHeight: 18.0,
+                                  ),
+                                  padding: const EdgeInsets.all(3.0),
+                                  decoration: BoxDecoration(
+                                    color: FlutterFlowTheme.of(context).tertiary,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Colors.white,
+                                      width: 2.0,
                                     ),
-                                    padding: EdgeInsets.all(4.0),
-                                    decoration: BoxDecoration(
-                                      color: Color(0xFFE74C3C),
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: Color(0xFFF4F4F4),
-                                        width: 2.0,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: FlutterFlowTheme.of(context).tertiary.withOpacity(0.3),
+                                        blurRadius: 4.0,
+                                        offset: const Offset(0, 2),
                                       ),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.red.withOpacity(0.3),
-                                          blurRadius: 4.0,
-                                          offset: Offset(0, 2),
-                                        ),
-                                      ],
-                                    ),
-                                    child: Center(
-                                      child: Text(
-                                        unreadCount > 9
-                                            ? '9+'
-                                            : unreadCount.toString(),
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize:
-                                              unreadCount > 9 ? 8.0 : 10.0,
-                                          fontWeight: FontWeight.w700,
-                                          height: 1.0,
-                                        ),
+                                    ],
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      unreadCount > 9 ? '9+' : unreadCount.toString(),
+                                      style: GoogleFonts.inter(
+                                        color: Colors.white,
+                                        fontSize: unreadCount > 9 ? 8.0 : 9.5,
+                                        fontWeight: FontWeight.bold,
+                                        height: 1.0,
                                       ),
                                     ),
                                   ),
                                 ),
+                              ),
                             ],
                           );
                         },
                       ),
 
-                      SizedBox(width: 12.0),
+                      const SizedBox(width: 10.0),
 
-                      // Crown Icon (Plans)
+                      // Orange Crown Icon (Plans)
                       Container(
                         width: 44.0,
                         height: 44.0,
@@ -480,9 +476,9 @@ class _MarketPlaceCustomerWidgetState extends State<MarketPlaceCustomerWidget>
                           borderRadius: BorderRadius.circular(14.0),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 8.0,
-                              offset: Offset(0, 2),
+                              color: Colors.black.withOpacity(0.06),
+                              blurRadius: 10.0,
+                              offset: const Offset(0, 3),
                             ),
                           ],
                         ),
@@ -494,7 +490,7 @@ class _MarketPlaceCustomerWidgetState extends State<MarketPlaceCustomerWidget>
                           child: Center(
                             child: FaIcon(
                               FontAwesomeIcons.crown,
-                              color: Color(0xFF283B5E),
+                              color: FlutterFlowTheme.of(context).tertiary,
                               size: 20.0,
                             ),
                           ),
@@ -522,9 +518,9 @@ class _MarketPlaceCustomerWidgetState extends State<MarketPlaceCustomerWidget>
                               alignment: Alignment(0.0, 0),
                               child: TabBar(
                                 labelColor:
-                                    FlutterFlowTheme.of(context).primaryText,
+                                    FlutterFlowTheme.of(context).tertiary,
                                 unselectedLabelColor:
-                                    FlutterFlowTheme.of(context).secondaryText,
+                                    const Color(0xFF64748B),
                                 labelStyle: FlutterFlowTheme.of(context)
                                     .titleMedium
                                     .override(
@@ -565,7 +561,7 @@ class _MarketPlaceCustomerWidgetState extends State<MarketPlaceCustomerWidget>
                                           .fontStyle,
                                     ),
                                 indicatorColor:
-                                    FlutterFlowTheme.of(context).primary,
+                                    FlutterFlowTheme.of(context).tertiary,
                                 tabs: [
                                   Tab(
                                     text: 'All',

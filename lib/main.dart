@@ -326,6 +326,11 @@ class _MyAppState extends State<MyApp> {
 // Save FCM token to user's Firestore document
   Future<void> _saveFCMTokenToUserProfile(String userId, {String? token}) async {
     try {
+      if (userId.trim().isEmpty) {
+        print('⚠️ Skipping FCM token save: userId is empty');
+        return;
+      }
+
       if (token == null) {
         token = await FirebaseMessaging.instance.getToken();
       }
@@ -336,7 +341,7 @@ class _MyAppState extends State<MyApp> {
       }
 
       print('💾 Saving FCM token for user: $userId');
-      print('   Token: ${token.substring(0, 20)}...');
+      print('   Token: ${token.length >= 20 ? token.substring(0, 20) : token}...');
 
       // ✅ CORRECT: Save as SINGLE field 'fcmToken' (not array)
       await FirebaseFirestore.instance
