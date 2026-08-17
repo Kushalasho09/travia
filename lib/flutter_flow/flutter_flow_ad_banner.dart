@@ -103,16 +103,21 @@ class _FlutterFlowAdBannerState extends State<FlutterFlowAdBanner> {
     }
 
     final isAndroid = !kIsWeb && Platform.isAndroid;
+    final String? adUnitId = widget.showsTestAd
+        ? (isAndroid
+            ? 'ca-app-pub-3940256099942544/6300978111'
+            : 'ca-app-pub-3940256099942544/2934735716')
+        : (isAndroid ? widget.androidAdUnitID : widget.iOSAdUnitID);
+
+    if (adUnitId == null || adUnitId.isEmpty) {
+      print('Unable to load banner ad: adUnitId is null or empty.');
+      return;
+    }
+
     final BannerAd banner = BannerAd(
       size: size,
       request: request,
-      adUnitId: widget.showsTestAd
-          ? isAndroid
-              ? 'ca-app-pub-3940256099942544/6300978111'
-              : 'ca-app-pub-3940256099942544/2934735716'
-          : isAndroid
-              ? widget.androidAdUnitID!
-              : widget.iOSAdUnitID!,
+      adUnitId: adUnitId,
       listener: BannerAdListener(
         onAdLoaded: (ad) {
           print('$BannerAd loaded.');
