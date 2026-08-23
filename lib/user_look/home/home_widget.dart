@@ -2570,9 +2570,17 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                                                                                       stream: UsersRecord.getDocument(listViewRidesNewRecord.creatorID!),
                                                                                       builder: (context, snapshot) {
                                                                                         final rowUsersRecord = snapshot.data;
-                                                                                        final driverName = rowUsersRecord?.displayName?.isNotEmpty == true
-                                                                                            ? rowUsersRecord!.displayName!
-                                                                                            : 'Driver';
+                                                                                        final driverName = (rowUsersRecord?.displayName != null && rowUsersRecord!.displayName.trim().isNotEmpty)
+                                                                                            ? rowUsersRecord.displayName.trim()
+                                                                                            : (rowUsersRecord?.userName != null && rowUsersRecord!.userName.trim().isNotEmpty)
+                                                                                                ? rowUsersRecord.userName.trim()
+                                                                                                : (rowUsersRecord?.phoneNumber != null && rowUsersRecord!.phoneNumber.trim().isNotEmpty)
+                                                                                                    ? rowUsersRecord.phoneNumber.trim()
+                                                                                                    : 'Driver';
+
+                                                                                        final driverRatings = rowUsersRecord?.ratings.toList() ?? [];
+                                                                                        final double driverAvgRating = functions.averageRating(driverRatings) ?? 0.0;
+                                                                                        final String driverRatingStr = driverAvgRating > 0 ? driverAvgRating.toStringAsFixed(1) : '5.0';
 
                                                                                         return Row(
                                                                                           children: [
@@ -2595,9 +2603,9 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                                                                                                 height: 32.0,
                                                                                                 clipBehavior: Clip.antiAlias,
                                                                                                 decoration: const BoxDecoration(shape: BoxShape.circle),
-                                                                                                child: rowUsersRecord?.photoUrl?.isNotEmpty == true
+                                                                                                child: rowUsersRecord?.photoUrl != null && rowUsersRecord!.photoUrl.trim().isNotEmpty
                                                                                                     ? Image.network(
-                                                                                                        rowUsersRecord!.photoUrl!,
+                                                                                                        rowUsersRecord.photoUrl,
                                                                                                         fit: BoxFit.cover,
                                                                                                         errorBuilder: (_, __, ___) => Image.asset(
                                                                                                           'assets/images/userIconTr.png',
@@ -2612,21 +2620,65 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                                                                                             ),
                                                                                             const SizedBox(width: 8.0),
                                                                                             Expanded(
-                                                                                              child: Text(
-                                                                                                driverName,
-                                                                                                style: GoogleFonts.inter(
-                                                                                                  fontSize: 13.5,
-                                                                                                  fontWeight: FontWeight.w600,
-                                                                                                  color: const Color(0xFF1E293B),
+                                                                                              child: InkWell(
+                                                                                                onTap: () {
+                                                                                                  if (rowUsersRecord != null) {
+                                                                                                    context.pushNamed(
+                                                                                                      DriverReviewWidget.routeName,
+                                                                                                      queryParameters: {
+                                                                                                        'userRef': serializeParam(
+                                                                                                          rowUsersRecord.reference,
+                                                                                                          ParamType.DocumentReference,
+                                                                                                        ),
+                                                                                                      }.withoutNulls,
+                                                                                                    );
+                                                                                                  }
+                                                                                                },
+                                                                                                child: Text(
+                                                                                                  driverName,
+                                                                                                  style: GoogleFonts.inter(
+                                                                                                    fontSize: 13.5,
+                                                                                                    fontWeight: FontWeight.w600,
+                                                                                                    color: const Color(0xFF1E293B),
+                                                                                                  ),
+                                                                                                  maxLines: 1,
+                                                                                                  overflow: TextOverflow.ellipsis,
                                                                                                 ),
-                                                                                                maxLines: 1,
-                                                                                                overflow: TextOverflow.ellipsis,
                                                                                               ),
                                                                                             ),
-                                                                                            const Icon(
-                                                                                              Icons.star_outline_rounded,
-                                                                                              color: Color(0xFFFBBF24),
-                                                                                              size: 22.0,
+                                                                                            InkWell(
+                                                                                              onTap: () {
+                                                                                                if (rowUsersRecord != null) {
+                                                                                                  context.pushNamed(
+                                                                                                    DriverReviewWidget.routeName,
+                                                                                                    queryParameters: {
+                                                                                                      'userRef': serializeParam(
+                                                                                                        rowUsersRecord.reference,
+                                                                                                        ParamType.DocumentReference,
+                                                                                                      ),
+                                                                                                    }.withoutNulls,
+                                                                                                  );
+                                                                                                }
+                                                                                              },
+                                                                                              child: Row(
+                                                                                                mainAxisSize: MainAxisSize.min,
+                                                                                                children: [
+                                                                                                  const Icon(
+                                                                                                    Icons.star_rounded,
+                                                                                                    color: Color(0xFFF59E0B),
+                                                                                                    size: 17.0,
+                                                                                                  ),
+                                                                                                  const SizedBox(width: 2.0),
+                                                                                                  Text(
+                                                                                                    driverRatingStr,
+                                                                                                    style: GoogleFonts.inter(
+                                                                                                      fontSize: 12.0,
+                                                                                                      fontWeight: FontWeight.w600,
+                                                                                                      color: const Color(0xFF475569),
+                                                                                                    ),
+                                                                                                  ),
+                                                                                                ],
+                                                                                              ),
                                                                                             ),
                                                                                           ],
                                                                                         );

@@ -501,7 +501,11 @@ class _MarketPlaceBookingWidgetState extends State<MarketPlaceBookingWidget>
                                                 mainAxisSize: MainAxisSize.max,
                                                 children: [
                                                   Text(
-                                                    rowUsersRecord.displayName,
+                                                    (rowUsersRecord.displayName.trim().isNotEmpty)
+                                                        ? rowUsersRecord.displayName.trim()
+                                                        : (rowUsersRecord.userName.trim().isNotEmpty
+                                                            ? rowUsersRecord.userName.trim()
+                                                            : 'Seller'),
                                                     style: FlutterFlowTheme.of(
                                                             context)
                                                         .bodyMedium
@@ -1106,11 +1110,11 @@ class _MarketPlaceBookingWidgetState extends State<MarketPlaceBookingWidget>
                                           .postedBy!),
                                   builder: (context, snapshot) {
                                     final rowUsersRecord = snapshot.data;
-                                    final displayName =
-                                        rowUsersRecord?.displayName.isNotEmpty ==
-                                                true
-                                            ? rowUsersRecord!.displayName
-                                            : 'Mohammad Nawazish';
+                                    final displayName = (rowUsersRecord?.displayName != null && rowUsersRecord!.displayName.trim().isNotEmpty)
+                                         ? rowUsersRecord.displayName.trim()
+                                         : (rowUsersRecord?.userName != null && rowUsersRecord!.userName.trim().isNotEmpty)
+                                             ? rowUsersRecord.userName.trim()
+                                             : 'Seller';
                                     final photoUrl =
                                         rowUsersRecord?.photoUrl ?? '';
 

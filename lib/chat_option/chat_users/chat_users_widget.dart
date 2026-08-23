@@ -54,7 +54,7 @@ class _ChatUsersWidgetState extends State<ChatUsersWidget> {
       },
       child: Scaffold(
         key: scaffoldKey,
-        backgroundColor: FlutterFlowTheme.of(context).containerColour,
+        backgroundColor: Colors.white,
         drawer: Drawer(
           width: MediaQuery.of(context).size.width * 0.88,
           elevation: 16.0,
@@ -65,9 +65,9 @@ class _ChatUsersWidgetState extends State<ChatUsersWidget> {
           ),
         ),
         appBar: AppBar(
-          backgroundColor: Color(0xFFF4F4F4),
+          backgroundColor: Colors.white,
           automaticallyImplyLeading: false,
-          elevation: 2.0,
+          elevation: 0.5,
           shadowColor: Colors.black.withOpacity(0.05),
 
           leading: Padding(
@@ -333,8 +333,9 @@ class _ChatUsersWidgetState extends State<ChatUsersWidget> {
                                       width: double.infinity,
                                       constraints: BoxConstraints(minHeight: 70.0, maxHeight: 85.0), // ✅ FIXED HEIGHT
                                       decoration: BoxDecoration(
-                                        color: FlutterFlowTheme.of(context).secondaryBackground,
-                                        borderRadius: BorderRadius.circular(10.0),
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(12.0),
+                                        border: Border.all(color: const Color(0xFFE2E8F0)),
                                       ),
                                       child: Padding(
                                         padding: EdgeInsets.all(12.0),
@@ -364,7 +365,11 @@ class _ChatUsersWidgetState extends State<ChatUsersWidget> {
                                                       // Name
                                                       Expanded(
                                                         child: Text(
-                                                          containerUsersRecord.displayName ?? 'User',
+                                                          containerUsersRecord.displayName.trim().isNotEmpty
+                                                              ? containerUsersRecord.displayName.trim()
+                                                              : (containerUsersRecord.userName.trim().isNotEmpty
+                                                                  ? containerUsersRecord.userName.trim()
+                                                                  : 'User'),
                                                           style: FlutterFlowTheme.of(context).titleMedium.override(fontWeight: FontWeight.w600, fontSize: 15.0),
                                                           overflow: TextOverflow.ellipsis,
                                                         ),

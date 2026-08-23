@@ -1,16 +1,12 @@
 import '/backend/backend.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
-import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
-import '/flutter_flow/flutter_flow_widgets.dart';
-import 'dart:ui';
 import '/flutter_flow/custom_functions.dart' as functions;
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '/index.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
 import 'driver_review_model.dart';
 export 'driver_review_model.dart';
 
@@ -49,6 +45,31 @@ class _DriverReviewWidgetState extends State<DriverReviewWidget> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.userRef == null) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF8FAFC),
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0.5,
+          leading: FlutterFlowIconButton(
+            borderColor: Colors.transparent,
+            borderRadius: 30.0,
+            buttonSize: 50.0,
+            icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF0F172A), size: 24.0),
+            onPressed: () => context.pop(),
+          ),
+          title: const Text(
+            'Driver Reviews',
+            style: TextStyle(color: Color(0xFF0F172A), fontSize: 18.0, fontWeight: FontWeight.bold),
+          ),
+          centerTitle: true,
+        ),
+        body: const Center(
+          child: Text('User details not available', style: TextStyle(color: Color(0xFF64748B))),
+        ),
+      );
+    }
+
     return StreamBuilder<UsersRecord>(
       stream: UsersRecord.getDocument(widget.userRef!),
       builder: (context, snapshot) {
@@ -70,11 +91,39 @@ class _DriverReviewWidgetState extends State<DriverReviewWidget> {
 
         final driverReviewUsersRecord = snapshot.data!;
         final ratingsList = driverReviewUsersRecord.ratings.toList();
-        final double avgRating =
-            functions.averageRating(ratingsList) ?? 0.0;
-        final int totalReviewsCount =
-            ratingsList.isNotEmpty ? ratingsList.length : 26;
+        final double avgRating = functions.averageRating(ratingsList) ?? 0.0;
+        final int totalReviewsCount = ratingsList.length;
         final String displayRatingStr = avgRating > 0 ? avgRating.toStringAsFixed(1) : '5.0';
+
+        final String driverName = (driverReviewUsersRecord.displayName.trim().isNotEmpty)
+            ? driverReviewUsersRecord.displayName.trim()
+            : (driverReviewUsersRecord.userName.trim().isNotEmpty
+                ? driverReviewUsersRecord.userName.trim()
+                : (driverReviewUsersRecord.phoneNumber.trim().isNotEmpty
+                    ? driverReviewUsersRecord.phoneNumber.trim()
+                    : 'Driver'));
+
+        final bool isAadhaarVerified = driverReviewUsersRecord.aadharFront.isNotEmpty ||
+            driverReviewUsersRecord.aadharNumber > 0 ||
+            driverReviewUsersRecord.isVerifed;
+        final bool isMobileVerified = driverReviewUsersRecord.phoneNumber.trim().isNotEmpty;
+        final bool isVerifiedUser = isAadhaarVerified ||
+            isMobileVerified ||
+            driverReviewUsersRecord.isVerifed ||
+            driverReviewUsersRecord.isProfileCompleted;
+
+        // Rating breakdown calculations
+        final int star5Count = ratingsList.where((r) => r >= 4.5).length;
+        final int star4Count = ratingsList.where((r) => r >= 3.5 && r < 4.5).length;
+        final int star3Count = ratingsList.where((r) => r >= 2.5 && r < 3.5).length;
+        final int star2Count = ratingsList.where((r) => r >= 1.5 && r < 2.5).length;
+        final int star1Count = ratingsList.where((r) => r < 1.5).length;
+
+        final double star5Pct = totalReviewsCount > 0 ? star5Count / totalReviewsCount : (avgRating >= 4.5 ? 1.0 : 0.0);
+        final double star4Pct = totalReviewsCount > 0 ? star4Count / totalReviewsCount : 0.0;
+        final double star3Pct = totalReviewsCount > 0 ? star3Count / totalReviewsCount : 0.0;
+        final double star2Pct = totalReviewsCount > 0 ? star2Count / totalReviewsCount : 0.0;
+        final double star1Pct = totalReviewsCount > 0 ? star1Count / totalReviewsCount : 0.0;
 
         return GestureDetector(
           onTap: () {
@@ -168,7 +217,7 @@ class _DriverReviewWidgetState extends State<DriverReviewWidget> {
                                         clipBehavior: Clip.antiAlias,
                                         child: Builder(
                                           builder: (context) {
-                                            if (driverReviewUsersRecord.photoUrl.isNotEmpty) {
+                                            if (driverReviewUsersRecord.photoUrl.trim().isNotEmpty) {
                                               return Image.network(
                                                 driverReviewUsersRecord.photoUrl,
                                                 fit: BoxFit.cover,
@@ -183,23 +232,24 @@ class _DriverReviewWidgetState extends State<DriverReviewWidget> {
                                           },
                                         ),
                                       ),
-                                      Positioned(
-                                        bottom: 0,
-                                        right: 0,
-                                        child: Container(
-                                          width: 22.0,
-                                          height: 22.0,
-                                          decoration: const BoxDecoration(
-                                            color: Color(0xFF10B981),
-                                            shape: BoxShape.circle,
-                                          ),
-                                          child: const Icon(
-                                            Icons.check_rounded,
-                                            color: Colors.white,
-                                            size: 14.0,
+                                      if (isVerifiedUser)
+                                        Positioned(
+                                          bottom: 0,
+                                          right: 0,
+                                          child: Container(
+                                            width: 22.0,
+                                            height: 22.0,
+                                            decoration: const BoxDecoration(
+                                              color: Color(0xFF10B981),
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: const Icon(
+                                              Icons.check_rounded,
+                                              color: Colors.white,
+                                              size: 14.0,
+                                            ),
                                           ),
                                         ),
-                                      ),
                                     ],
                                   ),
                                   const SizedBox(width: 14.0),
@@ -209,14 +259,14 @@ class _DriverReviewWidgetState extends State<DriverReviewWidget> {
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          driverReviewUsersRecord.displayName.isNotEmpty
-                                              ? driverReviewUsersRecord.displayName
-                                              : 'Mohammad Nawazish',
+                                          driverName,
                                           style: const TextStyle(
                                             color: Colors.white,
                                             fontSize: 18.0,
                                             fontWeight: FontWeight.bold,
                                           ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
                                         ),
                                         const SizedBox(height: 4.0),
                                         Row(
@@ -237,7 +287,7 @@ class _DriverReviewWidgetState extends State<DriverReviewWidget> {
                                             ),
                                             const SizedBox(width: 4.0),
                                             Text(
-                                              '($totalReviewsCount Reviews)',
+                                              '($totalReviewsCount ${totalReviewsCount == 1 ? "Review" : "Reviews"})',
                                               style: const TextStyle(
                                                 color: Colors.white70,
                                                 fontSize: 12.0,
@@ -251,25 +301,35 @@ class _DriverReviewWidgetState extends State<DriverReviewWidget> {
                                           padding: const EdgeInsets.symmetric(
                                               horizontal: 8.0, vertical: 3.0),
                                           decoration: BoxDecoration(
-                                            color: const Color(0xFF065F46).withOpacity(0.6),
+                                            color: isVerifiedUser
+                                                ? const Color(0xFF065F46).withOpacity(0.6)
+                                                : const Color(0xFF1E293B),
                                             borderRadius: BorderRadius.circular(12.0),
                                             border: Border.all(
-                                              color: const Color(0xFF10B981).withOpacity(0.4),
+                                              color: isVerifiedUser
+                                                  ? const Color(0xFF10B981).withOpacity(0.4)
+                                                  : const Color(0xFF475569),
                                             ),
                                           ),
                                           child: Row(
                                             mainAxisSize: MainAxisSize.min,
-                                            children: const [
+                                            children: [
                                               Icon(
-                                                Icons.check_circle_rounded,
-                                                color: Color(0xFF34D399),
+                                                isVerifiedUser
+                                                    ? Icons.check_circle_rounded
+                                                    : Icons.shield_outlined,
+                                                color: isVerifiedUser
+                                                    ? const Color(0xFF34D399)
+                                                    : const Color(0xFF94A3B8),
                                                 size: 12.0,
                                               ),
-                                              SizedBox(width: 4.0),
+                                              const SizedBox(width: 4.0),
                                               Text(
-                                                'Verified Traveler',
+                                                isVerifiedUser ? 'Verified Driver' : 'Community Driver',
                                                 style: TextStyle(
-                                                  color: Color(0xFF34D399),
+                                                  color: isVerifiedUser
+                                                      ? const Color(0xFF34D399)
+                                                      : const Color(0xFF94A3B8),
                                                   fontSize: 10.5,
                                                   fontWeight: FontWeight.w600,
                                                 ),
@@ -280,21 +340,25 @@ class _DriverReviewWidgetState extends State<DriverReviewWidget> {
                                         const SizedBox(height: 6.0),
                                         // Security Badges
                                         Row(
-                                          children: const [
+                                          children: [
                                             Icon(
-                                              Icons.shield_outlined,
-                                              color: Color(0xFF34D399),
+                                              isAadhaarVerified
+                                                  ? Icons.shield_rounded
+                                                  : Icons.shield_outlined,
+                                              color: isAadhaarVerified
+                                                  ? const Color(0xFF34D399)
+                                                  : const Color(0xFF94A3B8),
                                               size: 12.0,
                                             ),
-                                            SizedBox(width: 3.0),
+                                            const SizedBox(width: 3.0),
                                             Text(
-                                              'Aadhaar Verified',
+                                              isAadhaarVerified ? 'Aadhaar Verified' : 'Aadhaar Pending',
                                               style: TextStyle(
-                                                color: Colors.white70,
+                                                color: isAadhaarVerified ? Colors.white70 : Colors.white38,
                                                 fontSize: 10.0,
                                               ),
                                             ),
-                                            Text(
+                                            const Text(
                                               '   |   ',
                                               style: TextStyle(
                                                 color: Colors.white38,
@@ -302,15 +366,19 @@ class _DriverReviewWidgetState extends State<DriverReviewWidget> {
                                               ),
                                             ),
                                             Icon(
-                                              Icons.phone_iphone_rounded,
-                                              color: Color(0xFF60A5FA),
+                                              isMobileVerified
+                                                  ? Icons.phone_iphone_rounded
+                                                  : Icons.phone_android_outlined,
+                                              color: isMobileVerified
+                                                  ? const Color(0xFF60A5FA)
+                                                  : const Color(0xFF94A3B8),
                                               size: 12.0,
                                             ),
-                                            SizedBox(width: 3.0),
+                                            const SizedBox(width: 3.0),
                                             Text(
-                                              'Mobile Verified',
+                                              isMobileVerified ? 'Mobile Verified' : 'Mobile Pending',
                                               style: TextStyle(
-                                                color: Colors.white70,
+                                                color: isMobileVerified ? Colors.white70 : Colors.white38,
                                                 fontSize: 10.0,
                                               ),
                                             ),
@@ -326,39 +394,60 @@ class _DriverReviewWidgetState extends State<DriverReviewWidget> {
                               Divider(color: Colors.white.withOpacity(0.12), height: 1.0),
                               const SizedBox(height: 12.0),
 
-                              // Bottom Stats Bar (4 Columns)
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                children: [
-                                  _buildStatColumn(
-                                    icon: Icons.card_travel_rounded,
-                                    iconColor: const Color(0xFF60A5FA),
-                                    bgColor: const Color(0xFF1E3A5F),
-                                    value: '18',
-                                    label: 'Trips Completed',
-                                  ),
-                                  _buildStatColumn(
-                                    icon: Icons.inventory_2_outlined,
-                                    iconColor: const Color(0xFFF59E0B),
-                                    bgColor: const Color(0xFF3B2D1B),
-                                    value: '42',
-                                    label: 'Deliveries',
-                                  ),
-                                  _buildStatColumn(
-                                    icon: Icons.access_time_filled_rounded,
-                                    iconColor: const Color(0xFF34D399),
-                                    bgColor: const Color(0xFF133E36),
-                                    value: '98%',
-                                    label: 'On-time',
-                                  ),
-                                  _buildStatColumn(
-                                    icon: Icons.people_alt_rounded,
-                                    iconColor: const Color(0xFFA78BFA),
-                                    bgColor: const Color(0xFF2E2349),
-                                    value: '$totalReviewsCount',
-                                    label: 'Happy Travelers',
-                                  ),
-                                ],
+                              // Bottom Stats Bar (4 Dynamic Columns)
+                              FutureBuilder<int>(
+                                future: queryRidesNewRecordCount(
+                                  queryBuilder: (q) => q.where('creatorID', isEqualTo: driverReviewUsersRecord.reference),
+                                ),
+                                builder: (context, ridesSnapshot) {
+                                  final int tripsCount = ridesSnapshot.data ?? 0;
+
+                                  return FutureBuilder<int>(
+                                    future: queryMarketPlaceRecordCount(
+                                      queryBuilder: (q) => q.where('postedBy', isEqualTo: driverReviewUsersRecord.reference),
+                                    ),
+                                    builder: (context, marketSnapshot) {
+                                      final int deliveriesCount = marketSnapshot.data ?? 0;
+                                      final String scoreStr = totalReviewsCount > 0
+                                          ? (avgRating >= 4.0 ? '98%' : '${((avgRating / 5.0) * 100).toInt()}%')
+                                          : '100%';
+
+                                      return Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                        children: [
+                                          _buildStatColumn(
+                                            icon: Icons.card_travel_rounded,
+                                            iconColor: const Color(0xFF60A5FA),
+                                            bgColor: const Color(0xFF1E3A5F),
+                                            value: '$tripsCount',
+                                            label: 'Trips Listed',
+                                          ),
+                                          _buildStatColumn(
+                                            icon: Icons.inventory_2_outlined,
+                                            iconColor: const Color(0xFFF59E0B),
+                                            bgColor: const Color(0xFF3B2D1B),
+                                            value: '$deliveriesCount',
+                                            label: 'Deliveries',
+                                          ),
+                                          _buildStatColumn(
+                                            icon: Icons.access_time_filled_rounded,
+                                            iconColor: const Color(0xFF34D399),
+                                            bgColor: const Color(0xFF133E36),
+                                            value: scoreStr,
+                                            label: 'Score',
+                                          ),
+                                          _buildStatColumn(
+                                            icon: Icons.people_alt_rounded,
+                                            iconColor: const Color(0xFFA78BFA),
+                                            bgColor: const Color(0xFF2E2349),
+                                            value: '$totalReviewsCount',
+                                            label: 'Reviews',
+                                          ),
+                                        ],
+                                      );
+                                    },
+                                  );
+                                },
                               ),
                             ],
                           ),
@@ -416,7 +505,7 @@ class _DriverReviewWidgetState extends State<DriverReviewWidget> {
                                       ],
                                     ),
                                     Text(
-                                      'Based on $totalReviewsCount reviews',
+                                      'Based on $totalReviewsCount ${totalReviewsCount == 1 ? "review" : "reviews"}',
                                       style: const TextStyle(
                                         fontSize: 9.5,
                                         color: Color(0xFF64748B),
@@ -424,12 +513,12 @@ class _DriverReviewWidgetState extends State<DriverReviewWidget> {
                                     ),
                                     const SizedBox(height: 10.0),
 
-                                    // Rating Progress Bars
-                                    _buildRatingProgressRow(stars: 5, count: 24, total: 26, flexPct: 0.92),
-                                    _buildRatingProgressRow(stars: 4, count: 2, total: 26, flexPct: 0.08),
-                                    _buildRatingProgressRow(stars: 3, count: 0, total: 26, flexPct: 0.0),
-                                    _buildRatingProgressRow(stars: 2, count: 0, total: 26, flexPct: 0.0),
-                                    _buildRatingProgressRow(stars: 1, count: 0, total: 26, flexPct: 0.0),
+                                    // Dynamic Rating Progress Bars
+                                    _buildRatingProgressRow(stars: 5, count: star5Count, flexPct: star5Pct),
+                                    _buildRatingProgressRow(stars: 4, count: star4Count, flexPct: star4Pct),
+                                    _buildRatingProgressRow(stars: 3, count: star3Count, flexPct: star3Pct),
+                                    _buildRatingProgressRow(stars: 2, count: star2Count, flexPct: star2Pct),
+                                    _buildRatingProgressRow(stars: 1, count: star1Count, flexPct: star1Pct),
                                   ],
                                 ),
                               ),
@@ -448,7 +537,7 @@ class _DriverReviewWidgetState extends State<DriverReviewWidget> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     const Text(
-                                      'What people love about him',
+                                      'Driver Highlights',
                                       style: TextStyle(
                                         fontSize: 12.0,
                                         fontWeight: FontWeight.bold,
@@ -461,10 +550,10 @@ class _DriverReviewWidgetState extends State<DriverReviewWidget> {
                                       runSpacing: 5.0,
                                       children: const [
                                         _LoveTag(icon: Icons.shield_outlined, text: 'Safe Driver'),
-                                        _LoveTag(icon: Icons.inventory_2_outlined, text: 'Great Package Handling'),
+                                        _LoveTag(icon: Icons.inventory_2_outlined, text: 'Careful Handling'),
                                         _LoveTag(icon: Icons.sentiment_satisfied_alt_rounded, text: 'Friendly'),
-                                        _LoveTag(icon: Icons.access_time_rounded, text: 'Always On Time'),
-                                        _LoveTag(icon: Icons.chat_bubble_outline_rounded, text: 'Excellent Communication'),
+                                        _LoveTag(icon: Icons.access_time_rounded, text: 'On Time'),
+                                        _LoveTag(icon: Icons.chat_bubble_outline_rounded, text: 'Clear Comm.'),
                                         _LoveTag(icon: Icons.directions_car_rounded, text: 'Clean Vehicle'),
                                       ],
                                     ),
@@ -495,41 +584,13 @@ class _DriverReviewWidgetState extends State<DriverReviewWidget> {
                                   children: [
                                     _buildFilterChip('All Reviews'),
                                     const SizedBox(width: 6.0),
-                                    _buildFilterChip('Travelers'),
+                                    _buildFilterChip('5 Stars'),
                                     const SizedBox(width: 6.0),
-                                    _buildFilterChip('Parcel Senders'),
+                                    _buildFilterChip('4+ Stars'),
                                     const SizedBox(width: 6.0),
                                     _buildFilterChip('Recent'),
                                   ],
                                 ),
-                              ),
-                            ),
-                            const SizedBox(width: 6.0),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8.0, vertical: 5.0),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(20.0),
-                                border: Border.all(color: const Color(0xFFCBD5E1)),
-                              ),
-                              child: Row(
-                                children: const [
-                                  Text(
-                                    'Highest Rated',
-                                    style: TextStyle(
-                                      fontSize: 10.5,
-                                      fontWeight: FontWeight.w600,
-                                      color: Color(0xFF334155),
-                                    ),
-                                  ),
-                                  SizedBox(width: 2.0),
-                                  Icon(
-                                    Icons.keyboard_arrow_down_rounded,
-                                    size: 14.0,
-                                    color: Color(0xFF64748B),
-                                  ),
-                                ],
                               ),
                             ),
                           ],
@@ -557,35 +618,64 @@ class _DriverReviewWidgetState extends State<DriverReviewWidget> {
                                 ),
                               );
                             }
-                            List<ReviewRecord> listViewReviewRecordList =
-                                snapshot.data!;
+                            List<ReviewRecord> rawReviews = snapshot.data!;
+
+                            // Apply filters
+                            List<ReviewRecord> listViewReviewRecordList = rawReviews.where((r) {
+                              if (_selectedFilter == '5 Stars') {
+                                return r.rating >= 4.5;
+                              } else if (_selectedFilter == '4+ Stars') {
+                                return r.rating >= 3.5;
+                              }
+                              return true;
+                            }).toList();
 
                             if (listViewReviewRecordList.isEmpty) {
-                              // Demo fallback review list if database is empty
-                              return Column(
-                                children: [
-                                  _buildDemoReviewCard(
-                                    name: 'Sarah Khan',
-                                    badge: 'Verified Traveler',
-                                    timeAgo: '2 weeks ago',
-                                    route: 'Delhi → Jaipur',
-                                    reviewText:
-                                        'He kept me updated during the entire journey. Very polite and delivered my package exactly on time. Highly recommended!',
-                                    helpfulCount: 12,
-                                    imagePath: 'assets/images/market1.jpg',
-                                  ),
-                                  const SizedBox(height: 12.0),
-                                  _buildDemoReviewCard(
-                                    name: 'Rahul Verma',
-                                    badge: 'Verified Sender',
-                                    timeAgo: '1 month ago',
-                                    route: 'Agra → Delhi',
-                                    reviewText:
-                                        'Great experience! He is punctual, communicates clearly and takes good care of the parcel.',
-                                    helpfulCount: 9,
-                                    imagePath: 'assets/images/market2.jpg',
-                                  ),
-                                ],
+                              return Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(vertical: 36.0, horizontal: 20.0),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(14.0),
+                                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                                ),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Container(
+                                      width: 56.0,
+                                      height: 56.0,
+                                      decoration: const BoxDecoration(
+                                        color: Color(0xFFF1F5F9),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.rate_review_outlined,
+                                        size: 28.0,
+                                        color: Color(0xFF64748B),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 12.0),
+                                    Text(
+                                      'No Reviews Yet',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 16.0,
+                                        fontWeight: FontWeight.bold,
+                                        color: const Color(0xFF0F172A),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6.0),
+                                    Text(
+                                      'This driver hasn\'t received any reviews yet. Be the first to share your experience!',
+                                      textAlign: TextAlign.center,
+                                      style: GoogleFonts.inter(
+                                        fontSize: 12.5,
+                                        color: const Color(0xFF64748B),
+                                        height: 1.4,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               );
                             }
 
@@ -601,213 +691,38 @@ class _DriverReviewWidgetState extends State<DriverReviewWidget> {
                                 final listViewReviewRecord =
                                     listViewReviewRecordList[listViewIndex];
 
+                                if (listViewReviewRecord.userRef == null) {
+                                  return _buildReviewCard(
+                                    reviewerName: 'Verified User',
+                                    reviewerPhoto: '',
+                                    isVerified: true,
+                                    rating: listViewReviewRecord.rating,
+                                    dateCreated: listViewReviewRecord.dateCreated,
+                                    reviewText: listViewReviewRecord.review,
+                                  );
+                                }
+
                                 return StreamBuilder<UsersRecord>(
                                   stream: UsersRecord.getDocument(
                                       listViewReviewRecord.userRef!),
                                   builder: (context, snapshot) {
                                     final containerUsersRecord = snapshot.data;
-                                    final reviewerName = containerUsersRecord
-                                                ?.displayName.isNotEmpty ==
-                                            true
-                                        ? containerUsersRecord!.displayName
-                                        : (listViewIndex == 0 ? 'Sarah Khan' : 'Rahul Verma');
+                                    final reviewerName = (containerUsersRecord?.displayName.trim().isNotEmpty == true)
+                                        ? containerUsersRecord!.displayName.trim()
+                                        : (containerUsersRecord?.userName.trim().isNotEmpty == true
+                                            ? containerUsersRecord!.userName.trim()
+                                            : 'Verified User');
                                     final reviewerPhoto = containerUsersRecord?.photoUrl ?? '';
+                                    final bool isReviewerVerified = containerUsersRecord?.isVerifed == true ||
+                                        containerUsersRecord?.isProfileCompleted == true;
 
-                                    return Container(
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius:
-                                            BorderRadius.circular(14.0),
-                                        border: Border.all(
-                                            color: const Color(0xFFE2E8F0)),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color:
-                                                Colors.black.withOpacity(0.02),
-                                            blurRadius: 4.0,
-                                            offset: const Offset(0, 2),
-                                          ),
-                                        ],
-                                      ),
-                                      padding: const EdgeInsets.all(14.0),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          // Reviewer Header Row
-                                          Row(
-                                            children: [
-                                              Container(
-                                                width: 38.0,
-                                                height: 38.0,
-                                                clipBehavior: Clip.antiAlias,
-                                                decoration: const BoxDecoration(
-                                                    shape: BoxShape.circle),
-                                                child: reviewerPhoto.isNotEmpty
-                                                    ? Image.network(
-                                                        reviewerPhoto,
-                                                        fit: BoxFit.cover,
-                                                        errorBuilder: (context, error, stackTrace) =>
-                                                            Image.asset('assets/images/userIconTr.png', fit: BoxFit.cover),
-                                                      )
-                                                    : Image.asset(
-                                                        'assets/images/userIconTr.png',
-                                                        fit: BoxFit.cover,
-                                                      ),
-                                              ),
-                                              const SizedBox(width: 10.0),
-                                              Expanded(
-                                                child: Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: [
-                                                    Row(
-                                                      children: [
-                                                        Flexible(
-                                                          child: Text(
-                                                            reviewerName,
-                                                            maxLines: 1,
-                                                            overflow: TextOverflow
-                                                                .ellipsis,
-                                                            style: const TextStyle(
-                                                              fontSize: 13.5,
-                                                              fontWeight:
-                                                                  FontWeight.bold,
-                                                              color: Color(
-                                                                  0xFF0F172A),
-                                                            ),
-                                                          ),
-                                                        ),
-                                                        const SizedBox(width: 6.0),
-                                                        Container(
-                                                          padding: const EdgeInsets.symmetric(
-                                                              horizontal: 6.0, vertical: 2.0),
-                                                          decoration: BoxDecoration(
-                                                            color: const Color(0xFFF0FDF4),
-                                                            borderRadius: BorderRadius.circular(8.0),
-                                                            border: Border.all(color: const Color(0xFFDCFCE7)),
-                                                          ),
-                                                          child: Row(
-                                                            mainAxisSize: MainAxisSize.min,
-                                                            children: const [
-                                                              Icon(
-                                                                Icons.check_circle_rounded,
-                                                                color: Color(0xFF10B981),
-                                                                size: 10.0,
-                                                              ),
-                                                              SizedBox(width: 2.0),
-                                                              Text(
-                                                                'Verified Traveler',
-                                                                style: TextStyle(
-                                                                  color: Color(0xFF0F766E),
-                                                                  fontSize: 9.0,
-                                                                  fontWeight: FontWeight.w600,
-                                                                ),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                    const SizedBox(height: 2.0),
-                                                    Row(
-                                                      children: [
-                                                        RatingBarIndicator(
-                                                          itemBuilder: (context, index) => const Icon(
-                                                            Icons.star_rounded,
-                                                            color: Color(0xFFF59E0B),
-                                                          ),
-                                                          direction: Axis.horizontal,
-                                                          rating: listViewReviewRecord.rating > 0 ? listViewReviewRecord.rating : 5.0,
-                                                          unratedColor: const Color(0xFFCBD5E1),
-                                                          itemCount: 5,
-                                                          itemSize: 13.0,
-                                                        ),
-                                                        const SizedBox(width: 6.0),
-                                                        Text(
-                                                          '•  ${listViewReviewRecord.hasDateCreated() ? dateTimeFormat("relative", listViewReviewRecord.dateCreated!) : "2 weeks ago"}',
-                                                          style: const TextStyle(
-                                                            fontSize: 11.0,
-                                                            color: Color(0xFF64748B),
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-
-                                          const SizedBox(height: 8.0),
-
-                                          // Route line
-                                          Row(
-                                            children: const [
-                                              Icon(
-                                                Icons.location_on_rounded,
-                                                color: Color(0xFF10B981),
-                                                size: 12.0,
-                                              ),
-                                              SizedBox(width: 3.0),
-                                              Text(
-                                                'Delhi → Jaipur',
-                                                style: TextStyle(
-                                                  fontSize: 11.0,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: Color(0xFF334155),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-
-                                          const SizedBox(height: 6.0),
-
-                                          // Review Body Text
-                                          Text(
-                                            valueOrDefault<String>(
-                                                listViewReviewRecord.review,
-                                                'He kept me updated during the entire journey. Very polite and delivered my package exactly on time.'),
-                                            style: const TextStyle(
-                                              fontSize: 12.0,
-                                              height: 1.35,
-                                              color: Color(0xFF334155),
-                                            ),
-                                          ),
-
-                                          const SizedBox(height: 10.0),
-
-                                          // Footer: Helpful Count & 3-Dots
-                                          Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Row(
-                                                children: [
-                                                  const Icon(
-                                                    Icons.thumb_up_outlined,
-                                                    size: 13.0,
-                                                    color: Color(0xFF64748B),
-                                                  ),
-                                                  const SizedBox(width: 4.0),
-                                                  Text(
-                                                    'Helpful (${12 - listViewIndex})',
-                                                    style: const TextStyle(
-                                                      fontSize: 11.0,
-                                                      color: Color(0xFF64748B),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                              const Icon(
-                                                Icons.more_horiz_rounded,
-                                                size: 16.0,
-                                                color: Color(0xFF94A3B8),
-                                              ),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
+                                    return _buildReviewCard(
+                                      reviewerName: reviewerName,
+                                      reviewerPhoto: reviewerPhoto,
+                                      isVerified: isReviewerVerified,
+                                      rating: listViewReviewRecord.rating,
+                                      dateCreated: listViewReviewRecord.dateCreated,
+                                      reviewText: listViewReviewRecord.review,
                                     );
                                   },
                                 );
@@ -859,12 +774,15 @@ class _DriverReviewWidgetState extends State<DriverReviewWidget> {
                           ),
                           child: InkWell(
                             borderRadius: BorderRadius.circular(14.0),
-                            onTap: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Write a review dialog opening...'),
-                                  duration: Duration(seconds: 2),
-                                ),
+                            onTap: () async {
+                              await context.pushNamed(
+                                AddRatingWidget.routeName,
+                                queryParameters: {
+                                  'userRef': serializeParam(
+                                    driverReviewUsersRecord.reference,
+                                    ParamType.DocumentReference,
+                                  ),
+                                }.withoutNulls,
                               );
                             },
                             child: Padding(
@@ -920,6 +838,151 @@ class _DriverReviewWidgetState extends State<DriverReviewWidget> {
 
   // =================== HELPER BUILDERS ===================
 
+  Widget _buildReviewCard({
+    required String reviewerName,
+    required String reviewerPhoto,
+    required bool isVerified,
+    required double rating,
+    required DateTime? dateCreated,
+    required String reviewText,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14.0),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 4.0,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(14.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Reviewer Header Row
+          Row(
+            children: [
+              Container(
+                width: 38.0,
+                height: 38.0,
+                clipBehavior: Clip.antiAlias,
+                decoration: const BoxDecoration(shape: BoxShape.circle),
+                child: reviewerPhoto.isNotEmpty
+                    ? Image.network(
+                        reviewerPhoto,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) =>
+                            Image.asset('assets/images/userIconTr.png', fit: BoxFit.cover),
+                      )
+                    : Image.asset(
+                        'assets/images/userIconTr.png',
+                        fit: BoxFit.cover,
+                      ),
+              ),
+              const SizedBox(width: 10.0),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            reviewerName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF0F172A),
+                            ),
+                          ),
+                        ),
+                        if (isVerified) ...[
+                          const SizedBox(width: 6.0),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6.0, vertical: 2.0),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF0FDF4),
+                              borderRadius: BorderRadius.circular(8.0),
+                              border: Border.all(color: const Color(0xFFDCFCE7)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: const [
+                                Icon(
+                                  Icons.check_circle_rounded,
+                                  color: Color(0xFF10B981),
+                                  size: 10.0,
+                                ),
+                                SizedBox(width: 2.0),
+                                Text(
+                                  'Verified User',
+                                  style: TextStyle(
+                                    color: Color(0xFF0F766E),
+                                    fontSize: 9.0,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 2.0),
+                    Row(
+                      children: [
+                        RatingBarIndicator(
+                          itemBuilder: (context, index) => const Icon(
+                            Icons.star_rounded,
+                            color: Color(0xFFF59E0B),
+                          ),
+                          direction: Axis.horizontal,
+                          rating: rating > 0 ? rating : 5.0,
+                          unratedColor: const Color(0xFFCBD5E1),
+                          itemCount: 5,
+                          itemSize: 13.0,
+                        ),
+                        if (dateCreated != null) ...[
+                          const SizedBox(width: 6.0),
+                          Text(
+                            '•  ${dateTimeFormat("relative", dateCreated)}',
+                            style: const TextStyle(
+                              fontSize: 11.0,
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          if (reviewText.isNotEmpty) ...[
+            const SizedBox(height: 8.0),
+            Text(
+              reviewText,
+              style: const TextStyle(
+                fontSize: 12.0,
+                height: 1.35,
+                color: Color(0xFF334155),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   Widget _buildStatColumn({
     required IconData icon,
     required Color iconColor,
@@ -962,7 +1025,6 @@ class _DriverReviewWidgetState extends State<DriverReviewWidget> {
   Widget _buildRatingProgressRow({
     required int stars,
     required int count,
-    required int total,
     required double flexPct,
   }) {
     return Padding(
@@ -982,7 +1044,7 @@ class _DriverReviewWidgetState extends State<DriverReviewWidget> {
             child: ClipRRect(
               borderRadius: BorderRadius.circular(4.0),
               child: LinearProgressIndicator(
-                value: flexPct,
+                value: flexPct.clamp(0.0, 1.0),
                 minHeight: 5.0,
                 backgroundColor: const Color(0xFFF1F5F9),
                 valueColor:
@@ -1034,180 +1096,6 @@ class _DriverReviewWidgetState extends State<DriverReviewWidget> {
             color: isSelected ? Colors.white : const Color(0xFF475569),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildDemoReviewCard({
-    required String name,
-    required String badge,
-    required String timeAgo,
-    required String route,
-    required String reviewText,
-    required int helpfulCount,
-    required String imagePath,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14.0),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 4.0,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.all(14.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 38.0,
-                height: 38.0,
-                clipBehavior: Clip.antiAlias,
-                decoration: const BoxDecoration(shape: BoxShape.circle),
-                child: Image.asset(
-                  'assets/images/userIconTr.png',
-                  fit: BoxFit.cover,
-                ),
-              ),
-              const SizedBox(width: 10.0),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          name,
-                          style: const TextStyle(
-                            fontSize: 13.5,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF0F172A),
-                          ),
-                        ),
-                        const SizedBox(width: 6.0),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6.0, vertical: 2.0),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF0FDF4),
-                            borderRadius: BorderRadius.circular(8.0),
-                            border: Border.all(color: const Color(0xFFDCFCE7)),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.check_circle_rounded,
-                                color: Color(0xFF10B981),
-                                size: 10.0,
-                              ),
-                              const SizedBox(width: 2.0),
-                              Text(
-                                badge,
-                                style: const TextStyle(
-                                  color: Color(0xFF0F766E),
-                                  fontSize: 9.0,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 2.0),
-                    Row(
-                      children: [
-                        RatingBarIndicator(
-                          itemBuilder: (context, index) => const Icon(
-                            Icons.star_rounded,
-                            color: Color(0xFFF59E0B),
-                          ),
-                          direction: Axis.horizontal,
-                          rating: 5.0,
-                          unratedColor: const Color(0xFFCBD5E1),
-                          itemCount: 5,
-                          itemSize: 13.0,
-                        ),
-                        const SizedBox(width: 6.0),
-                        Text(
-                          '•  $timeAgo',
-                          style: const TextStyle(
-                            fontSize: 11.0,
-                            color: Color(0xFF64748B),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8.0),
-          Row(
-            children: [
-              const Icon(
-                Icons.location_on_rounded,
-                color: Color(0xFF10B981),
-                size: 12.0,
-              ),
-              const SizedBox(width: 3.0),
-              Text(
-                route,
-                style: const TextStyle(
-                  fontSize: 11.0,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF334155),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6.0),
-          Text(
-            reviewText,
-            style: const TextStyle(
-              fontSize: 12.0,
-              height: 1.35,
-              color: Color(0xFF334155),
-            ),
-          ),
-          const SizedBox(height: 10.0),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  const Icon(
-                    Icons.thumb_up_outlined,
-                    size: 13.0,
-                    color: Color(0xFF64748B),
-                  ),
-                  const SizedBox(width: 4.0),
-                  Text(
-                    'Helpful ($helpfulCount)',
-                    style: const TextStyle(
-                      fontSize: 11.0,
-                      color: Color(0xFF64748B),
-                    ),
-                  ),
-                ],
-              ),
-              const Icon(
-                Icons.more_horiz_rounded,
-                size: 16.0,
-                color: Color(0xFF94A3B8),
-              ),
-            ],
-          ),
-        ],
       ),
     );
   }

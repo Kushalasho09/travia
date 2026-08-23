@@ -798,7 +798,13 @@ class _SearchRideWidgetState extends State<SearchRideWidget> {
                                                                         crossAxisAlignment: CrossAxisAlignment.start,
                                                                         children: [
                                                                           Text(
-                                                                            rowUsersRecord.displayName != null && rowUsersRecord.displayName != '' ? rowUsersRecord.displayName : 'Driver',
+                                                                            (rowUsersRecord.displayName.trim().isNotEmpty)
+                                                                                ? rowUsersRecord.displayName.trim()
+                                                                                : (rowUsersRecord.userName.trim().isNotEmpty
+                                                                                    ? rowUsersRecord.userName.trim()
+                                                                                    : (rowUsersRecord.phoneNumber.trim().isNotEmpty
+                                                                                        ? rowUsersRecord.phoneNumber.trim()
+                                                                                        : 'Driver')),
                                                                             style: FlutterFlowTheme
                                                                                 .of(context)
                                                                                 .bodyMedium

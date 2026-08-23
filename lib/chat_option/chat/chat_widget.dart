@@ -30,6 +30,7 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'chat_model.dart';
 export 'chat_model.dart';
 
@@ -344,17 +345,179 @@ class _ChatWidgetState extends State<ChatWidget> {
     super.dispose();
   }
 
+  void _showBlockUserDialog(BuildContext context, DocumentReference? otherUserRef) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
+        backgroundColor: Colors.white,
+        title: const Row(
+          children: [
+            Icon(Icons.block_rounded, color: Color(0xFFE74C3C), size: 22.0),
+            SizedBox(width: 8.0),
+            Text(
+              'Block User',
+              style: TextStyle(
+                fontSize: 17.0,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF0F172A),
+              ),
+            ),
+          ],
+        ),
+        content: const Text(
+          'Are you sure you want to block this user? You will no longer receive messages or ride requests from them.',
+          style: TextStyle(fontSize: 13.5, color: Color(0xFF475569), height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFE74C3C),
+              elevation: 0.0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            ),
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('User has been blocked.'),
+                  backgroundColor: Color(0xFFE74C3C),
+                  duration: Duration(seconds: 3),
+                ),
+              );
+            },
+            child: const Text('Block', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showReportUserDialog(BuildContext context, DocumentReference? otherUserRef) {
+    String selectedReason = 'Spam or Harassment';
+    final TextEditingController detailsController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
+          backgroundColor: Colors.white,
+          title: const Row(
+            children: [
+              Icon(Icons.report_problem_outlined, color: Color(0xFFF59E0B), size: 22.0),
+              SizedBox(width: 8.0),
+              Text(
+                'Report User',
+                style: TextStyle(
+                  fontSize: 17.0,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF0F172A),
+                ),
+              ),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Select the issue you would like to report:',
+                  style: TextStyle(fontSize: 13.0, color: Color(0xFF475569)),
+                ),
+                const SizedBox(height: 10.0),
+                ...[
+                  'Spam or Harassment',
+                  'Inappropriate Content',
+                  'Fraud or Scam',
+                  'Fare / Route Dispute',
+                  'Other',
+                ].map((reason) => RadioListTile<String>(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      activeColor: const Color(0xFF0D9488),
+                      title: Text(reason, style: const TextStyle(fontSize: 13.0, color: Color(0xFF1E293B))),
+                      value: reason,
+                      groupValue: selectedReason,
+                      onChanged: (val) {
+                        if (val != null) {
+                          setDialogState(() {
+                            selectedReason = val;
+                          });
+                        }
+                      },
+                    )),
+                const SizedBox(height: 8.0),
+                TextField(
+                  controller: detailsController,
+                  maxLines: 2,
+                  decoration: InputDecoration(
+                    hintText: 'Additional details (optional)...',
+                    hintStyle: const TextStyle(fontSize: 12.0, color: Color(0xFF94A3B8)),
+                    filled: true,
+                    fillColor: const Color(0xFFF8FAFC),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10.0),
+                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10.0),
+                      borderSide: const BorderSide(color: Color(0xFF0D9488)),
+                    ),
+                    contentPadding: const EdgeInsets.all(10.0),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0D9488),
+                elevation: 0.0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              ),
+              onPressed: () {
+                Navigator.pop(dialogContext);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Report submitted. Our safety team will review this.'),
+                    backgroundColor: Color(0xFF0D9488),
+                    duration: Duration(seconds: 3),
+                  ),
+                );
+              },
+              child: const Text('Submit Report', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    // ✅ Added null check for reciveChats
     if (widget.reciveChats == null) {
       return Scaffold(
-        backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
-        body: Center(
-          child: Text(
-            'Chat not found',
-            style: FlutterFlowTheme.of(context).bodyLarge,
-          ),
+        backgroundColor: Colors.white,
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0.5,
+          title: const Text('Chat', style: TextStyle(color: Color(0xFF0F172A))),
+        ),
+        body: const Center(
+          child: Text('Chat not found', style: TextStyle(color: Color(0xFF64748B))),
         ),
       );
     }
@@ -365,7 +528,7 @@ class _ChatWidgetState extends State<ChatWidget> {
         // Customize what your widget looks like when it's loading.
         if (!snapshot.hasData) {
           return Scaffold(
-            backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
+            backgroundColor: Colors.white,
             body: Center(
               child: SizedBox(
                 width: 50.0,
@@ -394,7 +557,7 @@ class _ChatWidgetState extends State<ChatWidget> {
             },
             child: Scaffold(
               key: scaffoldKey,
-              backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
+              backgroundColor: Colors.white,
               drawer: Drawer(
                 width: MediaQuery.of(context).size.width * 0.88,
                 elevation: 16.0,
@@ -405,15 +568,17 @@ class _ChatWidgetState extends State<ChatWidget> {
                 ),
               ),
               appBar: AppBar(
-                backgroundColor: Color(0xFFF4F4F4),
+                backgroundColor: Colors.white,
                 automaticallyImplyLeading: false,
+                elevation: 0.5,
+                shadowColor: Colors.black.withOpacity(0.05),
                 leading: FlutterFlowIconButton(
                   borderRadius: 18.0,
                   buttonSize: 40.0,
                   icon: FaIcon(
                     FontAwesomeIcons.bars,
                     color: Color(0xFF283B5E),
-                    size: 27.0,
+                    size: 22.0,
                   ),
                   onPressed: () async {
                     if (scaffoldKey.currentState != null) {
@@ -421,169 +586,132 @@ class _ChatWidgetState extends State<ChatWidget> {
                     }
                   },
                 ),
-                title: Padding(
-                  padding: EdgeInsets.all(5.0),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8.0),
-                    child: Image.asset(
-                      'assets/images/logoTraviaJi.png',
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                    ),
+                title: Center(
+                  child: Image.asset(
+                    'assets/images/logoTraviaJi.png',
+                    height: 40.0,
+                    fit: BoxFit.contain,
                   ),
                 ),
                 actions: [
-                  Align(
-                    alignment: AlignmentDirectional(0.0, 0.0),
-                    child: Padding(
-                      padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          // // Notification Icon
-                          // Stack(
-                          //   children: [
-                          //     InkWell(
-                          //       splashColor: Colors.transparent,
-                          //       focusColor: Colors.transparent,
-                          //       hoverColor: Colors.transparent,
-                          //       highlightColor: Colors.transparent,
-                          //       onTap: () async {
-                          //         // TODO: Add notification page route
-                          //         // context.pushNamed('NotificationsPage');
-                          //       },
-                          //       child: Container(
-                          //         width: 40.0,
-                          //         height: 40.0,
-                          //         decoration: BoxDecoration(
-                          //           shape: BoxShape.circle,
-                          //           color: Colors.transparent,
-                          //         ),
-                          //         child: Icon(
-                          //           Icons.notifications_outlined,
-                          //           color: Color(0xFF283B5E),
-                          //           size: 24.0,
-                          //         ),
-                          //       ),
-                          //     ),
-                          //     Positioned(
-                          //       right: 0,
-                          //       top: 0,
-                          //       child: Container(
-                          //         width: 16.0,
-                          //         height: 16.0,
-                          //         decoration: BoxDecoration(
-                          //           color: Colors.red,
-                          //           shape: BoxShape.circle,
-                          //           border: Border.all(
-                          //             color: Color(0xFFF4F4F4),
-                          //             width: 2.0,
-                          //           ),
-                          //         ),
-                          //         child: Center(
-                          //           child: Text(
-                          //             '3',
-                          //             style: TextStyle(
-                          //               color: Colors.white,
-                          //               fontSize: 10.0,
-                          //               fontWeight: FontWeight.w600,
-                          //             ),
-                          //           ),
-                          //         ),
-                          //       ),
-                          //     ),
-                          //   ],
-                          // ),
-                          // SizedBox(width: 10.0),
-                          // Crown Icon
-                          InkWell(
-                            splashColor: Colors.transparent,
-                            focusColor: Colors.transparent,
-                            hoverColor: Colors.transparent,
-                            highlightColor: Colors.transparent,
-                            onTap: () async {
-                              context.pushNamed(PlansWidget.routeName);
-                            },
-                            child: CircleAvatar(
-                              radius: 20,
-                              backgroundColor: Color(0xFF283B5E),
-                              child: Padding(
-                                padding: const EdgeInsets.only(right: 2),
-                                child: Icon(
-                                  FontAwesomeIcons.crown,
-                                  color: Colors.white,
-                                  size: 18.0,
+                  // Call icon
+                  Padding(
+                    padding: const EdgeInsets.only(right: 6.0),
+                    child: Center(
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(20.0),
+                        onTap: () async {
+                          final otherUserRef = functions.getOtherUserRef(
+                            chatChatsRecord.userIDs.toList(),
+                            currentUserReference!,
+                          );
+                          if (otherUserRef != null) {
+                            final userDoc = await UsersRecord.getDocumentOnce(otherUserRef);
+                            final phone = userDoc.phoneNumber.trim();
+                            if (phone.isNotEmpty) {
+                              final cleanPhone = phone.replaceAll(RegExp(r'[^0-9+]'), '');
+                              final uri = Uri.parse('tel:$cleanPhone');
+                              if (await canLaunchUrl(uri)) {
+                                await launchUrl(uri);
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Could not open phone dialer for $cleanPhone')),
+                                );
+                              }
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Phone number is not available for this user.'),
+                                  backgroundColor: Color(0xFFE74C3C),
                                 ),
-                              ),
+                              );
+                            }
+                          }
+                        },
+                        child: Container(
+                          width: 38.0,
+                          height: 38.0,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFF3EB),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: const Color(0xFFFFD8C2)),
+                          ),
+                          child: const Center(
+                            child: Icon(
+                              Icons.call_rounded,
+                              color: Color(0xFFE2703A),
+                              size: 20.0,
                             ),
                           ),
-                          SizedBox(width: 10.0),
-                          // Profile Avatar
-                          Container(
-                            width: 40.0,
-                            height: 40.0,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: Color(0xFF283B5E),
-                                width: 1.0,
-                              ),
-                            ),
-                            child: InkWell(
-                              splashColor: Colors.transparent,
-                              focusColor: Colors.transparent,
-                              hoverColor: Colors.transparent,
-                              highlightColor: Colors.transparent,
-                              onTap: () async {
-                                context.pushNamed(DriveProfileWidget.routeName);
-                              },
-                              child: Builder(
-                                builder: (context) {
-                                  if (currentUserPhoto != null && currentUserPhoto != '') {
-                                    return Container(
-                                      width: 200.0,
-                                      height: 200.0,
-                                      clipBehavior: Clip.antiAlias,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: Image.network(
-                                        currentUserPhoto,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (context, error, stackTrace) {
-                                          return Image.asset(
-                                            'assets/images/userIconTravia.png',
-                                            fit: BoxFit.cover,
-                                          );
-                                        },
-                                      ),
-                                    );
-                                  } else {
-                                    return Container(
-                                      width: 200.0,
-                                      height: 200.0,
-                                      clipBehavior: Clip.antiAlias,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: Image.asset(
-                                        'assets/images/userIconTravia.png',
-                                        fit: BoxFit.cover,
-                                      ),
-                                    );
-                                  }
-                                },
-                              ),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
+                  // Options icon (more_vert) with ONLY Block and Report
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: PopupMenuButton<String>(
+                      icon: const Icon(
+                        Icons.more_vert_rounded,
+                        color: Color(0xFFE2703A),
+                        size: 24.0,
+                      ),
+                      color: Colors.white,
+                      elevation: 4.0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.0),
+                      ),
+                      onSelected: (value) {
+                        final otherUserRef = functions.getOtherUserRef(
+                          chatChatsRecord.userIDs.toList(),
+                          currentUserReference!,
+                        );
+                        if (value == 'block') {
+                          _showBlockUserDialog(context, otherUserRef);
+                        } else if (value == 'report') {
+                          _showReportUserDialog(context, otherUserRef);
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        const PopupMenuItem(
+                          value: 'block',
+                          child: Row(
+                            children: [
+                              Icon(Icons.block_rounded, color: Color(0xFFE74C3C), size: 18.0),
+                              SizedBox(width: 10.0),
+                              Text(
+                                'Block',
+                                style: TextStyle(
+                                  color: Color(0xFF0F172A),
+                                  fontSize: 14.0,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: 'report',
+                          child: Row(
+                            children: [
+                              Icon(Icons.flag_outlined, color: Color(0xFFF59E0B), size: 18.0),
+                              SizedBox(width: 10.0),
+                              Text(
+                                'Report',
+                                style: TextStyle(
+                                  color: Color(0xFF0F172A),
+                                  fontSize: 14.0,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
-                centerTitle: false,
-                elevation: 5.0,
+                centerTitle: true,
               ),
               body: SafeArea(
                 top: true,

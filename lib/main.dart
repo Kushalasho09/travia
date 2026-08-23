@@ -159,8 +159,6 @@
 //   }
 // }
 
-
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -182,14 +180,12 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'flutter_flow/nav/nav.dart';
 import 'index.dart';
 
-
 // ✅ ADD THIS - Background notification handler (MUST BE TOP-LEVEL)
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
   print("📨 Background notification: ${message.notification?.title}");
 }
-
 
 /// Dev branch
 void main() async {
@@ -264,7 +260,7 @@ class _MyAppState extends State<MyApp> {
 
     Future.delayed(
       Duration(milliseconds: 1000),
-          () => _appStateNotifier.stopShowingSplashImage(),
+      () => _appStateNotifier.stopShowingSplashImage(),
     );
   }
 
@@ -276,8 +272,8 @@ class _MyAppState extends State<MyApp> {
   }
 
   void setThemeMode(ThemeMode mode) => safeSetState(() {
-    _themeMode = mode;
-  });
+        _themeMode = mode;
+      });
 // Initialize FCM and save token
   Future<void> _initializeFCM() async {
     try {
@@ -317,14 +313,14 @@ class _MyAppState extends State<MyApp> {
 
       // Setup notification handlers
       _setupNotificationHandlers();
-
     } catch (e) {
       print('❌ FCM initialization error: $e');
     }
   }
 
 // Save FCM token to user's Firestore document
-  Future<void> _saveFCMTokenToUserProfile(String userId, {String? token}) async {
+  Future<void> _saveFCMTokenToUserProfile(String userId,
+      {String? token}) async {
     try {
       if (userId.trim().isEmpty) {
         print('⚠️ Skipping FCM token save: userId is empty');
@@ -341,19 +337,16 @@ class _MyAppState extends State<MyApp> {
       }
 
       print('💾 Saving FCM token for user: $userId');
-      print('   Token: ${token.length >= 20 ? token.substring(0, 20) : token}...');
+      print(
+          '   Token: ${token.length >= 20 ? token.substring(0, 20) : token}...');
 
       // ✅ CORRECT: Save as SINGLE field 'fcmToken' (not array)
-      await FirebaseFirestore.instance
-          .collection('Users')
-          .doc(userId)
-          .set({
+      await FirebaseFirestore.instance.collection('Users').doc(userId).set({
         'fcmToken': token, // ← SINGLE FIELD, NOT ARRAY
         'fcmTokenUpdated': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
 
       print('✅ FCM token saved successfully for $userId');
-
     } catch (e) {
       print('❌ Error saving FCM token: $e');
     }
@@ -376,13 +369,16 @@ class _MyAppState extends State<MyApp> {
     });
 
     // Handle initial notification when app is launched
-    FirebaseMessaging.instance.getInitialMessage().then((RemoteMessage? message) {
+    FirebaseMessaging.instance
+        .getInitialMessage()
+        .then((RemoteMessage? message) {
       if (message != null) {
         print('🚀 App launched from notification');
         print('   Data: ${message.data}');
       }
     });
   }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
