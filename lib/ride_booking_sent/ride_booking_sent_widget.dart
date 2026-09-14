@@ -11,7 +11,12 @@ import 'ride_booking_sent_model.dart';
 export 'ride_booking_sent_model.dart';
 
 class RideBookingSentWidget extends StatefulWidget {
-  const RideBookingSentWidget({super.key});
+  const RideBookingSentWidget({
+    super.key,
+    this.rideRef,
+  });
+
+  final DocumentReference? rideRef;
 
   static String routeName = 'RideBookingSent';
   static String routePath = '/rideBookingSent';
@@ -265,6 +270,40 @@ class _RideBookingSentWidgetState extends State<RideBookingSentWidget> {
                           borderSide: BorderSide(
                             color: Colors.transparent,
                             width: 1.0,
+                          ),
+                          borderRadius: BorderRadius.circular(12.0),
+                        ),
+                      ),
+                      FFButtonWidget(
+                        onPressed: () async {
+                          context.pushNamed(
+                            TrackParcelWidget.routeName,
+                            queryParameters: {
+                              'rideRef': serializeParam(
+                                widget.rideRef,
+                                ParamType.DocumentReference,
+                              ),
+                            }.withoutNulls,
+                          );
+                        },
+                        text: 'View Live Tracking (Live Map)',
+                        icon: const Icon(Icons.share_location_rounded, color: Color(0xFFFF6B35), size: 18),
+                        options: FFButtonOptions(
+                          width: double.infinity,
+                          height: 50.0,
+                          padding: const EdgeInsets.all(8.0),
+                          color: Colors.white,
+                          textStyle: FlutterFlowTheme.of(context).titleMedium.override(
+                                font: GoogleFonts.interTight(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                color: const Color(0xFFFF6B35),
+                                letterSpacing: 0.0,
+                              ),
+                          elevation: 0.0,
+                          borderSide: const BorderSide(
+                            color: Color(0xFFFF6B35),
+                            width: 1.5,
                           ),
                           borderRadius: BorderRadius.circular(12.0),
                         ),

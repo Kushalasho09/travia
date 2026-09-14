@@ -1,14 +1,12 @@
+import '/components/publish_ride_progress_header.dart';
 import '/compotement/termsconditions11/termsconditions11_widget.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
-import '/flutter_flow/flutter_flow_widgets.dart';
-import 'dart:ui';
 import '/index.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:percent_indicator/percent_indicator.dart';
 import 'package:provider/provider.dart';
 import 'ride_rules7_model.dart';
 export 'ride_rules7_model.dart';
@@ -25,8 +23,17 @@ class RideRules7Widget extends StatefulWidget {
 
 class _RideRules7WidgetState extends State<RideRules7Widget> {
   late RideRules7Model _model;
-
   final scaffoldKey = GlobalKey<ScaffoldState>();
+
+  final List<String> _rules = const [
+    'We accept only legal parcels. No prohibited, hazardous, or illegal items are allowed.',
+    'Senders must arrive at the pickup point at least 10 minutes prior to departure.',
+    'Verified receiver contact and drop address details are required upon booking.',
+    'Parcels must be securely packed and protected against road vibrations.',
+    'Fragile, perishable, or high-value items must be explicitly declared beforehand.',
+    'Travia holds zero tolerance for unlawful goods, which will immediately be reported.',
+    'Accurate schedule reporting ensures on-time coordination between all parties.',
+  ];
 
   @override
   void initState() {
@@ -37,8 +44,38 @@ class _RideRules7WidgetState extends State<RideRules7Widget> {
   @override
   void dispose() {
     _model.dispose();
-
     super.dispose();
+  }
+
+  Future<void> _proceedWithAcceptance() async {
+    FFAppState().isRiderulesAccepted = true;
+    FFAppState().isPredefinedItems = true;
+    safeSetState(() {});
+
+    await showModalBottomSheet(
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      useSafeArea: true,
+      context: context,
+      builder: (bottomSheetContext) {
+        return GestureDetector(
+          onTap: () {
+            FocusScope.of(bottomSheetContext).unfocus();
+          },
+          child: Padding(
+            padding: MediaQuery.viewInsetsOf(bottomSheetContext),
+            child: SizedBox(
+              height: MediaQuery.sizeOf(bottomSheetContext).height * 0.75,
+              child: const Termsconditions11Widget(),
+            ),
+          ),
+        );
+      },
+    );
+
+    if (mounted) {
+      context.pushNamed(Areyousure12Widget.routeName);
+    }
   }
 
   @override
@@ -50,670 +87,254 @@ class _RideRules7WidgetState extends State<RideRules7Widget> {
         FocusScope.of(context).unfocus();
         FocusManager.instance.primaryFocus?.unfocus();
       },
-      child: SafeArea(
-        top: false,
-        bottom: true,
-        child: Scaffold(
-          key: scaffoldKey,
-          backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
-          appBar: AppBar(
-            backgroundColor: FlutterFlowTheme.of(context).secondaryBackground,
-            automaticallyImplyLeading: false,
-            leading: FlutterFlowIconButton(
-              borderColor: Colors.transparent,
-              borderRadius: 30.0,
-              borderWidth: 1.0,
-              buttonSize: 60.0,
-              icon: Icon(
-                Icons.arrow_back_rounded,
-                color: FlutterFlowTheme.of(context).primaryText,
-                size: 30.0,
-              ),
-              onPressed: () async {
-                context.pop();
-              },
+      child: Scaffold(
+        key: scaffoldKey,
+        backgroundColor: const Color(0xFFF8FAFC),
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          automaticallyImplyLeading: false,
+          leading: FlutterFlowIconButton(
+            borderColor: Colors.transparent,
+            borderRadius: 30.0,
+            borderWidth: 1.0,
+            buttonSize: 48.0,
+            icon: const Icon(
+              Icons.arrow_back_rounded,
+              color: Color(0xFF1F2937),
+              size: 24.0,
             ),
-            title: Text(
-              'Ride Rules',
-              style: FlutterFlowTheme.of(context).headlineMedium.override(
-                    font: GoogleFonts.interTight(
-                      fontWeight:
-                          FlutterFlowTheme.of(context).headlineMedium.fontWeight,
-                      fontStyle:
-                          FlutterFlowTheme.of(context).headlineMedium.fontStyle,
-                    ),
-                    color: FlutterFlowTheme.of(context).primaryText,
-                    fontSize: 20.0,
-                    letterSpacing: 0.0,
-                    fontWeight:
-                        FlutterFlowTheme.of(context).headlineMedium.fontWeight,
-                    fontStyle:
-                        FlutterFlowTheme.of(context).headlineMedium.fontStyle,
-                  ),
-            ),
-            actions: [],
-            centerTitle: true,
-            elevation: 2.0,
+            onPressed: () async {
+              context.pop();
+            },
           ),
-          body: SafeArea(
-            top: true,
-            child: Align(
-              alignment: AlignmentDirectional(0.0, 0.0),
-              child: Padding(
-                padding: EdgeInsetsDirectional.fromSTEB(24.0, 10.0, 24.0, 10.0),
+          title: Text(
+            'Publish Ride',
+            style: GoogleFonts.inter(
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF111827),
+              fontSize: 18.0,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                context.pushNamed(RuleRide8BWidget.routeName);
+              },
+              child: Text(
+                'Custom Rules',
+                style: GoogleFonts.inter(
+                  fontSize: 13.0,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF6C4DF6),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8.0),
+          ],
+          centerTitle: true,
+          elevation: 0.0,
+        ),
+        body: SafeArea(
+          top: true,
+          child: Column(
+            children: [
+              Expanded(
                 child: SingleChildScrollView(
-                  primary: false,
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
                   child: Column(
-                    mainAxisSize: MainAxisSize.max,
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Padding(
-                        padding:
-                            EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 20.0),
-                        child: CircularPercentIndicator(
-                          percent: 0.9,
-                          radius: 60.0,
-                          lineWidth: 12.0,
-                          animation: true,
-                          animateFromLastPercent: true,
-                          progressColor: Color(0xFFF57C3B),
-                          backgroundColor: Color(0xFFD8D5D5),
-                          center: Text(
-                            '90%',
-                            style: FlutterFlowTheme.of(context)
-                                .headlineSmall
-                                .override(
-                                  font: GoogleFonts.interTight(
-                                    fontWeight: FlutterFlowTheme.of(context)
-                                        .headlineSmall
-                                        .fontWeight,
-                                    fontStyle: FlutterFlowTheme.of(context)
-                                        .headlineSmall
-                                        .fontStyle,
-                                  ),
-                                  letterSpacing: 0.0,
-                                  fontWeight: FlutterFlowTheme.of(context)
-                                      .headlineSmall
-                                      .fontWeight,
-                                  fontStyle: FlutterFlowTheme.of(context)
-                                      .headlineSmall
-                                      .fontStyle,
-                                ),
-                          ),
-                        ),
+                      // Step Progress Header
+                      const PublishRideProgressHeader(
+                        currentStep: 7,
+                        totalSteps: 8,
+                        title: 'Ride & Parcel Rules',
+                        subtitle: 'Review and accept standard safety terms and community guidelines.',
+                        badgeText: 'STEP 7 OF 8',
                       ),
-                      Text(
-                        'Predefined Ride Rules',
-                        textAlign: TextAlign.center,
-                        style: FlutterFlowTheme.of(context).titleLarge.override(
-                              font: GoogleFonts.interTight(
-                                fontWeight: FontWeight.bold,
-                                fontStyle: FlutterFlowTheme.of(context)
-                                    .titleLarge
-                                    .fontStyle,
-                              ),
-                              color: Color(0xFF303337),
-                              fontSize: 15.0,
-                              letterSpacing: 0.0,
-                              fontWeight: FontWeight.bold,
-                              fontStyle: FlutterFlowTheme.of(context)
-                                  .titleLarge
-                                  .fontStyle,
-                            ),
-                      ),
-                      if (FFAppState().isRiderulesAccepted == false)
-                        Padding(
-                          padding: EdgeInsetsDirectional.fromSTEB(16.0, 24.0, 16.0, 32.0),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Color(0xFFF5F5F5),
-                              borderRadius: BorderRadius.circular(12.0),
-                            ),
-                            padding: EdgeInsetsDirectional.fromSTEB(16.0, 10.0, 16.0, 20.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Padding(
-                                //   padding: EdgeInsetsDirectional.only(bottom: 12.0),
-                                //   child: Text(
-                                //     'Parcel Guidelines',
-                                //     style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                //       font: GoogleFonts.inter(
-                                //         fontWeight: FontWeight.w600,
-                                //       ),
-                                //       color: Color(0xFF333333),
-                                //       fontSize: 16.0,
-                                //       letterSpacing: 0.0,
-                                //     ),
-                                //   ),
-                                // ),
-                                ...List.generate(7, (index) {
-                                  final rules = [
-                                    'We accept only legal parcels no prohibited or illegal items allowed.',
-                                    'Customers must arrive with the parcel at least 10 minutes before the vehicle arrives.',
-                                    'Complete receiver information is required at the time of booking.',
-                                    'Unacceptable items found during the ride may lead to cancellation or being reported.',
-                                    'Parcels must be securely packed to avoid damage during transit.',
-                                    'Fragile or high-value items should be declared beforehand.',
-                                    'We are not responsible for delays caused by incomplete or incorrect information.',
-                                  ];
 
-                                  return Padding(
-                                    padding: EdgeInsetsDirectional.only(bottom: 8.0),
-                                    child: Row(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Padding(
-                                          padding: EdgeInsetsDirectional.only(end: 8.0, top: 1.0),
-                                          child: Text(
-                                            '•',
-                                            style: TextStyle(
-                                              color: Color(0xFF333333),
-                                              fontSize: 16.0,
-                                            ),
-                                          ),
-                                        ),
-                                        Expanded(
-                                          child: Text(
-                                            rules[index],
-                                            style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                              font: GoogleFonts.inter(),
-                                              color: Color(0xFF666666),
-                                              fontSize: 14.0,
-                                              letterSpacing: 0.0,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                }),
+                      // Rules Container Card
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(18.0),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20.0),
+                          border: Border.all(color: const Color(0xFFEAECEF)),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x0A000000),
+                              blurRadius: 16.0,
+                              offset: Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(6.0),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFEEF7F2),
+                                    borderRadius: BorderRadius.circular(8.0),
+                                  ),
+                                  child: const Icon(
+                                    Icons.gavel_rounded,
+                                    color: Color(0xFF10B981),
+                                    size: 18.0,
+                                  ),
+                                ),
+                                const SizedBox(width: 10.0),
+                                Text(
+                                  'Standard Safety Guidelines',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 14.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: const Color(0xFF111827),
+                                  ),
+                                ),
                               ],
                             ),
-                          ),
-                        ),                      if (FFAppState().isRiderulesAccepted == true)
-                        Padding(
-                          padding: EdgeInsetsDirectional.fromSTEB(
-                              0.0, 24.0, 0.0, 32.0),
-                          child: Wrap(
-                            spacing: 10.0,
-                            runSpacing: 10.0,
-                            alignment: WrapAlignment.start,
-                            crossAxisAlignment: WrapCrossAlignment.start,
-                            direction: Axis.horizontal,
-                            runAlignment: WrapAlignment.start,
-                            verticalDirection: VerticalDirection.down,
-                            clipBehavior: Clip.none,
-                            children: [
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: FlutterFlowTheme.of(context).tertiary,
-                                  borderRadius: BorderRadius.circular(20.0),
-                                ),
-                                child: Padding(
-                                  padding: EdgeInsetsDirectional.fromSTEB(
-                                      16.0, 8.0, 16.0, 8.0),
-                                  child: InkWell(
-                                    splashColor: Colors.transparent,
-                                    focusColor: Colors.transparent,
-                                    hoverColor: Colors.transparent,
-                                    highlightColor: Colors.transparent,
-                                    onTap: () async {
-                                      safeSetState(() {});
-                                    },
-                                    child: Text(
-                                      'We accept only legal parcels no prohibited or illegal items allowed.',
-                                      style: FlutterFlowTheme.of(context)
-                                          .bodyMedium
-                                          .override(
-                                            font: GoogleFonts.inter(
-                                              fontWeight:
-                                                  FlutterFlowTheme.of(context)
-                                                      .bodyMedium
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  FlutterFlowTheme.of(context)
-                                                      .bodyMedium
-                                                      .fontStyle,
-                                            ),
-                                            color: FlutterFlowTheme.of(context)
-                                                .primaryBackground,
-                                            letterSpacing: 0.0,
-                                            fontWeight:
-                                                FlutterFlowTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontWeight,
-                                            fontStyle:
-                                                FlutterFlowTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontStyle,
-                                          ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: FlutterFlowTheme.of(context).tertiary,
-                                  borderRadius: BorderRadius.circular(20.0),
-                                ),
-                                child: Padding(
-                                  padding: EdgeInsetsDirectional.fromSTEB(
-                                      16.0, 8.0, 16.0, 8.0),
-                                  child: Text(
-                                    'Customers must arrive with the parcel at least 10 minutes before the vehicle arrives.',
-                                    style: FlutterFlowTheme.of(context)
-                                        .bodyMedium
-                                        .override(
-                                          font: GoogleFonts.inter(
-                                            fontWeight:
-                                                FlutterFlowTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontWeight,
-                                            fontStyle:
-                                                FlutterFlowTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontStyle,
-                                          ),
-                                          color: FlutterFlowTheme.of(context)
-                                              .primaryBackground,
-                                          letterSpacing: 0.0,
-                                          fontWeight: FlutterFlowTheme.of(context)
-                                              .bodyMedium
-                                              .fontWeight,
-                                          fontStyle: FlutterFlowTheme.of(context)
-                                              .bodyMedium
-                                              .fontStyle,
-                                        ),
-                                  ),
-                                ),
-                              ),
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: FlutterFlowTheme.of(context).tertiary,
-                                  borderRadius: BorderRadius.circular(20.0),
-                                ),
-                                child: Padding(
-                                  padding: EdgeInsetsDirectional.fromSTEB(
-                                      16.0, 8.0, 16.0, 8.0),
-                                  child: Text(
-                                    'Complete receiver information is required at the time of booking.',
-                                    style: FlutterFlowTheme.of(context)
-                                        .bodyMedium
-                                        .override(
-                                          font: GoogleFonts.inter(
-                                            fontWeight:
-                                                FlutterFlowTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontWeight,
-                                            fontStyle:
-                                                FlutterFlowTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontStyle,
-                                          ),
-                                          color: FlutterFlowTheme.of(context)
-                                              .primaryBackground,
-                                          letterSpacing: 0.0,
-                                          fontWeight: FlutterFlowTheme.of(context)
-                                              .bodyMedium
-                                              .fontWeight,
-                                          fontStyle: FlutterFlowTheme.of(context)
-                                              .bodyMedium
-                                              .fontStyle,
-                                        ),
-                                  ),
-                                ),
-                              ),
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: FlutterFlowTheme.of(context).tertiary,
-                                  borderRadius: BorderRadius.circular(20.0),
-                                ),
-                                child: Padding(
-                                  padding: EdgeInsetsDirectional.fromSTEB(
-                                      16.0, 8.0, 16.0, 8.0),
-                                  child: Text(
-                                    'Unacceptable items found during the ride may lead to cancellation or being reported.',
-                                    style: FlutterFlowTheme.of(context)
-                                        .bodyMedium
-                                        .override(
-                                          font: GoogleFonts.inter(
-                                            fontWeight:
-                                                FlutterFlowTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontWeight,
-                                            fontStyle:
-                                                FlutterFlowTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontStyle,
-                                          ),
-                                          color: FlutterFlowTheme.of(context)
-                                              .primaryBackground,
-                                          letterSpacing: 0.0,
-                                          fontWeight: FlutterFlowTheme.of(context)
-                                              .bodyMedium
-                                              .fontWeight,
-                                          fontStyle: FlutterFlowTheme.of(context)
-                                              .bodyMedium
-                                              .fontStyle,
-                                        ),
-                                  ),
-                                ),
-                              ),
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: FlutterFlowTheme.of(context).tertiary,
-                                  borderRadius: BorderRadius.circular(20.0),
-                                ),
-                                child: Padding(
-                                  padding: EdgeInsetsDirectional.fromSTEB(
-                                      16.0, 8.0, 16.0, 8.0),
-                                  child: Text(
-                                    'Parcels must be securely packed to avoid damage during transit.',
-                                    style: FlutterFlowTheme.of(context)
-                                        .bodyMedium
-                                        .override(
-                                          font: GoogleFonts.inter(
-                                            fontWeight:
-                                                FlutterFlowTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontWeight,
-                                            fontStyle:
-                                                FlutterFlowTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontStyle,
-                                          ),
-                                          color: FlutterFlowTheme.of(context)
-                                              .primaryBackground,
-                                          letterSpacing: 0.0,
-                                          fontWeight: FlutterFlowTheme.of(context)
-                                              .bodyMedium
-                                              .fontWeight,
-                                          fontStyle: FlutterFlowTheme.of(context)
-                                              .bodyMedium
-                                              .fontStyle,
-                                        ),
-                                  ),
-                                ),
-                              ),
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: FlutterFlowTheme.of(context).tertiary,
-                                  borderRadius: BorderRadius.circular(20.0),
-                                ),
-                                child: Padding(
-                                  padding: EdgeInsetsDirectional.fromSTEB(
-                                      16.0, 8.0, 16.0, 8.0),
-                                  child: Text(
-                                    'Fragile or high-value items should be declared beforehand.',
-                                    style: FlutterFlowTheme.of(context)
-                                        .bodyMedium
-                                        .override(
-                                          font: GoogleFonts.inter(
-                                            fontWeight:
-                                                FlutterFlowTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontWeight,
-                                            fontStyle:
-                                                FlutterFlowTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontStyle,
-                                          ),
-                                          color: FlutterFlowTheme.of(context)
-                                              .primaryBackground,
-                                          letterSpacing: 0.0,
-                                          fontWeight: FlutterFlowTheme.of(context)
-                                              .bodyMedium
-                                              .fontWeight,
-                                          fontStyle: FlutterFlowTheme.of(context)
-                                              .bodyMedium
-                                              .fontStyle,
-                                        ),
-                                  ),
-                                ),
-                              ),
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: FlutterFlowTheme.of(context).tertiary,
-                                  borderRadius: BorderRadius.circular(20.0),
-                                ),
-                                child: Padding(
-                                  padding: EdgeInsetsDirectional.fromSTEB(
-                                      16.0, 8.0, 16.0, 8.0),
-                                  child: Text(
-                                    'We are not responsible for delays caused by incomplete or incorrect information.',
-                                    style: FlutterFlowTheme.of(context)
-                                        .bodyMedium
-                                        .override(
-                                          font: GoogleFonts.inter(
-                                            fontWeight:
-                                                FlutterFlowTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontWeight,
-                                            fontStyle:
-                                                FlutterFlowTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontStyle,
-                                          ),
-                                          color: FlutterFlowTheme.of(context)
-                                              .primaryBackground,
-                                          letterSpacing: 0.0,
-                                          fontWeight: FlutterFlowTheme.of(context)
-                                              .bodyMedium
-                                              .fontWeight,
-                                          fontStyle: FlutterFlowTheme.of(context)
-                                              .bodyMedium
-                                              .fontStyle,
-                                        ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.max,
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            if (FFAppState().isRiderulesAccepted == false)
-                              FFButtonWidget(
-                                onPressed: () async {
-                                  FFAppState().isRiderulesAccepted = true;
-                                  safeSetState(() {});
-                                },
-                                text: 'Accept All',
-                                options: FFButtonOptions(
-                                  width: 120.0,
-                                  height: 40.0,
-                                  padding: EdgeInsetsDirectional.fromSTEB(
-                                      16.0, 0.0, 16.0, 0.0),
-                                  iconPadding: EdgeInsetsDirectional.fromSTEB(
-                                      0.0, 0.0, 0.0, 0.0),
-                                  color: Color(0x1F4CAF50),
-                                  textStyle: FlutterFlowTheme.of(context)
-                                      .bodyMedium
-                                      .override(
-                                        font: GoogleFonts.inter(
-                                          fontWeight: FlutterFlowTheme.of(context)
-                                              .bodyMedium
-                                              .fontWeight,
-                                          fontStyle: FlutterFlowTheme.of(context)
-                                              .bodyMedium
-                                              .fontStyle,
-                                        ),
-                                        color:
-                                            FlutterFlowTheme.of(context).success,
-                                        letterSpacing: 0.0,
-                                        fontWeight: FlutterFlowTheme.of(context)
-                                            .bodyMedium
-                                            .fontWeight,
-                                        fontStyle: FlutterFlowTheme.of(context)
-                                            .bodyMedium
-                                            .fontStyle,
-                                      ),
-                                  elevation: 0.0,
-                                  borderSide: BorderSide(
-                                    color: FlutterFlowTheme.of(context).success,
-                                    width: 1.0,
-                                  ),
-                                  borderRadius: BorderRadius.circular(8.0),
-                                ),
-                              ),
-                            if (FFAppState().isRiderulesAccepted == true)
-                              FFButtonWidget(
-                                onPressed: () async {
-                                  FFAppState().isRiderulesAccepted = false;
-                                  safeSetState(() {});
-                                },
-                                text: 'Reject',
-                                options: FFButtonOptions(
-                                  width: 120.0,
-                                  height: 40.0,
-                                  padding: EdgeInsetsDirectional.fromSTEB(
-                                      16.0, 0.0, 16.0, 0.0),
-                                  iconPadding: EdgeInsetsDirectional.fromSTEB(
-                                      0.0, 0.0, 0.0, 0.0),
-                                  color: Color(0x1FF44336),
-                                  textStyle: FlutterFlowTheme.of(context)
-                                      .bodyMedium
-                                      .override(
-                                        font: GoogleFonts.inter(
-                                          fontWeight: FlutterFlowTheme.of(context)
-                                              .bodyMedium
-                                              .fontWeight,
-                                          fontStyle: FlutterFlowTheme.of(context)
-                                              .bodyMedium
-                                              .fontStyle,
-                                        ),
-                                        color: FlutterFlowTheme.of(context).error,
-                                        letterSpacing: 0.0,
-                                        fontWeight: FlutterFlowTheme.of(context)
-                                            .bodyMedium
-                                            .fontWeight,
-                                        fontStyle: FlutterFlowTheme.of(context)
-                                            .bodyMedium
-                                            .fontStyle,
-                                      ),
-                                  elevation: 0.0,
-                                  borderSide: BorderSide(
-                                    color: FlutterFlowTheme.of(context).error,
-                                    width: 1.0,
-                                  ),
-                                  borderRadius: BorderRadius.circular(8.0),
-                                ),
-                              ),
-                            if (FFAppState().isRiderulesAccepted == true)
-                              Padding(
-                                padding: EdgeInsetsDirectional.fromSTEB(
-                                    24.0, 30.0, 24.0, 24.0),
-                                child: InkWell(
-                                  splashColor: Colors.transparent,
-                                  focusColor: Colors.transparent,
-                                  hoverColor: Colors.transparent,
-                                  highlightColor: Colors.transparent,
-                                  onTap: () async {
-                                    FFAppState().isPredefinedItems = true;
-                                    safeSetState(() {});
-                                    await showModalBottomSheet(
-                                      isScrollControlled: true,
-                                      backgroundColor: Colors.transparent,
-                                      useSafeArea: true,
-                                      context: context,
-                                      builder: (context) {
-                                        return GestureDetector(
-                                          onTap: () {
-                                            FocusScope.of(context).unfocus();
-                                            FocusManager.instance.primaryFocus
-                                                ?.unfocus();
-                                          },
-                                          child: Padding(
-                                            padding:
-                                                MediaQuery.viewInsetsOf(context),
-                                            child: Container(
-                                              height: MediaQuery.sizeOf(context)
-                                                      .height *
-                                                  0.7,
-                                              child: Termsconditions11Widget(),
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                    ).then((value) => safeSetState(() {}));
 
-                                    context
-                                        .pushNamed(Areyousure12Widget.routeName);
-                                  },
-                                  child: Container(
-                                    width: 80.0,
-                                    height: 80.0,
-                                    decoration: BoxDecoration(
-                                      color: Color(0xFFFF8C00),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Align(
-                                      alignment: AlignmentDirectional(0.0, 0.0),
-                                      child: Icon(
-                                        Icons.arrow_forward,
-                                        color: Colors.white,
-                                        size: 32.0,
+                            const SizedBox(height: 16.0),
+
+                            // List of rules with clean checkmark bullets
+                            ..._rules.asMap().entries.map((entry) {
+                              final index = entry.key;
+                              final rule = entry.value;
+
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 12.0),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Container(
+                                      margin: const EdgeInsets.only(top: 2.0),
+                                      width: 18.0,
+                                      height: 18.0,
+                                      decoration: const BoxDecoration(
+                                        color: Color(0xFFEEF7F2),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.check_rounded,
+                                        color: Color(0xFF10B981),
+                                        size: 12.0,
                                       ),
                                     ),
-                                  ),
-                                ),
-                              ),
-                            if (FFAppState().isRiderulesAccepted == false)
-                              FFButtonWidget(
-                                onPressed: () async {
-                                  context.pushNamed(RuleRide8BWidget.routeName);
-                                },
-                                text: 'Enter Manually',
-                                options: FFButtonOptions(
-                                  width: 120.0,
-                                  height: 40.0,
-                                  padding: EdgeInsetsDirectional.fromSTEB(
-                                      16.0, 0.0, 16.0, 0.0),
-                                  iconPadding: EdgeInsetsDirectional.fromSTEB(
-                                      0.0, 0.0, 0.0, 0.0),
-                                  color: Color(0xFFB35831),
-                                  textStyle: FlutterFlowTheme.of(context)
-                                      .bodyMedium
-                                      .override(
-                                        font: GoogleFonts.inter(
-                                          fontWeight: FlutterFlowTheme.of(context)
-                                              .bodyMedium
-                                              .fontWeight,
-                                          fontStyle: FlutterFlowTheme.of(context)
-                                              .bodyMedium
-                                              .fontStyle,
+                                    const SizedBox(width: 10.0),
+                                    Expanded(
+                                      child: Text(
+                                        rule,
+                                        style: GoogleFonts.inter(
+                                          fontSize: 13.0,
+                                          fontWeight: FontWeight.w400,
+                                          color: const Color(0xFF374151),
+                                          height: 1.38,
                                         ),
-                                        color: FlutterFlowTheme.of(context)
-                                            .secondaryBackground,
-                                        letterSpacing: 0.0,
-                                        fontWeight: FlutterFlowTheme.of(context)
-                                            .bodyMedium
-                                            .fontWeight,
-                                        fontStyle: FlutterFlowTheme.of(context)
-                                            .bodyMedium
-                                            .fontStyle,
                                       ),
-                                  elevation: 0.0,
-                                  borderSide: BorderSide(
-                                    color: Color(0xFFF67E4A),
-                                    width: 1.0,
-                                  ),
-                                  borderRadius: BorderRadius.circular(8.0),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 16.0),
+
+                      // Terms agreement summary
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(14.0),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF0ECFD),
+                          borderRadius: BorderRadius.circular(16.0),
+                          border: Border.all(color: const Color(0xFFE2DBFC)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.verified_user_rounded,
+                              color: Color(0xFF6C4DF6),
+                              size: 20.0,
+                            ),
+                            const SizedBox(width: 10.0),
+                            Expanded(
+                              child: Text(
+                                'By continuing, you agree to Travia Terms of Service and Carriage Safety Standards.',
+                                style: GoogleFonts.inter(
+                                  color: const Color(0xFF4C28D4),
+                                  fontSize: 12.0,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
-                          ].divide(SizedBox(width: 12.0)),
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
                 ),
               ),
-            ),
+
+              // Bottom Fixed Action Button Container
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 14.0),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  border: Border(
+                    top: BorderSide(
+                      color: Color(0xFFF1F5F9),
+                      width: 1.0,
+                    ),
+                  ),
+                ),
+                child: InkWell(
+                  onTap: _proceedWithAcceptance,
+                  borderRadius: BorderRadius.circular(16.0),
+                  child: Container(
+                    width: double.infinity,
+                    height: 52.0,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEE7B4D),
+                      borderRadius: BorderRadius.circular(16.0),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x33EE7B4D),
+                          blurRadius: 12.0,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Accept & Review Ride',
+                          style: GoogleFonts.inter(
+                            fontSize: 15.5,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(width: 8.0),
+                        const Icon(
+                          Icons.arrow_forward_rounded,
+                          color: Colors.white,
+                          size: 20.0,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

@@ -9,6 +9,8 @@
 .history
 .project
 .directory
+flutter_*.png
+
 
 # IntelliJ related
 .idea/

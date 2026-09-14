@@ -1,16 +1,10 @@
-import '/flutter_flow/flutter_flow_drop_down.dart';
+import '/components/publish_ride_progress_header.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
-import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
-import '/flutter_flow/flutter_flow_widgets.dart';
-import '/flutter_flow/form_field_controller.dart';
-import 'dart:ui';
 import '/index.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
-import 'package:percent_indicator/percent_indicator.dart';
 import 'package:provider/provider.dart';
 import 'pansanger5_b_model.dart';
 export 'pansanger5_b_model.dart';
@@ -27,34 +21,101 @@ class Pansanger5BWidget extends StatefulWidget {
 
 class _Pansanger5BWidgetState extends State<Pansanger5BWidget> {
   late Pansanger5BModel _model;
-
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
     super.initState();
     _model = createModel(context, () => Pansanger5BModel());
+    _model.isPassangersAllowedValue ??= 'Yes';
+    _model.isPassangerAllowed = 'Yes';
 
-    _model.numOfpassTextController ??= TextEditingController();
+    _model.numOfpassTextController ??= TextEditingController(
+      text: FFAppState().numPassengers > 0 ? FFAppState().numPassengers.toString() : '2',
+    );
     _model.numOfpassFocusNode ??= FocusNode();
 
-    _model.priceTextController ??= TextEditingController();
+    _model.priceTextController ??= TextEditingController(
+      text: FFAppState().pricePerPassengers > 0 ? FFAppState().pricePerPassengers.toString() : '',
+    );
     _model.priceFocusNode ??= FocusNode();
 
     _model.priceMask = MaskTextInputFormatter(mask: '#####');
-    _model.bagsTextController ??= TextEditingController();
+    _model.bagsTextController ??= TextEditingController(
+      text: FFAppState().numBagAllowed > 0 ? FFAppState().numBagAllowed.toString() : '1',
+    );
     _model.bagsFocusNode ??= FocusNode();
   }
 
   @override
   void dispose() {
     _model.dispose();
-
     super.dispose();
+  }
+
+  void _proceedNext() async {
+    final seatsText = _model.numOfpassTextController.text.trim();
+    final priceText = _model.priceTextController.text.trim();
+    final bagsText = _model.bagsTextController.text.trim();
+
+    if (_model.isPassangerAllowed == 'Yes') {
+      if (seatsText.isEmpty || priceText.isEmpty) {
+        await showDialog(
+          context: context,
+          builder: (alertDialogContext) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18.0),
+            ),
+            title: Text(
+              'Missing Details',
+              style: GoogleFonts.inter(
+                fontWeight: FontWeight.w700,
+                fontSize: 16.5,
+              ),
+            ),
+            content: Text(
+              'Please enter the number of seats and price per passenger.',
+              style: GoogleFonts.inter(
+                fontSize: 13.5,
+                color: const Color(0xFF4B5563),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(alertDialogContext),
+                child: Text(
+                  'Ok',
+                  style: GoogleFonts.inter(
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFFEE7B4D),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+        return;
+      }
+
+      FFAppState().isPassengers = 'Yes';
+      FFAppState().numPassengers = int.tryParse(seatsText) ?? 1;
+      FFAppState().pricePerPassengers = int.tryParse(priceText) ?? 0;
+      FFAppState().numBagAllowed = int.tryParse(bagsText) ?? 1;
+    } else {
+      FFAppState().isPassengers = 'No';
+      FFAppState().numPassengers = 0;
+      FFAppState().pricePerPassengers = 0;
+      FFAppState().numBagAllowed = 0;
+    }
+
+    safeSetState(() {});
+    context.pushNamed(DriverDetail6Widget.routeName);
   }
 
   @override
   Widget build(BuildContext context) {
+    context.watch<FFAppState>();
+
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
@@ -62,664 +123,416 @@ class _Pansanger5BWidgetState extends State<Pansanger5BWidget> {
       },
       child: Scaffold(
         key: scaffoldKey,
-        backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
+        backgroundColor: const Color(0xFFF8FAFC),
         appBar: AppBar(
-          backgroundColor: FlutterFlowTheme.of(context).secondaryBackground,
+          backgroundColor: Colors.white,
           automaticallyImplyLeading: false,
           leading: FlutterFlowIconButton(
             borderColor: Colors.transparent,
             borderRadius: 30.0,
             borderWidth: 1.0,
-            buttonSize: 60.0,
-            icon: Icon(
+            buttonSize: 48.0,
+            icon: const Icon(
               Icons.arrow_back_rounded,
-              color: FlutterFlowTheme.of(context).primaryText,
-              size: 30.0,
+              color: Color(0xFF1F2937),
+              size: 24.0,
             ),
             onPressed: () async {
               context.pop();
             },
           ),
           title: Text(
-            'Carpool Preference',
-            style: FlutterFlowTheme.of(context).headlineMedium.override(
-                  font: GoogleFonts.interTight(
-                    fontWeight:
-                        FlutterFlowTheme.of(context).headlineMedium.fontWeight,
-                    fontStyle:
-                        FlutterFlowTheme.of(context).headlineMedium.fontStyle,
-                  ),
-                  color: FlutterFlowTheme.of(context).primaryText,
-                  fontSize: 22.0,
-                  letterSpacing: 0.0,
-                  fontWeight:
-                      FlutterFlowTheme.of(context).headlineMedium.fontWeight,
-                  fontStyle:
-                      FlutterFlowTheme.of(context).headlineMedium.fontStyle,
-                ),
+            'Publish Ride',
+            style: GoogleFonts.inter(
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF111827),
+              fontSize: 18.0,
+            ),
           ),
-          actions: [],
           centerTitle: true,
-          elevation: 2.0,
+          elevation: 0.0,
         ),
         body: SafeArea(
           top: true,
-          child: Align(
-            alignment: AlignmentDirectional(0.0, 0.0),
-            child: Padding(
-              padding: EdgeInsetsDirectional.fromSTEB(24.0, 30.0, 24.0, 0.0),
-              child: SingleChildScrollView(
-                primary: false,
-                child: Column(
-                  mainAxisSize: MainAxisSize.max,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Padding(
-                      padding:
-                          EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 20.0),
-                      child: CircularPercentIndicator(
-                        percent: 0.7,
-                        radius: 60.0,
-                        lineWidth: 12.0,
-                        animation: true,
-                        animateFromLastPercent: true,
-                        progressColor: Color(0xFFF57C3B),
-                        backgroundColor: Color(0xFFD8D5D5),
-                        center: Text(
-                          '70%',
-                          style: FlutterFlowTheme.of(context)
-                              .headlineSmall
-                              .override(
-                                font: GoogleFonts.interTight(
-                                  fontWeight: FlutterFlowTheme.of(context)
-                                      .headlineSmall
-                                      .fontWeight,
-                                  fontStyle: FlutterFlowTheme.of(context)
-                                      .headlineSmall
-                                      .fontStyle,
-                                ),
-                                letterSpacing: 0.0,
-                                fontWeight: FlutterFlowTheme.of(context)
-                                    .headlineSmall
-                                    .fontWeight,
-                                fontStyle: FlutterFlowTheme.of(context)
-                                    .headlineSmall
-                                    .fontStyle,
-                              ),
+          child: Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Step Progress Header
+                      const PublishRideProgressHeader(
+                        currentStep: 6,
+                        totalSteps: 8,
+                        title: 'Carpool Capacity & Fare',
+                        subtitle: 'Set available seats, fare per passenger, and luggage allowances.',
+                        badgeText: 'STEP 6 OF 8',
+                      ),
+
+                      // 1. Available Seats Card
+                      Container(
+                        width: double.infinity,
+                        margin: const EdgeInsets.only(bottom: 16.0),
+                        padding: const EdgeInsets.all(18.0),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20.0),
+                          border: Border.all(color: const Color(0xFFEAECEF)),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x0A000000),
+                              blurRadius: 16.0,
+                              offset: Offset(0, 4),
+                            ),
+                          ],
                         ),
-                      ),
-                    ),
-                    Text(
-                      'Offer ride sharing for this trip?',
-                      textAlign: TextAlign.center,
-                      style:
-                          FlutterFlowTheme.of(context).headlineSmall.override(
-                                font: GoogleFonts.interTight(
-                                  fontWeight: FontWeight.w500,
-                                  fontStyle: FlutterFlowTheme.of(context)
-                                      .headlineSmall
-                                      .fontStyle,
-                                ),
-                                fontSize: 20.0,
-                                letterSpacing: 0.0,
-                                fontWeight: FontWeight.w500,
-                                fontStyle: FlutterFlowTheme.of(context)
-                                    .headlineSmall
-                                    .fontStyle,
-                              ),
-                    ),
-                    FlutterFlowDropDown<String>(
-                      controller: _model.isPassangersAllowedValueController ??=
-                          FormFieldController<String>(null),
-                      options: ['Yes', 'No'],
-                      onChanged: (val) async {
-                        safeSetState(
-                            () => _model.isPassangersAllowedValue = val);
-                        _model.isPassangerAllowed =
-                            _model.isPassangersAllowedValue!;
-                        safeSetState(() {});
-                      },
-                      width: 360.07,
-                      height: 53.7,
-                      textStyle:
-                          FlutterFlowTheme.of(context).bodyMedium.override(
-                                font: GoogleFonts.inter(
-                                  fontWeight: FlutterFlowTheme.of(context)
-                                      .bodyMedium
-                                      .fontWeight,
-                                  fontStyle: FlutterFlowTheme.of(context)
-                                      .bodyMedium
-                                      .fontStyle,
-                                ),
-                                letterSpacing: 0.0,
-                                fontWeight: FlutterFlowTheme.of(context)
-                                    .bodyMedium
-                                    .fontWeight,
-                                fontStyle: FlutterFlowTheme.of(context)
-                                    .bodyMedium
-                                    .fontStyle,
-                              ),
-                      hintText: 'Select...',
-                      icon: Icon(
-                        Icons.keyboard_arrow_down_rounded,
-                        color: FlutterFlowTheme.of(context).secondaryText,
-                        size: 24.0,
-                      ),
-                      fillColor:
-                          FlutterFlowTheme.of(context).secondaryBackground,
-                      elevation: 2.0,
-                      borderColor: Color(0xFF4DABF7),
-                      borderWidth: 2.0,
-                      borderRadius: 8.0,
-                      margin:
-                          EdgeInsetsDirectional.fromSTEB(12.0, 0.0, 12.0, 0.0),
-                      hidesUnderline: true,
-                      isOverButton: false,
-                      isSearchable: false,
-                      isMultiSelect: false,
-                    ),
-                    if (_model.isPassangerAllowed == 'Yes')
-                      Column(
-                        mainAxisSize: MainAxisSize.max,
-                        children: [
-                          Text(
-                            'Number of Passengers',
-                            style: FlutterFlowTheme.of(context)
-                                .titleMedium
-                                .override(
-                                  font: GoogleFonts.interTight(
-                                    fontWeight: FontWeight.w600,
-                                    fontStyle: FlutterFlowTheme.of(context)
-                                        .titleMedium
-                                        .fontStyle,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8.0),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF0ECFD),
+                                    borderRadius: BorderRadius.circular(10.0),
                                   ),
-                                  letterSpacing: 0.0,
-                                  fontWeight: FontWeight.w600,
-                                  fontStyle: FlutterFlowTheme.of(context)
-                                      .titleMedium
-                                      .fontStyle,
+                                  child: const Icon(
+                                    Icons.airline_seat_recline_normal_rounded,
+                                    color: Color(0xFF6C4DF6),
+                                    size: 20.0,
+                                  ),
                                 ),
-                          ),
-                          Row(
-                            mainAxisSize: MainAxisSize.max,
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Expanded(
-                                child: Container(
-                                  width: double.infinity,
-                                  child: TextFormField(
-                                    controller: _model.numOfpassTextController,
-                                    focusNode: _model.numOfpassFocusNode,
-                                    autofocus: false,
-                                    obscureText: false,
-                                    decoration: InputDecoration(
-                                      labelText: 'Enter number of passengers',
-                                      hintText: 'Enter number of passengers',
-                                      hintStyle: FlutterFlowTheme.of(context)
-                                          .bodyMedium
-                                          .override(
-                                            font: GoogleFonts.inter(
-                                              fontWeight:
-                                                  FlutterFlowTheme.of(context)
-                                                      .bodyMedium
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  FlutterFlowTheme.of(context)
-                                                      .bodyMedium
-                                                      .fontStyle,
-                                            ),
-                                            letterSpacing: 0.0,
-                                            fontWeight:
-                                                FlutterFlowTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontWeight,
-                                            fontStyle:
-                                                FlutterFlowTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontStyle,
-                                          ),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color: Color(0xFF4DABF7),
-                                          width: 2.0,
-                                        ),
-                                        borderRadius:
-                                            BorderRadius.circular(12.0),
+                                const SizedBox(width: 12.0),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Available Seats',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 14.5,
+                                        fontWeight: FontWeight.w700,
+                                        color: const Color(0xFF111827),
                                       ),
-                                      focusedBorder: OutlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color: FlutterFlowTheme.of(context)
-                                              .primary,
-                                          width: 2.0,
-                                        ),
-                                        borderRadius:
-                                            BorderRadius.circular(12.0),
-                                      ),
-                                      errorBorder: OutlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color: FlutterFlowTheme.of(context)
-                                              .error,
-                                          width: 2.0,
-                                        ),
-                                        borderRadius:
-                                            BorderRadius.circular(12.0),
-                                      ),
-                                      focusedErrorBorder: OutlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color: FlutterFlowTheme.of(context)
-                                              .error,
-                                          width: 2.0,
-                                        ),
-                                        borderRadius:
-                                            BorderRadius.circular(12.0),
-                                      ),
-                                      filled: true,
-                                      fillColor: Color(0xFFF5F5F5),
                                     ),
-                                    style: FlutterFlowTheme.of(context)
-                                        .bodyMedium
-                                        .override(
-                                          font: GoogleFonts.inter(
-                                            fontWeight:
-                                                FlutterFlowTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontWeight,
-                                            fontStyle:
-                                                FlutterFlowTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontStyle,
-                                          ),
-                                          fontSize: 16.0,
-                                          letterSpacing: 0.0,
-                                          fontWeight:
-                                              FlutterFlowTheme.of(context)
-                                                  .bodyMedium
-                                                  .fontWeight,
-                                          fontStyle:
-                                              FlutterFlowTheme.of(context)
-                                                  .bodyMedium
-                                                  .fontStyle,
-                                        ),
-                                    textAlign: TextAlign.center,
-                                    keyboardType: TextInputType.number,
-                                    cursorColor: FlutterFlowTheme.of(context)
-                                        .primaryText,
-                                    validator: _model
-                                        .numOfpassTextControllerValidator
-                                        .asValidator(context),
-                                  ),
-                                ),
-                              ),
-                            ].divide(SizedBox(width: 16.0)),
-                          ),
-                        ].divide(SizedBox(height: 16.0)),
-                      ),
-                    if (_model.isPassangerAllowed == 'Yes')
-                      Column(
-                        mainAxisSize: MainAxisSize.max,
-                        children: [
-                          Text(
-                            'Price Per Passenger',
-                            style: FlutterFlowTheme.of(context)
-                                .titleMedium
-                                .override(
-                                  font: GoogleFonts.interTight(
-                                    fontWeight: FontWeight.w600,
-                                    fontStyle: FlutterFlowTheme.of(context)
-                                        .titleMedium
-                                        .fontStyle,
-                                  ),
-                                  letterSpacing: 0.0,
-                                  fontWeight: FontWeight.w600,
-                                  fontStyle: FlutterFlowTheme.of(context)
-                                      .titleMedium
-                                      .fontStyle,
-                                ),
-                          ),
-                          Row(
-                            mainAxisSize: MainAxisSize.max,
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Expanded(
-                                child: Container(
-                                  width: double.infinity,
-                                  child: TextFormField(
-                                    controller: _model.priceTextController,
-                                    focusNode: _model.priceFocusNode,
-                                    autofocus: false,
-                                    obscureText: false,
-                                    decoration: InputDecoration(
-                                      labelText: 'Enter price per passenger',
-                                      hintText: 'Enter price per passenger',
-                                      hintStyle: FlutterFlowTheme.of(context)
-                                          .bodyMedium
-                                          .override(
-                                            font: GoogleFonts.inter(
-                                              fontWeight:
-                                                  FlutterFlowTheme.of(context)
-                                                      .bodyMedium
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  FlutterFlowTheme.of(context)
-                                                      .bodyMedium
-                                                      .fontStyle,
-                                            ),
-                                            letterSpacing: 0.0,
-                                            fontWeight:
-                                                FlutterFlowTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontWeight,
-                                            fontStyle:
-                                                FlutterFlowTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontStyle,
-                                          ),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color: Color(0xFF4DABF7),
-                                          width: 2.0,
-                                        ),
-                                        borderRadius:
-                                            BorderRadius.circular(12.0),
+                                    Text(
+                                      'Passenger capacity',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 11.5,
+                                        color: const Color(0xFF6B7280),
                                       ),
-                                      focusedBorder: OutlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color: FlutterFlowTheme.of(context)
-                                              .primary,
-                                          width: 2.0,
-                                        ),
-                                        borderRadius:
-                                            BorderRadius.circular(12.0),
-                                      ),
-                                      errorBorder: OutlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color: FlutterFlowTheme.of(context)
-                                              .error,
-                                          width: 2.0,
-                                        ),
-                                        borderRadius:
-                                            BorderRadius.circular(12.0),
-                                      ),
-                                      focusedErrorBorder: OutlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color: FlutterFlowTheme.of(context)
-                                              .error,
-                                          width: 2.0,
-                                        ),
-                                        borderRadius:
-                                            BorderRadius.circular(12.0),
-                                      ),
-                                      filled: true,
-                                      fillColor: Color(0xFFF5F5F5),
                                     ),
-                                    style: FlutterFlowTheme.of(context)
-                                        .bodyMedium
-                                        .override(
-                                          font: GoogleFonts.inter(
-                                            fontWeight:
-                                                FlutterFlowTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontWeight,
-                                            fontStyle:
-                                                FlutterFlowTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontStyle,
-                                          ),
-                                          fontSize: 16.0,
-                                          letterSpacing: 0.0,
-                                          fontWeight:
-                                              FlutterFlowTheme.of(context)
-                                                  .bodyMedium
-                                                  .fontWeight,
-                                          fontStyle:
-                                              FlutterFlowTheme.of(context)
-                                                  .bodyMedium
-                                                  .fontStyle,
-                                        ),
-                                    textAlign: TextAlign.center,
-                                    keyboardType: TextInputType.number,
-                                    cursorColor: FlutterFlowTheme.of(context)
-                                        .primaryText,
-                                    validator: _model
-                                        .priceTextControllerValidator
-                                        .asValidator(context),
-                                    inputFormatters: [_model.priceMask],
-                                  ),
+                                  ],
                                 ),
-                              ),
-                            ].divide(SizedBox(width: 16.0)),
-                          ),
-                        ].divide(SizedBox(height: 16.0)),
-                      ),
-                    if (_model.isPassangerAllowed == 'Yes')
-                      Column(
-                        mainAxisSize: MainAxisSize.max,
-                        children: [
-                          Text(
-                            'Number of bags allowed in Luggage',
-                            style: FlutterFlowTheme.of(context)
-                                .titleMedium
-                                .override(
-                                  font: GoogleFonts.interTight(
-                                    fontWeight: FontWeight.w600,
-                                    fontStyle: FlutterFlowTheme.of(context)
-                                        .titleMedium
-                                        .fontStyle,
-                                  ),
-                                  letterSpacing: 0.0,
-                                  fontWeight: FontWeight.w600,
-                                  fontStyle: FlutterFlowTheme.of(context)
-                                      .titleMedium
-                                      .fontStyle,
-                                ),
-                          ),
-                          Row(
-                            mainAxisSize: MainAxisSize.max,
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Expanded(
-                                child: Container(
-                                  width: double.infinity,
-                                  child: TextFormField(
-                                    controller: _model.bagsTextController,
-                                    focusNode: _model.bagsFocusNode,
-                                    autofocus: false,
-                                    obscureText: false,
-                                    decoration: InputDecoration(
-                                      labelText: 'Enter number of bags allowed',
-                                      hintText: 'Enter number of bags allowed',
-                                      hintStyle: FlutterFlowTheme.of(context)
-                                          .bodyMedium
-                                          .override(
-                                            font: GoogleFonts.inter(
-                                              fontWeight:
-                                                  FlutterFlowTheme.of(context)
-                                                      .bodyMedium
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  FlutterFlowTheme.of(context)
-                                                      .bodyMedium
-                                                      .fontStyle,
-                                            ),
-                                            letterSpacing: 0.0,
-                                            fontWeight:
-                                                FlutterFlowTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontWeight,
-                                            fontStyle:
-                                                FlutterFlowTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontStyle,
-                                          ),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color: Color(0xFF4DABF7),
-                                          width: 2.0,
-                                        ),
-                                        borderRadius:
-                                            BorderRadius.circular(12.0),
-                                      ),
-                                      focusedBorder: OutlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color: FlutterFlowTheme.of(context)
-                                              .primary,
-                                          width: 2.0,
-                                        ),
-                                        borderRadius:
-                                            BorderRadius.circular(12.0),
-                                      ),
-                                      errorBorder: OutlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color: FlutterFlowTheme.of(context)
-                                              .error,
-                                          width: 2.0,
-                                        ),
-                                        borderRadius:
-                                            BorderRadius.circular(12.0),
-                                      ),
-                                      focusedErrorBorder: OutlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color: FlutterFlowTheme.of(context)
-                                              .error,
-                                          width: 2.0,
-                                        ),
-                                        borderRadius:
-                                            BorderRadius.circular(12.0),
-                                      ),
-                                      filled: true,
-                                      fillColor: Color(0xFFF5F5F5),
-                                    ),
-                                    style: FlutterFlowTheme.of(context)
-                                        .bodyMedium
-                                        .override(
-                                          font: GoogleFonts.inter(
-                                            fontWeight:
-                                                FlutterFlowTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontWeight,
-                                            fontStyle:
-                                                FlutterFlowTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontStyle,
-                                          ),
-                                          fontSize: 16.0,
-                                          letterSpacing: 0.0,
-                                          fontWeight:
-                                              FlutterFlowTheme.of(context)
-                                                  .bodyMedium
-                                                  .fontWeight,
-                                          fontStyle:
-                                              FlutterFlowTheme.of(context)
-                                                  .bodyMedium
-                                                  .fontStyle,
-                                        ),
-                                    textAlign: TextAlign.center,
-                                    keyboardType: TextInputType.number,
-                                    cursorColor: FlutterFlowTheme.of(context)
-                                        .primaryText,
-                                    validator: _model
-                                        .bagsTextControllerValidator
-                                        .asValidator(context),
-                                  ),
-                                ),
-                              ),
-                            ].divide(SizedBox(width: 16.0)),
-                          ),
-                        ].divide(SizedBox(height: 16.0)),
-                      ),
-                    if (_model.isPassangersAllowedValue != null &&
-                        _model.isPassangersAllowedValue != '')
-                      Align(
-                        alignment: AlignmentDirectional(1.0, 1.0),
-                        child: Padding(
-                          padding: EdgeInsetsDirectional.fromSTEB(
-                              24.0, 30.0, 24.0, 24.0),
-                          child: InkWell(
-                            splashColor: Colors.transparent,
-                            focusColor: Colors.transparent,
-                            hoverColor: Colors.transparent,
-                            highlightColor: Colors.transparent,
-                            onTap: () async {
-                              // Print all current values first
-                              print('=== BEFORE NAVIGATION ===');
-                              print('Passengers Allowed Value: ${_model.isPassangersAllowedValue}');
-                              print('Passengers Allowed (Yes/No): ${_model.isPassangerAllowed}');
-                              print('Number of Passengers: ${_model.numOfpassTextController.text}');
-                              print('Price Per Passenger: ${_model.priceTextController.text}');
-                              print('Number of Bags Allowed: ${_model.bagsTextController.text}');
-                              print('Current FFAppState Passengers: ${FFAppState().isPassengers}');
-                              print('Current FFAppState Num Passengers: ${FFAppState().numPassengers}');
-                              print('Current FFAppState Price Per Passenger: ${FFAppState().pricePerPassengers}');
-                              print('Current FFAppState Num Bags: ${FFAppState().numBagAllowed}');
-
-                              if (_model.isPassangersAllowedValue != null &&
-                                  _model.isPassangersAllowedValue != '') {
-                                FFAppState().isPassengers = _model.isPassangersAllowedValue!;
-                                safeSetState(() {});
-
-                                print('=== AFTER UPDATING FFAppState ===');
-                                print('Updated FFAppState Passengers: ${FFAppState().isPassengers}');
-
-                                if (_model.isPassangerAllowed == 'Yes') {
-                                  FFAppState().numPassengers = int.parse(_model.numOfpassTextController.text);
-                                  FFAppState().pricePerPassengers = int.parse(_model.priceTextController.text);
-                                  FFAppState().numBagAllowed = int.parse(_model.bagsTextController.text);
-                                  safeSetState(() {});
-
-                                  print('=== PASSENGERS = YES ===');
-                                  print('Updated Num Passengers: ${FFAppState().numPassengers}');
-                                  print('Updated Price Per Passenger: ${FFAppState().pricePerPassengers}');
-                                  print('Updated Num Bags: ${FFAppState().numBagAllowed}');
-
-                                  print('=== NAVIGATING TO TravelTime6Widget ===');
-                                  context.pushNamed(DriverDetail6Widget.routeName);
-                                } else {
-                                  print('=== PASSENGERS = NO ===');
-                                  print('=== NAVIGATING TO TravelTime6Widget ===');
-                                  context.pushNamed(DriverDetail6Widget.routeName);
-                                }
-                              } else {
-                                print('=== ERROR: Passengers allowed value is empty or null ===');
-                                await showDialog(
-                                  context: context,
-                                  builder: (alertDialogContext) {
-                                    return AlertDialog(
-                                      title: const Text('Attention'),
-                                      content: const Text('Please select passanger allowed or not'),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () => Navigator.pop(alertDialogContext),
-                                          child: const Text('Ok'),
-                                        ),
-                                      ],
-                                    );
-                                  },
-                                );
-                              }
-                            },
-                            child: Container(
-                              width: 80.0,
-                              height: 80.0,
+                              ],
+                            ),
+                            Container(
                               decoration: BoxDecoration(
-                                color: Color(0xFFFF8C00),
-                                shape: BoxShape.circle,
+                                color: const Color(0xFFF9FAFB),
+                                borderRadius: BorderRadius.circular(12.0),
+                                border: Border.all(color: const Color(0xFFE5E7EB)),
                               ),
-                              child: Align(
-                                alignment: AlignmentDirectional(0.0, 0.0),
-                                child: Icon(
-                                  Icons.arrow_forward,
-                                  color: Colors.white,
-                                  size: 30.0,
-                                ),
+                              child: Row(
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.remove_rounded, size: 18.0),
+                                    onPressed: () {
+                                      int current = int.tryParse(_model.numOfpassTextController.text) ?? 1;
+                                      if (current > 1) {
+                                        _model.numOfpassTextController.text = (current - 1).toString();
+                                        safeSetState(() {});
+                                      }
+                                    },
+                                  ),
+                                  SizedBox(
+                                    width: 32.0,
+                                    child: Text(
+                                      _model.numOfpassTextController.text.isNotEmpty
+                                          ? _model.numOfpassTextController.text
+                                          : '1',
+                                      textAlign: TextAlign.center,
+                                      style: GoogleFonts.inter(
+                                        fontSize: 16.0,
+                                        fontWeight: FontWeight.w700,
+                                        color: const Color(0xFF111827),
+                                      ),
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.add_rounded, size: 18.0),
+                                    onPressed: () {
+                                      int current = int.tryParse(_model.numOfpassTextController.text) ?? 1;
+                                      if (current < 8) {
+                                        _model.numOfpassTextController.text = (current + 1).toString();
+                                        safeSetState(() {});
+                                      }
+                                    },
+                                  ),
+                                ],
                               ),
                             ),
-                          ),
+                          ],
                         ),
                       ),
-                  ].divide(SizedBox(height: 24.0)),
+
+                      // 2. Price Per Passenger Card
+                      Container(
+                        width: double.infinity,
+                        margin: const EdgeInsets.only(bottom: 16.0),
+                        padding: const EdgeInsets.all(18.0),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20.0),
+                          border: Border.all(color: const Color(0xFFEAECEF)),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x0A000000),
+                              blurRadius: 16.0,
+                              offset: Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8.0),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFFF6EE),
+                                    borderRadius: BorderRadius.circular(10.0),
+                                  ),
+                                  child: const Icon(
+                                    Icons.payments_rounded,
+                                    color: Color(0xFFEE7B4D),
+                                    size: 18.0,
+                                  ),
+                                ),
+                                const SizedBox(width: 10.0),
+                                Text(
+                                  'Price Per Passenger',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 14.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: const Color(0xFF111827),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 14.0),
+                            Container(
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF9FAFB),
+                                borderRadius: BorderRadius.circular(14.0),
+                                border: Border.all(color: const Color(0xFFE5E7EB)),
+                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 14.0),
+                              child: Row(
+                                children: [
+                                  Text(
+                                    '₹',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 20.0,
+                                      fontWeight: FontWeight.w700,
+                                      color: const Color(0xFFEE7B4D),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8.0),
+                                  Expanded(
+                                    child: TextField(
+                                      controller: _model.priceTextController,
+                                      focusNode: _model.priceFocusNode,
+                                      keyboardType: TextInputType.number,
+                                      inputFormatters: [_model.priceMask],
+                                      style: GoogleFonts.inter(
+                                        fontSize: 16.0,
+                                        fontWeight: FontWeight.w700,
+                                        color: const Color(0xFF111827),
+                                      ),
+                                      decoration: InputDecoration(
+                                        hintText: 'Enter amount (e.g. 350)',
+                                        hintStyle: GoogleFonts.inter(
+                                          fontSize: 14.0,
+                                          color: const Color(0xFF9CA3AF),
+                                        ),
+                                        border: InputBorder.none,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // 3. Luggage Bags Allowed Card
+                      Container(
+                        width: double.infinity,
+                        margin: const EdgeInsets.only(bottom: 16.0),
+                        padding: const EdgeInsets.all(18.0),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20.0),
+                          border: Border.all(color: const Color(0xFFEAECEF)),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x0A000000),
+                              blurRadius: 16.0,
+                              offset: Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8.0),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFEEF7F2),
+                                    borderRadius: BorderRadius.circular(10.0),
+                                  ),
+                                  child: const Icon(
+                                    Icons.luggage_rounded,
+                                    color: Color(0xFF10B981),
+                                    size: 20.0,
+                                  ),
+                                ),
+                                const SizedBox(width: 12.0),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Bags Allowed',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 14.5,
+                                        fontWeight: FontWeight.w700,
+                                        color: const Color(0xFF111827),
+                                      ),
+                                    ),
+                                    Text(
+                                      'Per passenger limit',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 11.5,
+                                        color: const Color(0xFF6B7280),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            Container(
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF9FAFB),
+                                borderRadius: BorderRadius.circular(12.0),
+                                border: Border.all(color: const Color(0xFFE5E7EB)),
+                              ),
+                              child: Row(
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.remove_rounded, size: 18.0),
+                                    onPressed: () {
+                                      int current = int.tryParse(_model.bagsTextController.text) ?? 0;
+                                      if (current > 0) {
+                                        _model.bagsTextController.text = (current - 1).toString();
+                                        safeSetState(() {});
+                                      }
+                                    },
+                                  ),
+                                  SizedBox(
+                                    width: 32.0,
+                                    child: Text(
+                                      _model.bagsTextController.text.isNotEmpty
+                                          ? _model.bagsTextController.text
+                                          : '0',
+                                      textAlign: TextAlign.center,
+                                      style: GoogleFonts.inter(
+                                        fontSize: 16.0,
+                                        fontWeight: FontWeight.w700,
+                                        color: const Color(0xFF111827),
+                                      ),
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.add_rounded, size: 18.0),
+                                    onPressed: () {
+                                      int current = int.tryParse(_model.bagsTextController.text) ?? 0;
+                                      if (current < 4) {
+                                        _model.bagsTextController.text = (current + 1).toString();
+                                        safeSetState(() {});
+                                      }
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
+
+              // Bottom Fixed Action Button Container
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 14.0),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  border: Border(
+                    top: BorderSide(
+                      color: Color(0xFFF1F5F9),
+                      width: 1.0,
+                    ),
+                  ),
+                ),
+                child: InkWell(
+                  onTap: _proceedNext,
+                  borderRadius: BorderRadius.circular(16.0),
+                  child: Container(
+                    width: double.infinity,
+                    height: 52.0,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEE7B4D),
+                      borderRadius: BorderRadius.circular(16.0),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x33EE7B4D),
+                          blurRadius: 12.0,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Continue to Driver Details',
+                          style: GoogleFonts.inter(
+                            fontSize: 15.5,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(width: 8.0),
+                        const Icon(
+                          Icons.arrow_forward_rounded,
+                          color: Colors.white,
+                          size: 20.0,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

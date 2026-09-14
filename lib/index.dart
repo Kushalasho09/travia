@@ -108,3 +108,5 @@ export '/post_ride_if_car_bike/driver_detail6/driver_detail6_widget.dart'
     show DriverDetail6Widget;
 export '/post_ride_if_car_bike/ride_rules7/ride_rules7_widget.dart'
     show RideRules7Widget;
+export '/customer_bookings/track_parcel/track_parcel_widget.dart'
+    show TrackParcelWidget;

@@ -137,7 +137,13 @@ class UsersRecord extends FirestoreRecord {
   List<DocumentReference> get chatConnected => _chatConnected ?? const [];
   bool hasChatConnected() => _chatConnected != null;
 
+  // "is_premium" field.
+  bool? _isPremium;
+  bool get isPremium => _isPremium ?? false;
+  bool hasIsPremium() => _isPremium != null;
+
   void _initializeFields() {
+    _isPremium = snapshotData['is_premium'] as bool? ?? snapshotData['isPremium'] as bool?;
     _email = snapshotData['email'] as String?;
     _displayName = snapshotData['display_name'] as String?;
     _photoUrl = snapshotData['photo_url'] as String?;
@@ -218,9 +224,11 @@ Map<String, dynamic> createUsersRecordData({
   String? role,
   double? walletBalance,
   String? newDateOfBirth,
+  bool? isPremium,
 }) {
   final firestoreData = mapToFirestore(
     <String, dynamic>{
+      'is_premium': isPremium,
       'email': email,
       'display_name': displayName,
       'photo_url': photoUrl,

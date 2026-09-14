@@ -1,14 +1,9 @@
+import '/components/publish_ride_progress_header.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
-import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
-import '/flutter_flow/flutter_flow_widgets.dart';
-import 'dart:ui';
 import '/index.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:percent_indicator/percent_indicator.dart';
 import 'package:provider/provider.dart';
 import 'third_model.dart';
 export 'third_model.dart';
@@ -25,27 +20,39 @@ class ThirdWidget extends StatefulWidget {
 
 class _ThirdWidgetState extends State<ThirdWidget> {
   late ThirdModel _model;
-
   final scaffoldKey = GlobalKey<ScaffoldState>();
+
+  final List<String> _suggestedAmounts = const ['150', '250', '500', '750', '1000'];
 
   @override
   void initState() {
     super.initState();
     _model = createModel(context, () => ThirdModel());
-
-    _model.parcelDeliveryTextController ??= TextEditingController();
+    _model.parcelDeliveryTextController ??= TextEditingController(
+      text: FFAppState().totalDelvieryCost.isNotEmpty ? FFAppState().totalDelvieryCost : '',
+    );
     _model.parcelDeliveryFocusNode ??= FocusNode();
   }
 
   @override
   void dispose() {
     _model.dispose();
-
     super.dispose();
+  }
+
+  void _proceedNext() {
+    final cost = _model.parcelDeliveryTextController.text.trim();
+    if (cost.isNotEmpty) {
+      FFAppState().totalDelvieryCost = cost;
+      safeSetState(() {});
+    }
+    context.pushNamed(WhatyouCarry5Widget.routeName);
   }
 
   @override
   Widget build(BuildContext context) {
+    context.watch<FFAppState>();
+
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
@@ -53,394 +60,304 @@ class _ThirdWidgetState extends State<ThirdWidget> {
       },
       child: Scaffold(
         key: scaffoldKey,
-        backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
+        backgroundColor: const Color(0xFFF8FAFC),
         appBar: AppBar(
-          backgroundColor: FlutterFlowTheme.of(context).secondaryBackground,
+          backgroundColor: Colors.white,
           automaticallyImplyLeading: false,
           leading: FlutterFlowIconButton(
             borderColor: Colors.transparent,
             borderRadius: 30.0,
             borderWidth: 1.0,
-            buttonSize: 60.0,
-            icon: Icon(
+            buttonSize: 48.0,
+            icon: const Icon(
               Icons.arrow_back_rounded,
-              color: FlutterFlowTheme.of(context).primaryText,
-              size: 30.0,
+              color: Color(0xFF1F2937),
+              size: 24.0,
             ),
             onPressed: () async {
               context.pop();
             },
           ),
           title: Text(
-            'Parcel Carrying Cost',
-            style: FlutterFlowTheme.of(context).headlineMedium.override(
-                  font: GoogleFonts.interTight(
-                    fontWeight:
-                        FlutterFlowTheme.of(context).headlineMedium.fontWeight,
-                    fontStyle:
-                        FlutterFlowTheme.of(context).headlineMedium.fontStyle,
-                  ),
-                  color: FlutterFlowTheme.of(context).primaryText,
-                  fontSize: 20.0,
-                  letterSpacing: 0.0,
-                  fontWeight:
-                      FlutterFlowTheme.of(context).headlineMedium.fontWeight,
-                  fontStyle:
-                      FlutterFlowTheme.of(context).headlineMedium.fontStyle,
-                ),
+            'Publish Ride',
+            style: GoogleFonts.inter(
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF111827),
+              fontSize: 18.0,
+            ),
           ),
-          actions: [],
+          actions: [
+            TextButton(
+              onPressed: _proceedNext,
+              child: Text(
+                'Skip',
+                style: GoogleFonts.inter(
+                  fontSize: 14.0,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF6B7280),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8.0),
+          ],
           centerTitle: true,
-          elevation: 2.0,
+          elevation: 0.0,
         ),
         body: SafeArea(
           top: true,
-          child: Align(
-            alignment: AlignmentDirectional(0.0, 0.0),
-            child: Padding(
-              padding: EdgeInsetsDirectional.fromSTEB(24.0, 0.0, 24.0, 0.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.max,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: Align(
-                      alignment: AlignmentDirectional(0.0, 0.0),
-                      child: Padding(
-                        padding: EdgeInsetsDirectional.fromSTEB(
-                            0.0, 22.0, 0.0, 15.0),
-                        child: ListView(
-                          padding: EdgeInsets.zero,
-                          primary: false,
-                          shrinkWrap: true,
-                          scrollDirection: Axis.vertical,
+          child: Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Step Progress Header
+                      const PublishRideProgressHeader(
+                        currentStep: 6,
+                        totalSteps: 8,
+                        title: 'Parcel Delivery Charges',
+                        subtitle: 'Set an estimated price for carrying packages on this trip.',
+                        badgeText: 'STEP 6 OF 8',
+                      ),
+
+                      // Pricing Card
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(20.0),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20.0),
+                          border: Border.all(color: const Color(0xFFEAECEF)),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x0A000000),
+                              blurRadius: 16.0,
+                              offset: Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Align(
-                              alignment: AlignmentDirectional(1.0, 0.0),
-                              child: Padding(
-                                padding: EdgeInsetsDirectional.fromSTEB(
-                                    0.0, 0.0, 25.0, 0.0),
-                                child: FFButtonWidget(
-                                  onPressed: () async {
-                                    context.pushNamed(
-                                        DriverDetail10Widget.routeName);
-                                  },
-                                  text: 'Skip',
-                                  options: FFButtonOptions(
-                                    height: 40.0,
-                                    padding: EdgeInsetsDirectional.fromSTEB(
-                                        16.0, 0.0, 16.0, 0.0),
-                                    iconPadding: EdgeInsetsDirectional.fromSTEB(
-                                        0.0, 0.0, 0.0, 0.0),
-                                    color: Color(0x1F4CAF50),
-                                    textStyle: FlutterFlowTheme.of(context)
-                                        .titleSmall
-                                        .override(
-                                          font: GoogleFonts.interTight(
-                                            fontWeight:
-                                                FlutterFlowTheme.of(context)
-                                                    .titleSmall
-                                                    .fontWeight,
-                                            fontStyle:
-                                                FlutterFlowTheme.of(context)
-                                                    .titleSmall
-                                                    .fontStyle,
-                                          ),
-                                          color: FlutterFlowTheme.of(context)
-                                              .success,
-                                          letterSpacing: 0.0,
-                                          fontWeight:
-                                              FlutterFlowTheme.of(context)
-                                                  .titleSmall
-                                                  .fontWeight,
-                                          fontStyle:
-                                              FlutterFlowTheme.of(context)
-                                                  .titleSmall
-                                                  .fontStyle,
-                                        ),
-                                    elevation: 0.0,
-                                    borderSide: BorderSide(
-                                      color:
-                                          FlutterFlowTheme.of(context).success,
-                                    ),
-                                    borderRadius: BorderRadius.circular(8.0),
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8.0),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFFF6EE),
+                                    borderRadius: BorderRadius.circular(10.0),
+                                  ),
+                                  child: const Icon(
+                                    Icons.payments_rounded,
+                                    color: Color(0xFFEE7B4D),
+                                    size: 20.0,
                                   ),
                                 ),
-                              ),
-                            ),
-                            Padding(
-                              padding: EdgeInsetsDirectional.fromSTEB(
-                                  0.0, 0.0, 0.0, 20.0),
-                              child: CircularPercentIndicator(
-                                percent: 0.6,
-                                radius: 60.0,
-                                lineWidth: 12.0,
-                                animation: true,
-                                animateFromLastPercent: true,
-                                progressColor: Color(0xFFF57C3B),
-                                backgroundColor: Color(0xFFD8D5D5),
-                                center: Text(
-                                  '60%',
-                                  style: FlutterFlowTheme.of(context)
-                                      .headlineSmall
-                                      .override(
-                                        font: GoogleFonts.interTight(
-                                          fontWeight:
-                                              FlutterFlowTheme.of(context)
-                                                  .headlineSmall
-                                                  .fontWeight,
-                                          fontStyle:
-                                              FlutterFlowTheme.of(context)
-                                                  .headlineSmall
-                                                  .fontStyle,
-                                        ),
-                                        letterSpacing: 0.0,
-                                        fontWeight: FlutterFlowTheme.of(context)
-                                            .headlineSmall
-                                            .fontWeight,
-                                        fontStyle: FlutterFlowTheme.of(context)
-                                            .headlineSmall
-                                            .fontStyle,
-                                      ),
+                                const SizedBox(width: 10.0),
+                                Text(
+                                  'Delivery Charge (INR)',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 15.0,
+                                    fontWeight: FontWeight.w700,
+                                    color: const Color(0xFF111827),
+                                  ),
                                 ),
-                              ),
+                              ],
                             ),
-                            Padding(
-                              padding: EdgeInsetsDirectional.fromSTEB(
-                                  0.0, 0.0, 0.0, 16.0),
-                              child: Text(
-                                'How much do you charge to carry a parcel?',
-                                style: FlutterFlowTheme.of(context)
-                                    .titleMedium
-                                    .override(
-                                      font: GoogleFonts.interTight(
-                                        fontWeight: FontWeight.w600,
-                                        fontStyle: FlutterFlowTheme.of(context)
-                                            .titleMedium
-                                            .fontStyle,
-                                      ),
-                                      color: Color(0xFF1A5FB4),
-                                      letterSpacing: 0.0,
-                                      fontWeight: FontWeight.w600,
-                                      fontStyle: FlutterFlowTheme.of(context)
-                                          .titleMedium
-                                          .fontStyle,
-                                    ),
-                              ),
-                            ),
+
+                            const SizedBox(height: 18.0),
+
+                            // Amount Input Field
                             Container(
-                              width: double.infinity,
-                              child: TextFormField(
-                                controller: _model.parcelDeliveryTextController,
-                                focusNode: _model.parcelDeliveryFocusNode,
-                                autofocus: false,
-                                textCapitalization:
-                                    TextCapitalization.sentences,
-                                textInputAction: TextInputAction.done,
-                                obscureText: false,
-                                decoration: InputDecoration(
-                                  labelText:
-                                      'How much do you charge for parcel delivery?',
-                                  hintStyle: FlutterFlowTheme.of(context)
-                                      .bodyMedium
-                                      .override(
-                                        font: GoogleFonts.inter(
-                                          fontWeight:
-                                              FlutterFlowTheme.of(context)
-                                                  .bodyMedium
-                                                  .fontWeight,
-                                          fontStyle:
-                                              FlutterFlowTheme.of(context)
-                                                  .bodyMedium
-                                                  .fontStyle,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF9FAFB),
+                                borderRadius: BorderRadius.circular(16.0),
+                                border: Border.all(color: const Color(0xFFE5E7EB)),
+                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
+                              child: Row(
+                                children: [
+                                  Text(
+                                    '₹',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 24.0,
+                                      fontWeight: FontWeight.w800,
+                                      color: const Color(0xFFEE7B4D),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10.0),
+                                  Expanded(
+                                    child: TextField(
+                                      controller: _model.parcelDeliveryTextController,
+                                      focusNode: _model.parcelDeliveryFocusNode,
+                                      keyboardType: TextInputType.number,
+                                      style: GoogleFonts.inter(
+                                        fontSize: 22.0,
+                                        fontWeight: FontWeight.w700,
+                                        color: const Color(0xFF111827),
+                                      ),
+                                      decoration: InputDecoration(
+                                        hintText: 'Enter amount',
+                                        hintStyle: GoogleFonts.inter(
+                                          fontSize: 18.0,
+                                          fontWeight: FontWeight.w400,
+                                          color: const Color(0xFF9CA3AF),
                                         ),
-                                        color: Color(0xFF757575),
-                                        letterSpacing: 0.0,
-                                        fontWeight: FlutterFlowTheme.of(context)
-                                            .bodyMedium
-                                            .fontWeight,
-                                        fontStyle: FlutterFlowTheme.of(context)
-                                            .bodyMedium
-                                            .fontStyle,
+                                        border: InputBorder.none,
                                       ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(
-                                      color: Color(0xFF1A5FB4),
-                                      width: 1.5,
+                                      onChanged: (_) => safeSetState(() {}),
                                     ),
-                                    borderRadius: BorderRadius.circular(12.0),
                                   ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(
-                                      color:
-                                          FlutterFlowTheme.of(context).primary,
-                                      width: 1.5,
-                                    ),
-                                    borderRadius: BorderRadius.circular(12.0),
-                                  ),
-                                  errorBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(
-                                      color: FlutterFlowTheme.of(context).error,
-                                      width: 1.5,
-                                    ),
-                                    borderRadius: BorderRadius.circular(12.0),
-                                  ),
-                                  focusedErrorBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(
-                                      color: FlutterFlowTheme.of(context).error,
-                                      width: 1.5,
-                                    ),
-                                    borderRadius: BorderRadius.circular(12.0),
-                                  ),
-                                  filled: true,
-                                  fillColor: Color(0xFFF5F5F5),
-                                ),
-                                style: FlutterFlowTheme.of(context)
-                                    .bodyMedium
-                                    .override(
-                                      font: GoogleFonts.inter(
-                                        fontWeight: FlutterFlowTheme.of(context)
-                                            .bodyMedium
-                                            .fontWeight,
-                                        fontStyle: FlutterFlowTheme.of(context)
-                                            .bodyMedium
-                                            .fontStyle,
-                                      ),
-                                      color: Color(0xFF333333),
-                                      letterSpacing: 0.0,
-                                      fontWeight: FlutterFlowTheme.of(context)
-                                          .bodyMedium
-                                          .fontWeight,
-                                      fontStyle: FlutterFlowTheme.of(context)
-                                          .bodyMedium
-                                          .fontStyle,
-                                    ),
-                                keyboardType: TextInputType.number,
-                                cursorColor: Color(0xFF1A5FB4),
-                                validator: _model
-                                    .parcelDeliveryTextControllerValidator
-                                    .asValidator(context),
-                                inputFormatters: [
-                                  if (!isAndroid && !isiOS)
-                                    TextInputFormatter.withFunction(
-                                        (oldValue, newValue) {
-                                      return TextEditingValue(
-                                        selection: newValue.selection,
-                                        text: newValue.text.toCapitalization(
-                                            TextCapitalization.sentences),
-                                      );
-                                    }),
                                 ],
                               ),
                             ),
-                            Padding(
-                              padding: EdgeInsets.all(10.0),
-                              child: Text(
-                                '₹1/km, final rate based on parcel size & delicacy (to be discussed on call)',
-                                textAlign: TextAlign.center,
-                                style: FlutterFlowTheme.of(context)
-                                    .bodyMedium
-                                    .override(
-                                      font: GoogleFonts.inter(
-                                        fontWeight: FlutterFlowTheme.of(context)
-                                            .bodyMedium
-                                            .fontWeight,
-                                        fontStyle: FlutterFlowTheme.of(context)
-                                            .bodyMedium
-                                            .fontStyle,
-                                      ),
-                                      fontSize: 11.0,
-                                      letterSpacing: 0.0,
-                                      fontWeight: FlutterFlowTheme.of(context)
-                                          .bodyMedium
-                                          .fontWeight,
-                                      fontStyle: FlutterFlowTheme.of(context)
-                                          .bodyMedium
-                                          .fontStyle,
+
+                            const SizedBox(height: 18.0),
+
+                            // Suggested Quick Price Pills
+                            Text(
+                              'Suggested Rates',
+                              style: GoogleFonts.inter(
+                                fontSize: 12.0,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF6B7280),
+                              ),
+                            ),
+                            const SizedBox(height: 8.0),
+                            Wrap(
+                              spacing: 8.0,
+                              children: _suggestedAmounts.map((amt) {
+                                final isSelected = _model.parcelDeliveryTextController.text == amt;
+                                return InkWell(
+                                  onTap: () {
+                                    _model.parcelDeliveryTextController.text = amt;
+                                    safeSetState(() {});
+                                  },
+                                  borderRadius: BorderRadius.circular(20.0),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 7.0),
+                                    decoration: BoxDecoration(
+                                      color: isSelected ? const Color(0xFFEE7B4D) : const Color(0xFFF3F4F6),
+                                      borderRadius: BorderRadius.circular(20.0),
                                     ),
+                                    child: Text(
+                                      '₹$amt',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 12.5,
+                                        fontWeight: FontWeight.w700,
+                                        color: isSelected ? Colors.white : const Color(0xFF374151),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 18.0),
+
+                      // Guidelines Box
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(14.0),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEEF7F2),
+                          borderRadius: BorderRadius.circular(16.0),
+                          border: Border.all(color: const Color(0xFFD6EFE1)),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(6.0),
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFD6EFE1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.info_outline_rounded,
+                                color: Color(0xFF10B981),
+                                size: 16.0,
+                              ),
+                            ),
+                            const SizedBox(width: 10.0),
+                            Expanded(
+                              child: Text(
+                                'Recommended base rate is approximately ₹1 - ₹2 per km. Final delivery terms and handling can be coordinated with the parcel sender.',
+                                style: GoogleFonts.inter(
+                                  color: const Color(0xFF065F46),
+                                  fontSize: 12.0,
+                                  fontWeight: FontWeight.w400,
+                                  height: 1.35,
+                                ),
                               ),
                             ),
                           ],
                         ),
                       ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Bottom Fixed Action Button Container
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 14.0),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  border: Border(
+                    top: BorderSide(
+                      color: Color(0xFFF1F5F9),
+                      width: 1.0,
                     ),
                   ),
-                  Padding(
-                    padding:
-                        EdgeInsetsDirectional.fromSTEB(0.0, 22.0, 0.0, 15.0),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.max,
+                ),
+                child: InkWell(
+                  onTap: _proceedNext,
+                  borderRadius: BorderRadius.circular(16.0),
+                  child: Container(
+                    width: double.infinity,
+                    height: 52.0,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEE7B4D),
+                      borderRadius: BorderRadius.circular(16.0),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x33EE7B4D),
+                          blurRadius: 12.0,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // if (_model.parcelDeliveryTextController.text != null &&
-                        //     _model.parcelDeliveryTextController.text != '')
-                          Align(
-                            alignment: AlignmentDirectional(1.0, 1.0),
-                            child: Padding(
-                              padding: EdgeInsetsDirectional.fromSTEB(
-                                  24.0, 50.0, 24.0, 24.0),
-                              child: InkWell(
-                                splashColor: Colors.transparent,
-                                focusColor: Colors.transparent,
-                                hoverColor: Colors.transparent,
-                                highlightColor: Colors.transparent,
-                                onTap: () async {
-                                  if (_model.parcelDeliveryTextController
-                                              .text !=
-                                          null &&
-                                      _model.parcelDeliveryTextController
-                                              .text !=
-                                          '') {
-                                    FFAppState().totalDelvieryCost = _model
-                                        .parcelDeliveryTextController.text;
-                                    safeSetState(() {});
-
-                                    context.pushNamed(
-                                        WhatyouCarry5Widget.routeName);
-                                  } else {
-                                    await showDialog(
-                                      context: context,
-                                      builder: (alertDialogContext) {
-                                        return AlertDialog(
-                                          title: Text('Attention'),
-                                          content:
-                                              Text('Please fill all details'),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () => Navigator.pop(
-                                                  alertDialogContext),
-                                              child: Text('Ok'),
-                                            ),
-                                          ],
-                                        );
-                                      },
-                                    );
-                                  }
-                                },
-                                child: Container(
-                                  width: 80.0,
-                                  height: 80.0,
-                                  decoration: BoxDecoration(
-                                    color: Color(0xFFFF8C00),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Align(
-                                    alignment: AlignmentDirectional(0.0, 0.0),
-                                    child: Icon(
-                                      Icons.arrow_forward,
-                                      color: Colors.white,
-                                      size: 30.0,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
+                        Text(
+                          'Continue to Carry Preferences',
+                          style: GoogleFonts.inter(
+                            fontSize: 15.5,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
                           ),
+                        ),
+                        const SizedBox(width: 8.0),
+                        const Icon(
+                          Icons.arrow_forward_rounded,
+                          color: Colors.white,
+                          size: 20.0,
+                        ),
                       ],
                     ),
                   ),
-                ],
+                ),
               ),
-            ),
+            ],
           ),
         ),
       ),

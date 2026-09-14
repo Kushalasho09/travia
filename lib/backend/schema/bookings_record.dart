@@ -101,7 +101,14 @@ class BookingsRecord extends FirestoreRecord {
   String get bookingFor => _bookingFor ?? '';
   bool hasBookingFor() => _bookingFor != null;
 
+  // "liveTrackingEnabled" field.
+  bool? _liveTrackingEnabled;
+  bool get liveTrackingEnabled => _liveTrackingEnabled ?? false;
+  bool hasLiveTrackingEnabled() => _liveTrackingEnabled != null;
+
   void _initializeFields() {
+    _liveTrackingEnabled = snapshotData['liveTrackingEnabled'] as bool? ??
+        snapshotData['live_tracking_enabled'] as bool?;
     _itemName = snapshotData['itemName'] as String?;
     _receiverName = snapshotData['receiverName'] as String?;
     _phoneNumber = snapshotData['phoneNumber'] as String?;
@@ -175,9 +182,12 @@ Map<String, dynamic> createBookingsRecordData({
   String? rideAdditionalInformation,
   String? rideBookFor,
   String? bookingFor,
+  bool? liveTrackingEnabled,
 }) {
   final firestoreData = mapToFirestore(
     <String, dynamic>{
+      'live_tracking_enabled': liveTrackingEnabled,
+      'liveTrackingEnabled': liveTrackingEnabled,
       'itemName': itemName,
       'receiverName': receiverName,
       'phoneNumber': phoneNumber,

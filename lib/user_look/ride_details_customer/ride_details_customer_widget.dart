@@ -3811,7 +3811,7 @@ class _RideDetailsCustomerWidgetState extends State<RideDetailsCustomerWidget> w
         ? rideRecord.caryyItems
         : ['Documents', 'Electronics', 'Clothing', 'Sweets'];
 
-    final displayItems = dynamicItems.take(4).toList();
+    final displayItems = dynamicItems.take(3).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -3843,24 +3843,28 @@ class _RideDetailsCustomerWidgetState extends State<RideDetailsCustomerWidget> w
         ),
         const SizedBox(height: 8.0),
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             ...displayItems.map((item) {
               final style = _getIconForItem(item);
-              return _buildParcelCategoryItem(
-                icon: style.icon,
-                iconColor: style.color,
-                bgColor: style.bgColor,
-                label: item,
-                onTap: () => _showParcelItemsBottomSheet(context, rideRecord),
+              return Expanded(
+                child: _buildParcelCategoryItem(
+                  icon: style.icon,
+                  iconColor: style.color,
+                  bgColor: style.bgColor,
+                  label: item,
+                  onTap: () => _showParcelItemsBottomSheet(context, rideRecord),
+                ),
               );
             }),
-            _buildParcelCategoryItem(
-              icon: Icons.more_horiz_rounded,
-              iconColor: const Color(0xFF64748B),
-              bgColor: const Color(0xFFF1F5F9),
-              label: 'More',
-              onTap: () => _showParcelItemsBottomSheet(context, rideRecord),
+            Expanded(
+              child: _buildParcelCategoryItem(
+                icon: Icons.more_horiz_rounded,
+                iconColor: const Color(0xFF64748B),
+                bgColor: const Color(0xFFF1F5F9),
+                label: 'More',
+                onTap: () => _showParcelItemsBottomSheet(context, rideRecord),
+              ),
             ),
           ],
         ),
@@ -3910,15 +3914,19 @@ class _RideDetailsCustomerWidgetState extends State<RideDetailsCustomerWidget> w
             ),
           ),
           const SizedBox(height: 6.0),
-          Text(
-            label,
-            style: GoogleFonts.inter(
-              fontSize: 11.0,
-              fontWeight: FontWeight.w500,
-              color: const Color(0xFF475569),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 2.0),
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.inter(
+                fontSize: 11.0,
+                fontWeight: FontWeight.w500,
+                color: const Color(0xFF475569),
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),

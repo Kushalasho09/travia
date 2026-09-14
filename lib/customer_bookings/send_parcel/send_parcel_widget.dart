@@ -5,17 +5,12 @@ import '/auth/firebase_auth/auth_util.dart';
 import '/backend/backend.dart';
 import '/components/bid_posted_thanks_widget.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
-import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
-import '/flutter_flow/flutter_flow_widgets.dart';
-import 'dart:ui';
 import '/index.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
 import 'send_parcel_model.dart';
 export 'send_parcel_model.dart';
 
@@ -38,6 +33,7 @@ class _SendParcelWidgetState extends State<SendParcelWidget> {
   late SendParcelModel _model;
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
+  bool _isSubmitting = false;
 
   @override
   void initState() {
@@ -63,33 +59,197 @@ class _SendParcelWidgetState extends State<SendParcelWidget> {
   @override
   void dispose() {
     _model.dispose();
-
     super.dispose();
+  }
+
+  Future<void> _submitParcelBooking(RidesNewRecord rideRecord) async {
+    final itemName = _model.itemNameTextController?.text.trim() ?? '';
+    final receiverName = _model.reciverNameTextController?.text.trim() ?? '';
+    final phone = _model.phoneNumberTextController?.text.trim() ?? '';
+    final address = _model.addressTextController?.text.trim() ?? '';
+    final isChecked = _model.checkboxValue ?? false;
+
+    if (itemName.isEmpty) {
+      _showWarningDialog('Please describe the parcel/items you wish to send.');
+      return;
+    }
+    if (receiverName.isEmpty) {
+      _showWarningDialog('Please enter the recipient\'s name.');
+      return;
+    }
+    if (phone.isEmpty) {
+      _showWarningDialog('Please enter the contact phone number.');
+      return;
+    }
+    if (address.isEmpty) {
+      _showWarningDialog('Please select the meetup/drop-off address.');
+      return;
+    }
+    if (!isChecked) {
+      _showWarningDialog('Please accept the Terms and Conditions to proceed.');
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+
+    try {
+      // 1. Create booking in Firestore
+      await BookingsRecord.collection.doc().set(createBookingsRecordData(
+            itemName: itemName,
+            receiverName: receiverName,
+            phoneNumber: phone,
+            meetupLocation: address,
+            meetupLocationMap: _model.meetupLocationMap,
+            additionalInformation: _model.additionalInformationTextController?.text.trim() ?? '',
+            createdTime: getCurrentTimestamp,
+            creator: currentUserReference,
+            rideID: rideRecord.reference,
+            status: 'Pending',
+            bookingType: 'Parcel',
+          ));
+
+      // 2. Send push notification to driver
+      try {
+        final driverRef = rideRecord.creatorID;
+        if (driverRef != null) {
+          final driverSnapshot = await driverRef.get();
+          if (driverSnapshot.exists) {
+            final driverData = driverSnapshot.data() as Map<String, dynamic>?;
+            String? fcmToken;
+            if (driverData?['fcmToken'] != null) {
+              fcmToken = driverData!['fcmToken'] as String?;
+            } else if (driverData?['fcmTokens'] is List && (driverData!['fcmTokens'] as List).isNotEmpty) {
+              fcmToken = (driverData['fcmTokens'] as List).first as String?;
+            }
+
+            if (fcmToken != null && fcmToken.isNotEmpty) {
+              await FirebaseFunctions.instance.httpsCallable('sendChatNotification').call({
+                'token': fcmToken,
+                'senderName': currentUserDisplayName.isNotEmpty ? currentUserDisplayName : 'Travia Customer',
+                'message': 'A customer requested to send a parcel on your ride!',
+                'chatId': '',
+              });
+            }
+          }
+        }
+      } catch (e) {
+        // Non-fatal error
+      }
+
+      // 3. Show thank you dialog & navigate
+      if (mounted) {
+        await showDialog(
+          barrierDismissible: false,
+          context: context,
+          builder: (dialogContext) {
+            return const Dialog(
+              elevation: 0,
+              insetPadding: EdgeInsets.zero,
+              backgroundColor: Colors.transparent,
+              child: BidPostedThanksWidget(),
+            );
+          },
+        );
+
+        if (mounted) {
+          context.goNamed(
+            HomeWidget.routeName,
+            queryParameters: {
+              'tabNumberRef': serializeParam(1, ParamType.int),
+            }.withoutNulls,
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        _showWarningDialog('Failed to book parcel: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
+    }
+  }
+
+  void _showWarningDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
+        backgroundColor: Colors.white,
+        title: Row(
+          children: [
+            const Icon(Icons.info_outline_rounded, color: Color(0xFFEE7B4D), size: 22.0),
+            const SizedBox(width: 8.0),
+            Text(
+              'Required Info',
+              style: GoogleFonts.inter(fontSize: 17.0, fontWeight: FontWeight.bold, color: const Color(0xFF111827)),
+            ),
+          ],
+        ),
+        content: Text(
+          message,
+          style: GoogleFonts.inter(fontSize: 13.5, color: const Color(0xFF475569), height: 1.4),
+        ),
+        actions: [
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEE7B4D),
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
+              padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 8.0),
+            ),
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              'Got it',
+              style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13.0),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    if (widget.bookingKarnaHai == null) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF8FAFC),
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0.5,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF111827)),
+            onPressed: () => Navigator.pop(context),
+          ),
+          title: Text('Send Parcel', style: GoogleFonts.inter(color: const Color(0xFF111827), fontWeight: FontWeight.bold)),
+        ),
+        body: Center(
+          child: Text('Ride details not found', style: GoogleFonts.inter(color: const Color(0xFF64748B))),
+        ),
+      );
+    }
+
     return StreamBuilder<RidesNewRecord>(
-      stream: RidesNewRecord.getDocument(widget!.bookingKarnaHai!),
+      stream: RidesNewRecord.getDocument(widget.bookingKarnaHai!),
       builder: (context, snapshot) {
-        // Customize what your widget looks like when it's loading.
         if (!snapshot.hasData) {
-          return Scaffold(
-            backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
+          return const Scaffold(
+            backgroundColor: Color(0xFFF8FAFC),
             body: Center(
               child: SizedBox(
-                width: 50.0,
-                height: 50.0,
+                width: 44.0,
+                height: 44.0,
                 child: SpinKitFadingCircle(
-                  color: Color(0xFF2B3C58),
-                  size: 50.0,
+                  color: Color(0xFFEE7B4D),
+                  size: 40.0,
                 ),
               ),
             ),
           );
         }
 
-        final sendParcelRidesNewRecord = snapshot.data!;
+        final rideRecord = snapshot.data!;
 
         return GestureDetector(
           onTap: () {
@@ -98,709 +258,537 @@ class _SendParcelWidgetState extends State<SendParcelWidget> {
           },
           child: Scaffold(
             key: scaffoldKey,
-            backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
+            backgroundColor: const Color(0xFFF8FAFC),
             appBar: AppBar(
-              backgroundColor: FlutterFlowTheme.of(context).secondaryBackground,
+              backgroundColor: Colors.white,
               automaticallyImplyLeading: false,
-              leading: FlutterFlowIconButton(
-                borderColor: Colors.transparent,
-                borderRadius: 30.0,
-                borderWidth: 1.0,
-                buttonSize: 60.0,
-                icon: Icon(
-                  Icons.arrow_back_rounded,
-                  color: FlutterFlowTheme.of(context).primaryText,
-                  size: 30.0,
+              elevation: 0.5,
+              shadowColor: Colors.black.withValues(alpha: 0.04),
+              leading: Padding(
+                padding: const EdgeInsets.only(left: 8.0),
+                child: FlutterFlowIconButton(
+                  borderRadius: 12.0,
+                  buttonSize: 40.0,
+                  icon: const Icon(
+                    Icons.arrow_back_ios_new_rounded,
+                    color: Color(0xFF111827),
+                    size: 18.0,
+                  ),
+                  onPressed: () => Navigator.pop(context),
                 ),
-                onPressed: () async {
-                  context.pop();
-                },
               ),
               title: Text(
-                'Post a Bid',
-                style: FlutterFlowTheme.of(context).headlineMedium.override(
-                      font: GoogleFonts.interTight(
-                        fontWeight: FlutterFlowTheme.of(context).headlineMedium.fontWeight,
-                        fontStyle: FlutterFlowTheme.of(context).headlineMedium.fontStyle,
-                      ),
-                      color: FlutterFlowTheme.of(context).primaryText,
-                      fontSize: 22.0,
-                      letterSpacing: 0.0,
-                      fontWeight: FlutterFlowTheme.of(context).headlineMedium.fontWeight,
-                      fontStyle: FlutterFlowTheme.of(context).headlineMedium.fontStyle,
-                    ),
+                'Send Parcel',
+                style: GoogleFonts.inter(
+                  fontSize: 18.0,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF111827),
+                ),
               ),
-              actions: [],
               centerTitle: true,
-              elevation: 2.0,
             ),
             body: SafeArea(
-              top: true,
-              child: Align(
-                alignment: AlignmentDirectional(0.0, 0.0),
-                child: Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: SingleChildScrollView(
-                    primary: false,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.max,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Material(
-                          color: Colors.transparent,
-                          elevation: 10.0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(24.0),
+              top: false,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 32.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Trip Summary Card
+                    Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16.0),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.03),
+                            blurRadius: 10.0,
+                            offset: const Offset(0, 3),
                           ),
-                          child: Container(
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              color: FlutterFlowTheme.of(context).containerColour,
-                              borderRadius: BorderRadius.circular(24.0),
-                            ),
-                            child: Padding(
-                              padding: EdgeInsets.all(10.0),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.max,
+                        ],
+                      ),
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFFF4ED),
+                                  borderRadius: BorderRadius.circular(20.0),
+                                  border: Border.all(color: const Color(0xFFFFD4C2)),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.local_shipping_outlined, color: Color(0xFFEE7B4D), size: 14.0),
+                                    const SizedBox(width: 5.0),
+                                    Text(
+                                      'Parcel Delivery',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.w700,
+                                        color: const Color(0xFFEE7B4D),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (rideRecord.totalDeliveryCost.isNotEmpty)
+                                Text(
+                                  '₹${rideRecord.totalDeliveryCost}',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 18.0,
+                                    fontWeight: FontWeight.w800,
+                                    color: const Color(0xFF111827),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 14.0),
+
+                          // Route Visual
+                          Row(
+                            children: [
+                              Column(
                                 children: [
                                   Container(
-                                    width: double.infinity,
-                                    decoration: BoxDecoration(
-                                      color: FlutterFlowTheme.of(context).containerBG,
-                                      borderRadius: BorderRadius.circular(16.0),
-                                      border: Border.all(
-                                        color: Color(0xFFA7A7A7),
-                                      ),
-                                    ),
-                                    child: Padding(
-                                      padding: EdgeInsets.all(16.0),
-                                      child: Column(
-                                        mainAxisSize: MainAxisSize.max,
-                                        children: [
-                                          Column(
-                                            mainAxisSize: MainAxisSize.max,
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Padding(
-                                                padding: EdgeInsets.only(bottom: 12.0),
-                                                child: Text(
-                                                  'Product details',
-                                                  style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                        font: GoogleFonts.inter(
-                                                          fontWeight: FontWeight.w500,
-                                                          fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                        ),
-                                                        color: FlutterFlowTheme.of(context).iconColours,
-                                                        fontSize: 14.0,
-                                                        letterSpacing: 0.0,
-                                                        fontWeight: FontWeight.w500,
-                                                        fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                      ),
-                                                ),
-                                              ),
-                                              TextFormField(
-                                                controller: _model.itemNameTextController,
-                                                focusNode: _model.itemNameFocusNode,
-                                                obscureText: false,
-                                                decoration: InputDecoration(
-                                                  hintText: 'Documents',
-                                                  enabledBorder: OutlineInputBorder(
-                                                    borderSide: BorderSide(
-                                                      color: Color(0xFFD0D0D0),
-                                                      width: 1.0,
-                                                    ),
-                                                    borderRadius: BorderRadius.circular(12.0),
-                                                  ),
-                                                  focusedBorder: OutlineInputBorder(
-                                                    borderSide: BorderSide(
-                                                      color: Color(0x00000000),
-                                                      width: 1.0,
-                                                    ),
-                                                    borderRadius: BorderRadius.circular(12.0),
-                                                  ),
-                                                  errorBorder: OutlineInputBorder(
-                                                    borderSide: BorderSide(
-                                                      color: Color(0x00000000),
-                                                      width: 1.0,
-                                                    ),
-                                                    borderRadius: BorderRadius.circular(12.0),
-                                                  ),
-                                                  focusedErrorBorder: OutlineInputBorder(
-                                                    borderSide: BorderSide(
-                                                      color: Color(0x00000000),
-                                                      width: 1.0,
-                                                    ),
-                                                    borderRadius: BorderRadius.circular(12.0),
-                                                  ),
-                                                  filled: true,
-                                                  fillColor: FlutterFlowTheme.of(context).accent4,
-                                                ),
-                                                style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                      font: GoogleFonts.inter(
-                                                        fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
-                                                        fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                      ),
-                                                      color: FlutterFlowTheme.of(context).primaryText,
-                                                      letterSpacing: 0.0,
-                                                      fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
-                                                      fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                    ),
-                                                validator: _model.itemNameTextControllerValidator.asValidator(context),
-                                              ),
-                                            ],
-                                          ),
-                                          Column(
-                                            mainAxisSize: MainAxisSize.max,
-                                            children: [
-                                              Padding(
-                                                padding: EdgeInsets.only(bottom: 12.0),
-                                                child: Text(
-                                                  'Name of Recipient',
-                                                  style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                        font: GoogleFonts.inter(
-                                                          fontWeight: FontWeight.w500,
-                                                          fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                        ),
-                                                        color: FlutterFlowTheme.of(context).iconColours,
-                                                        fontSize: 14.0,
-                                                        letterSpacing: 0.0,
-                                                        fontWeight: FontWeight.w500,
-                                                        fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                      ),
-                                                ),
-                                              ),
-                                              AuthUserStreamWidget(
-                                                builder: (context) => TextFormField(
-                                                  controller: _model.reciverNameTextController,
-                                                  focusNode: _model.reciverNameFocusNode,
-                                                  obscureText: false,
-                                                  decoration: InputDecoration(
-                                                    hintText: 'Sumit',
-                                                    enabledBorder: OutlineInputBorder(
-                                                      borderSide: BorderSide(
-                                                        color: Color(0xFFD0D0D0),
-                                                        width: 1.0,
-                                                      ),
-                                                      borderRadius: BorderRadius.circular(12.0),
-                                                    ),
-                                                    focusedBorder: OutlineInputBorder(
-                                                      borderSide: BorderSide(
-                                                        color: Color(0x00000000),
-                                                        width: 1.0,
-                                                      ),
-                                                      borderRadius: BorderRadius.circular(12.0),
-                                                    ),
-                                                    errorBorder: OutlineInputBorder(
-                                                      borderSide: BorderSide(
-                                                        color: Color(0x00000000),
-                                                        width: 1.0,
-                                                      ),
-                                                      borderRadius: BorderRadius.circular(12.0),
-                                                    ),
-                                                    focusedErrorBorder: OutlineInputBorder(
-                                                      borderSide: BorderSide(
-                                                        color: Color(0x00000000),
-                                                        width: 1.0,
-                                                      ),
-                                                      borderRadius: BorderRadius.circular(12.0),
-                                                    ),
-                                                    filled: true,
-                                                    fillColor: FlutterFlowTheme.of(context).accent4,
-                                                  ),
-                                                  style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                        font: GoogleFonts.inter(
-                                                          fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
-                                                          fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                        ),
-                                                        letterSpacing: 0.0,
-                                                        fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
-                                                        fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                      ),
-                                                  validator: _model.reciverNameTextControllerValidator.asValidator(context),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                          Column(
-                                            mainAxisSize: MainAxisSize.max,
-                                            children: [
-                                              Padding(
-                                                padding: EdgeInsets.only(bottom: 12.0),
-                                                child: Text(
-                                                  'Contact person\'s number',
-                                                  style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                        font: GoogleFonts.inter(
-                                                          fontWeight: FontWeight.w500,
-                                                          fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                        ),
-                                                        color: FlutterFlowTheme.of(context).iconColours,
-                                                        fontSize: 14.0,
-                                                        letterSpacing: 0.0,
-                                                        fontWeight: FontWeight.w500,
-                                                        fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                      ),
-                                                ),
-                                              ),
-                                              AuthUserStreamWidget(
-                                                builder: (context) => TextFormField(
-                                                  controller: _model.phoneNumberTextController,
-                                                  focusNode: _model.phoneNumberFocusNode,
-                                                  obscureText: false,
-                                                  decoration: InputDecoration(
-                                                    hintText: '7312345678',
-                                                    enabledBorder: OutlineInputBorder(
-                                                      borderSide: BorderSide(
-                                                        color: Color(0xFFD0D0D0),
-                                                        width: 1.0,
-                                                      ),
-                                                      borderRadius: BorderRadius.circular(12.0),
-                                                    ),
-                                                    focusedBorder: OutlineInputBorder(
-                                                      borderSide: BorderSide(
-                                                        color: Color(0x00000000),
-                                                        width: 1.0,
-                                                      ),
-                                                      borderRadius: BorderRadius.circular(12.0),
-                                                    ),
-                                                    errorBorder: OutlineInputBorder(
-                                                      borderSide: BorderSide(
-                                                        color: Color(0x00000000),
-                                                        width: 1.0,
-                                                      ),
-                                                      borderRadius: BorderRadius.circular(12.0),
-                                                    ),
-                                                    focusedErrorBorder: OutlineInputBorder(
-                                                      borderSide: BorderSide(
-                                                        color: Color(0x00000000),
-                                                        width: 1.0,
-                                                      ),
-                                                      borderRadius: BorderRadius.circular(12.0),
-                                                    ),
-                                                    filled: true,
-                                                    fillColor: FlutterFlowTheme.of(context).accent4,
-                                                  ),
-                                                  style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                        font: GoogleFonts.inter(
-                                                          fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
-                                                          fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                        ),
-                                                        letterSpacing: 0.0,
-                                                        fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
-                                                        fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                      ),
-                                                  keyboardType: TextInputType.phone,
-                                                  validator: _model.phoneNumberTextControllerValidator.asValidator(context),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                          Align(
-                                            alignment: AlignmentDirectional(0.0, 0.0),
-                                            child: Column(
-                                              mainAxisSize: MainAxisSize.max,
-                                              children: [
-                                                Padding(
-                                                  padding: EdgeInsets.only(bottom: 12.0),
-                                                  child: Text(
-                                                    'Address of meetup',
-                                                    style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                          font: GoogleFonts.inter(
-                                                            fontWeight: FontWeight.w500,
-                                                            fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                          ),
-                                                          color: FlutterFlowTheme.of(context).iconColours,
-                                                          fontSize: 14.0,
-                                                          letterSpacing: 0.0,
-                                                          fontWeight: FontWeight.w500,
-                                                          fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                        ),
-                                                  ),
-                                                ),
-                                                GooglePlaceAutoCompleteTextField(
-                                                  focusNode: _model.addressFocusNode,
-                                                  textEditingController: _model.addressTextController!,
-                                                  googleAPIKey: "AIzaSyDZkxRpoy0BOIAPwMaMIvAd5xpCe-6ZYvs",
-                                                  inputDecoration: InputDecoration(
-                                                    hintText: 'Address of meetup',
-                                                    hintStyle: FlutterFlowTheme.of(context).labelMedium.override(
-                                                          font: GoogleFonts.inter(
-                                                            fontWeight: FlutterFlowTheme.of(context).labelMedium.fontWeight,
-                                                            fontStyle: FlutterFlowTheme.of(context).labelMedium.fontStyle,
-                                                          ),
-                                                          letterSpacing: 0.0,
-                                                          fontWeight: FlutterFlowTheme.of(context).labelMedium.fontWeight,
-                                                          fontStyle: FlutterFlowTheme.of(context).labelMedium.fontStyle,
-                                                        ),
-                                                    enabledBorder: OutlineInputBorder(
-                                                      borderSide: BorderSide(
-                                                        color: Color(0xFFD0D0D0),
-                                                        width: 1.0,
-                                                      ),
-                                                      borderRadius: BorderRadius.circular(12.0),
-                                                    ),
-                                                    focusedBorder: OutlineInputBorder(
-                                                      borderSide: BorderSide(
-                                                        color: Color(0x00000000),
-                                                        width: 1.0,
-                                                      ),
-                                                      borderRadius: BorderRadius.circular(12.0),
-                                                    ),
-                                                    errorBorder: OutlineInputBorder(
-                                                      borderSide: BorderSide(
-                                                        color: Color(0x00000000),
-                                                        width: 1.0,
-                                                      ),
-                                                      borderRadius: BorderRadius.circular(12.0),
-                                                    ),
-                                                    focusedErrorBorder: OutlineInputBorder(
-                                                      borderSide: BorderSide(
-                                                        color: Color(0x00000000),
-                                                        width: 1.0,
-                                                      ),
-                                                      borderRadius: BorderRadius.circular(12.0),
-                                                    ),
-                                                    filled: true,
-                                                    fillColor: FlutterFlowTheme.of(context).accent4,
-                                                  ),
-                                                  textStyle: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                        font: GoogleFonts.inter(
-                                                          fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
-                                                          fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                        ),
-                                                        letterSpacing: 0.0,
-                                                        fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
-                                                        fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                      ),
-                                                  debounceTime: 600,
-                                                  countries: ["in"],
-                                                  isLatLngRequired: true,
-                                                  getPlaceDetailWithLatLng: (prediction) {
-                                                    if (prediction.lat != null && prediction.lng != null) {
-                                                      _model.meetupLocationMap = LatLng(
-                                                        double.parse(prediction.lat!),
-                                                        double.parse(prediction.lng!),
-                                                      );
-                                                    }
-                                                  },
-                                                  itemClick: (prediction) {
-                                                    _model.addressTextController!.text = prediction.description ?? "";
-                                                    _model.addressTextController!.selection = TextSelection.fromPosition(
-                                                      TextPosition(offset: prediction.description?.length ?? 0),
-                                                    );
-                                                  },
-                                                  itemBuilder: (context, index, prediction) {
-                                                    return Container(
-                                                      padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-                                                      child: Row(
-                                                        children: [
-                                                          Icon(Icons.location_on_outlined, size: 18.0, color: Color(0xFF4DABF7)),
-                                                          SizedBox(width: 10.0),
-                                                          Expanded(
-                                                            child: Text(
-                                                              prediction.description ?? "",
-                                                              style: FlutterFlowTheme.of(context).bodyMedium.override(fontSize: 14.0),
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    );
-                                                  },
-                                                  seperatedBuilder: Divider(height: 1.0, thickness: 0.5),
-                                                  isCrossBtnShown: true,
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          Align(
-                                            alignment: AlignmentDirectional(0.0, 0.0),
-                                            child: Column(
-                                              mainAxisSize: MainAxisSize.max,
-                                              children: [
-                                                Padding(
-                                                  padding: EdgeInsets.only(bottom: 12.0),
-                                                  child: Text(
-                                                    'Additional Information (Optional)',
-                                                    style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                          font: GoogleFonts.inter(
-                                                            fontWeight: FontWeight.w500,
-                                                            fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                          ),
-                                                          color: FlutterFlowTheme.of(context).iconColours,
-                                                          fontSize: 14.0,
-                                                          letterSpacing: 0.0,
-                                                          fontWeight: FontWeight.w500,
-                                                          fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                        ),
-                                                  ),
-                                                ),
-                                                TextFormField(
-                                                  controller: _model.additionalInformationTextController,
-                                                  focusNode: _model.additionalInformationFocusNode,
-                                                  obscureText: false,
-                                                  decoration: InputDecoration(
-                                                    hintStyle: FlutterFlowTheme.of(context).labelMedium.override(
-                                                          font: GoogleFonts.inter(
-                                                            fontWeight: FlutterFlowTheme.of(context).labelMedium.fontWeight,
-                                                            fontStyle: FlutterFlowTheme.of(context).labelMedium.fontStyle,
-                                                          ),
-                                                          letterSpacing: 0.0,
-                                                          fontWeight: FlutterFlowTheme.of(context).labelMedium.fontWeight,
-                                                          fontStyle: FlutterFlowTheme.of(context).labelMedium.fontStyle,
-                                                        ),
-                                                    enabledBorder: OutlineInputBorder(
-                                                      borderSide: BorderSide(
-                                                        color: Color(0xFFD0D0D0),
-                                                        width: 1.0,
-                                                      ),
-                                                      borderRadius: BorderRadius.circular(12.0),
-                                                    ),
-                                                    focusedBorder: OutlineInputBorder(
-                                                      borderSide: BorderSide(
-                                                        color: Color(0x00000000),
-                                                        width: 1.0,
-                                                      ),
-                                                      borderRadius: BorderRadius.circular(12.0),
-                                                    ),
-                                                    errorBorder: OutlineInputBorder(
-                                                      borderSide: BorderSide(
-                                                        color: Color(0x00000000),
-                                                        width: 1.0,
-                                                      ),
-                                                      borderRadius: BorderRadius.circular(12.0),
-                                                    ),
-                                                    focusedErrorBorder: OutlineInputBorder(
-                                                      borderSide: BorderSide(
-                                                        color: Color(0x00000000),
-                                                        width: 1.0,
-                                                      ),
-                                                      borderRadius: BorderRadius.circular(12.0),
-                                                    ),
-                                                    filled: true,
-                                                    fillColor: FlutterFlowTheme.of(context).accent4,
-                                                  ),
-                                                  style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                        font: GoogleFonts.inter(
-                                                          fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
-                                                          fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                        ),
-                                                        letterSpacing: 0.0,
-                                                        fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
-                                                        fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                      ),
-                                                  validator: _model.additionalInformationTextControllerValidator.asValidator(context),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ].divide(SizedBox(height: 16.0)),
-                                      ),
+                                    width: 10.0,
+                                    height: 10.0,
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFF10B981),
+                                      shape: BoxShape.circle,
                                     ),
                                   ),
-                                  Row(
-                                    mainAxisSize: MainAxisSize.max,
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Theme(
-                                        data: ThemeData(
-                                          checkboxTheme: CheckboxThemeData(
-                                            visualDensity: VisualDensity.compact,
-                                            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(4.0),
-                                            ),
-                                          ),
-                                          unselectedWidgetColor: Color(0xFFFF0606),
-                                        ),
-                                        child: Checkbox(
-                                          value: _model.checkboxValue ??= false,
-                                          onChanged: (newValue) async {
-                                            safeSetState(() => _model.checkboxValue = newValue!);
-                                          },
-                                          side: (Color(0xFFFF0606) != null)
-                                              ? BorderSide(
-                                                  width: 2,
-                                                  color: Color(0xFFFF0606)!,
-                                                )
-                                              : null,
-                                          activeColor: FlutterFlowTheme.of(context).secondary,
-                                          checkColor: FlutterFlowTheme.of(context).info,
-                                        ),
-                                      ),
-                                      GestureDetector(
-                                        onTap: () {
-                                          showDialog(
-                                            context: context,
-                                            builder: (BuildContext context) {
-                                              return Dialog(
-                                                insetPadding: EdgeInsets.all(16),
-                                                child: NewTermsconditions11Widget(),
-                                              );
-                                            },
-                                          );
-                                        },
-                                        child: Text(
-                                          'Please Read our terms and conditions *',
-                                          style: FlutterFlowTheme.of(context).bodySmall.override(
-                                            font: GoogleFonts.inter(
-                                              fontWeight: FontWeight.w500,
-                                              fontStyle: FlutterFlowTheme.of(context).bodySmall.fontStyle,
-                                              decoration: TextDecoration.underline, // Added underline here
-                                            ),
-                                            color: Color(0xFF848484),
-                                            letterSpacing: 0.0,
-                                            fontWeight: FontWeight.w500,
-                                            fontStyle: FlutterFlowTheme.of(context).bodySmall.fontStyle,
-                                          ),
-                                        ),
-                                      )                                    ].divide(SizedBox(width: 8.0)),
+                                  Container(
+                                    width: 2.0,
+                                    height: 24.0,
+                                    color: const Color(0xFFCBD5E1),
                                   ),
-                                  Row(
-                                    mainAxisSize: MainAxisSize.max,
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Padding(
-                                        padding: EdgeInsets.only(bottom: 12.0),
-                                        child: Builder(
-                                          builder: (context) => FFButtonWidget(
-                                            onPressed: () async {
-                                              if ((_model.itemNameTextController.text != null && _model.itemNameTextController.text != '') &&
-                                                  (_model.reciverNameTextController.text != null && _model.reciverNameTextController.text != '') &&
-                                                  (_model.phoneNumberTextController.text != null && _model.phoneNumberTextController.text != '') &&
-                                                  (_model.addressTextController.text != null && _model.addressTextController.text != '') &&
-                                                  (_model.checkboxValue == true)) {
-                                                await BookingsRecord.collection.doc().set(createBookingsRecordData(
-                                                      itemName: _model.itemNameTextController.text,
-                                                      receiverName: _model.reciverNameTextController.text,
-                                                      phoneNumber: _model.phoneNumberTextController.text,
-                                                      meetupLocation: _model.addressTextController.text,
-                                                      meetupLocationMap: _model.meetupLocationMap,
-                                                      additionalInformation: _model.additionalInformationTextController.text,
-                                                      createdTime: getCurrentTimestamp,
-                                                      creator: currentUserReference,
-                                                      rideID: sendParcelRidesNewRecord.reference,
-                                                      status: 'Pending',
-                                                      bookingType: 'Parcel',
-                                                    ));
-
-                                                // Send push notification to driver
-                                                try {
-                                                  final driverRef = sendParcelRidesNewRecord.creatorID;
-                                                  if (driverRef != null) {
-                                                    final driverSnapshot = await driverRef.get();
-                                                    if (driverSnapshot.exists) {
-                                                      final driverData = driverSnapshot.data() as Map<String, dynamic>?;
-                                                      String? fcmToken;
-                                                      if (driverData?['fcmToken'] != null) {
-                                                        fcmToken = driverData!['fcmToken'] as String?;
-                                                      } else if (driverData?['fcmTokens'] is List && (driverData!['fcmTokens'] as List).isNotEmpty) {
-                                                        fcmToken = (driverData['fcmTokens'] as List).first as String?;
-                                                      }
-
-                                                      if (fcmToken != null && fcmToken.isNotEmpty) {
-                                                        await FirebaseFunctions.instance.httpsCallable('sendChatNotification').call({
-                                                          'token': fcmToken,
-                                                          'senderName': currentUserDisplayName.isNotEmpty ? currentUserDisplayName : 'Travia Customer',
-                                                          'message': 'A customer wants to send a parcel on your ride!',
-                                                          'chatId': '',
-                                                        });
-                                                        print('✅ Parcel push notification sent to driver: ${driverRef.id}');
-                                                      } else {
-                                                        print('⚠️ Driver has no FCM token for parcel notification');
-                                                      }
-                                                    }
-                                                  }
-                                                } catch (e) {
-                                                  print('❌ Non-fatal parcel notification error: $e');
-                                                }
-
-                                                await showDialog(
-                                                  barrierDismissible: false,
-                                                  context: context,
-                                                  builder: (dialogContext) {
-                                                    return Dialog(
-                                                      elevation: 0,
-                                                      insetPadding: EdgeInsets.zero,
-                                                      backgroundColor: Colors.transparent,
-                                                      alignment: AlignmentDirectional(0.0, 0.0).resolve(Directionality.of(context)),
-                                                      child: GestureDetector(
-                                                        onTap: () {
-                                                          FocusScope.of(dialogContext).unfocus();
-                                                          FocusManager.instance.primaryFocus?.unfocus();
-                                                        },
-                                                        child: BidPostedThanksWidget(),
-                                                      ),
-                                                    );
-                                                  },
-                                                );
-
-                                                context.goNamed(
-                                                  HomeWidget.routeName,
-                                                  queryParameters: {
-                                                    'tabNumberRef': serializeParam(
-                                                      1,
-                                                      ParamType.int,
-                                                    ),
-                                                  }.withoutNulls,
-                                                );
-                                              } else {
-                                                await showDialog(
-                                                  context: context,
-                                                  builder: (alertDialogContext) {
-                                                    return AlertDialog(
-                                                      title: Text('Attention Required '),
-                                                      content: Text('Please fill in all the details carefully.'),
-                                                      actions: [
-                                                        TextButton(
-                                                          onPressed: () => Navigator.pop(alertDialogContext),
-                                                          child: Text('Ok'),
-                                                        ),
-                                                      ],
-                                                    );
-                                                  },
-                                                );
-                                              }
-                                            },
-                                            text: 'Book Now',
-                                            options: FFButtonOptions(
-                                              width: 150.0,
-                                              height: 50.0,
-                                              padding: EdgeInsets.all(8.0),
-                                              iconPadding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
-                                              color: Color(0xFFF77F4A),
-                                              textStyle: FlutterFlowTheme.of(context).titleSmall.override(
-                                                    font: GoogleFonts.interTight(
-                                                      fontWeight: FontWeight.bold,
-                                                      fontStyle: FlutterFlowTheme.of(context).titleSmall.fontStyle,
-                                                    ),
-                                                    color: Colors.white,
-                                                    letterSpacing: 0.0,
-                                                    fontWeight: FontWeight.bold,
-                                                    fontStyle: FlutterFlowTheme.of(context).titleSmall.fontStyle,
-                                                  ),
-                                              borderSide: BorderSide(
-                                                color: Colors.transparent,
-                                              ),
-                                              borderRadius: BorderRadius.circular(12.0),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ].divide(SizedBox(width: 5.0)),
+                                  Container(
+                                    width: 10.0,
+                                    height: 10.0,
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFFEE7B4D),
+                                      shape: BoxShape.circle,
+                                    ),
                                   ),
-                                ].divide(SizedBox(height: 16.0)),
+                                ],
                               ),
+                              const SizedBox(width: 12.0),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      rideRecord.rideStartLocation.isNotEmpty ? rideRecord.rideStartLocation : 'Pickup Location',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 14.0,
+                                        fontWeight: FontWeight.w600,
+                                        color: const Color(0xFF1E293B),
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 14.0),
+                                    Text(
+                                      rideRecord.rideEndLocation.isNotEmpty ? rideRecord.rideEndLocation : 'Destination Location',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 14.0,
+                                        fontWeight: FontWeight.w600,
+                                        color: const Color(0xFF1E293B),
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          if (rideRecord.pickupTime != null) ...[
+                            const SizedBox(height: 12.0),
+                            const Divider(height: 1.0, color: Color(0xFFF1F5F9)),
+                            const SizedBox(height: 10.0),
+                            Row(
+                              children: [
+                                const Icon(Icons.schedule_rounded, size: 15.0, color: Color(0xFF64748B)),
+                                const SizedBox(width: 6.0),
+                                Text(
+                                  'Departure: ${dateTimeFormat("MMM d, yyyy  •  jm", rideRecord.pickupTime!)}',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12.0,
+                                    fontWeight: FontWeight.w500,
+                                    color: const Color(0xFF64748B),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 18.0),
+
+                    // Main Booking Form Card
+                    Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16.0),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.03),
+                            blurRadius: 10.0,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      padding: const EdgeInsets.all(18.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Section 1: Item Details
+                          Text(
+                            'Parcel Details',
+                            style: GoogleFonts.inter(
+                              fontSize: 15.0,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF111827),
                             ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 12.0),
+
+                          _buildFormField(
+                            label: 'Item Description *',
+                            hint: 'e.g. Documents, Clothes, Small Box',
+                            controller: _model.itemNameTextController!,
+                            focusNode: _model.itemNameFocusNode!,
+                            icon: Icons.inventory_2_outlined,
+                          ),
+                          const SizedBox(height: 14.0),
+
+                          _buildFormField(
+                            label: 'Additional Information (Optional)',
+                            hint: 'Weight, size, or special instructions...',
+                            controller: _model.additionalInformationTextController!,
+                            focusNode: _model.additionalInformationFocusNode!,
+                            icon: Icons.notes_rounded,
+                            maxLines: 2,
+                          ),
+
+                          const SizedBox(height: 20.0),
+                          const Divider(height: 1.0, color: Color(0xFFE2E8F0)),
+                          const SizedBox(height: 18.0),
+
+                          // Section 2: Recipient Details
+                          Text(
+                            'Recipient Information',
+                            style: GoogleFonts.inter(
+                              fontSize: 15.0,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF111827),
+                            ),
+                          ),
+                          const SizedBox(height: 12.0),
+
+                          _buildFormField(
+                            label: 'Recipient Full Name *',
+                            hint: 'Name of person receiving the parcel',
+                            controller: _model.reciverNameTextController!,
+                            focusNode: _model.reciverNameFocusNode!,
+                            icon: Icons.person_outline_rounded,
+                          ),
+                          const SizedBox(height: 14.0),
+
+                          _buildFormField(
+                            label: 'Contact Phone Number *',
+                            hint: 'Recipient phone number',
+                            controller: _model.phoneNumberTextController!,
+                            focusNode: _model.phoneNumberFocusNode!,
+                            icon: Icons.phone_outlined,
+                            keyboardType: TextInputType.phone,
+                          ),
+
+                          const SizedBox(height: 20.0),
+                          const Divider(height: 1.0, color: Color(0xFFE2E8F0)),
+                          const SizedBox(height: 18.0),
+
+                          // Section 3: Meetup / Pickup Address
+                          Text(
+                            'Meetup / Handover Address *',
+                            style: GoogleFonts.inter(
+                              fontSize: 15.0,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF111827),
+                            ),
+                          ),
+                          const SizedBox(height: 6.0),
+                          Text(
+                            'Where will you handover the parcel to the driver?',
+                            style: GoogleFonts.inter(
+                              fontSize: 12.0,
+                              color: const Color(0xFF64748B),
+                            ),
+                          ),
+                          const SizedBox(height: 10.0),
+
+                          Container(
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(12.0),
+                              border: Border.all(color: const Color(0xFFCBD5E1)),
+                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 2.0),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.location_on_outlined, color: Color(0xFFEE7B4D), size: 20.0),
+                                const SizedBox(width: 8.0),
+                                Expanded(
+                                  child: GooglePlaceAutoCompleteTextField(
+                                    focusNode: _model.addressFocusNode,
+                                    textEditingController: _model.addressTextController!,
+                                    googleAPIKey: "AIzaSyDZkxRpoy0BOIAPwMaMIvAd5xpCe-6ZYvs",
+                                    boxDecoration: const BoxDecoration(
+                                      color: Colors.transparent,
+                                    ),
+                                    containerHorizontalPadding: 0,
+                                    containerVerticalPadding: 0,
+                                    inputDecoration: InputDecoration(
+                                      hintText: 'Search pickup address or landmark...',
+                                      hintStyle: GoogleFonts.inter(fontSize: 13.5, color: const Color(0xFF94A3B8)),
+                                      border: InputBorder.none,
+                                      enabledBorder: InputBorder.none,
+                                      focusedBorder: InputBorder.none,
+                                      errorBorder: InputBorder.none,
+                                      focusedErrorBorder: InputBorder.none,
+                                      disabledBorder: InputBorder.none,
+                                      isDense: true,
+                                      contentPadding: const EdgeInsets.symmetric(vertical: 12.0),
+                                    ),
+                                    textStyle: GoogleFonts.inter(fontSize: 13.5, color: const Color(0xFF1E293B)),
+                                    debounceTime: 600,
+                                    countries: const ["in"],
+                                    isLatLngRequired: true,
+                                    getPlaceDetailWithLatLng: (prediction) {
+                                      if (prediction.lat != null && prediction.lng != null) {
+                                        _model.meetupLocationMap = LatLng(
+                                          double.parse(prediction.lat!),
+                                          double.parse(prediction.lng!),
+                                        );
+                                      }
+                                    },
+                                    itemClick: (prediction) {
+                                      _model.addressTextController!.text = prediction.description ?? "";
+                                      _model.addressTextController!.selection = TextSelection.fromPosition(
+                                        TextPosition(offset: prediction.description?.length ?? 0),
+                                      );
+                                    },
+                                    itemBuilder: (context, index, prediction) {
+                                      return Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                                        child: Row(
+                                          children: [
+                                            const Icon(Icons.location_on_outlined, size: 18.0, color: Color(0xFFEE7B4D)),
+                                            const SizedBox(width: 10.0),
+                                            Expanded(
+                                              child: Text(
+                                                prediction.description ?? "",
+                                                style: GoogleFonts.inter(fontSize: 13.5, color: const Color(0xFF1E293B)),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                    seperatedBuilder: const Divider(height: 1.0, thickness: 0.5),
+                                    isCrossBtnShown: true,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(height: 20.0),
+                          const Divider(height: 1.0, color: Color(0xFFE2E8F0)),
+                          const SizedBox(height: 16.0),
+
+                          // Terms and Conditions Checkbox
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              SizedBox(
+                                width: 22.0,
+                                height: 22.0,
+                                child: Checkbox(
+                                  value: _model.checkboxValue ??= false,
+                                  activeColor: const Color(0xFFEE7B4D),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4.0)),
+                                  side: BorderSide(
+                                    color: (_model.checkboxValue ?? false) ? const Color(0xFFEE7B4D) : const Color(0xFF94A3B8),
+                                    width: 1.5,
+                                  ),
+                                  onChanged: (val) {
+                                    setState(() => _model.checkboxValue = val ?? false);
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 10.0),
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () {
+                                    showDialog(
+                                      context: context,
+                                      builder: (BuildContext context) {
+                                        return const Dialog(
+                                          insetPadding: EdgeInsets.all(16),
+                                          child: NewTermsconditions11Widget(),
+                                        );
+                                      },
+                                    );
+                                  },
+                                  child: RichText(
+                                    text: TextSpan(
+                                      text: 'I agree to the ',
+                                      style: GoogleFonts.inter(fontSize: 12.5, color: const Color(0xFF64748B)),
+                                      children: [
+                                        TextSpan(
+                                          text: 'Terms & Conditions',
+                                          style: GoogleFonts.inter(
+                                            fontSize: 12.5,
+                                            fontWeight: FontWeight.w600,
+                                            color: const Color(0xFFEE7B4D),
+                                            decoration: TextDecoration.underline,
+                                          ),
+                                        ),
+                                        const TextSpan(text: ' *'),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 24.0),
+
+                          // Confirm Booking Button
+                          SizedBox(
+                            width: double.infinity,
+                            height: 52.0,
+                            child: ElevatedButton(
+                              onPressed: _isSubmitting ? null : () => _submitParcelBooking(rideRecord),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFEE7B4D),
+                                disabledBackgroundColor: const Color(0xFFCBD5E1),
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14.0)),
+                                shadowColor: const Color(0xFFEE7B4D).withValues(alpha: 0.3),
+                              ),
+                              child: _isSubmitting
+                                  ? const SizedBox(
+                                      width: 24.0,
+                                      height: 24.0,
+                                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                                    )
+                                  : Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        const Icon(Icons.check_circle_outline_rounded, color: Colors.white, size: 20.0),
+                                        const SizedBox(width: 8.0),
+                                        Text(
+                                          'Confirm Parcel Booking',
+                                          style: GoogleFonts.inter(
+                                            fontSize: 15.5,
+                                            fontWeight: FontWeight.w700,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
+                  ],
                 ),
               ),
             ),
           ),
         );
       },
+    );
+  }
+
+  Widget _buildFormField({
+    required String label,
+    required String hint,
+    required TextEditingController controller,
+    required FocusNode focusNode,
+    required IconData icon,
+    int maxLines = 1,
+    TextInputType keyboardType = TextInputType.text,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 12.5,
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFF475569),
+          ),
+        ),
+        const SizedBox(height: 6.0),
+        Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.circular(12.0),
+            border: Border.all(color: const Color(0xFFCBD5E1)),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 2.0),
+          child: Row(
+            crossAxisAlignment: maxLines > 1 ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+            children: [
+              Padding(
+                padding: EdgeInsets.only(top: maxLines > 1 ? 10.0 : 0.0),
+                child: Icon(icon, color: const Color(0xFF94A3B8), size: 19.0),
+              ),
+              const SizedBox(width: 10.0),
+              Expanded(
+                child: TextFormField(
+                  controller: controller,
+                  focusNode: focusNode,
+                  maxLines: maxLines,
+                  keyboardType: keyboardType,
+                  style: GoogleFonts.inter(fontSize: 13.5, color: const Color(0xFF1E293B)),
+                  decoration: InputDecoration(
+                    hintText: hint,
+                    hintStyle: GoogleFonts.inter(fontSize: 13.0, color: const Color(0xFF94A3B8)),
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    errorBorder: InputBorder.none,
+                    focusedErrorBorder: InputBorder.none,
+                    disabledBorder: InputBorder.none,
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 12.0),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

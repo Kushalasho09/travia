@@ -491,7 +491,14 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
         FFRoute(
           name: RideBookingSentWidget.routeName,
           path: RideBookingSentWidget.routePath,
-          builder: (context, params) => RideBookingSentWidget(),
+          builder: (context, params) => RideBookingSentWidget(
+            rideRef: params.getParam(
+              'rideRef',
+              ParamType.DocumentReference,
+              isList: false,
+              collectionNamePath: ['RidesNew'],
+            ),
+          ),
         ),
         FFRoute(
           name: ChatUsersWidget.routeName,
@@ -544,6 +551,28 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
           name: RideRules7Widget.routeName,
           path: RideRules7Widget.routePath,
           builder: (context, params) => RideRules7Widget(),
+        ),
+        FFRoute(
+          name: TrackParcelWidget.routeName,
+          path: TrackParcelWidget.routePath,
+          builder: (context, params) => TrackParcelWidget(
+            bookingRef: params.getParam(
+              'bookingRef',
+              ParamType.DocumentReference,
+              isList: false,
+              collectionNamePath: ['bookings'],
+            ),
+            rideRef: params.getParam(
+              'rideRef',
+              ParamType.DocumentReference,
+              isList: false,
+              collectionNamePath: ['RidesNew'],
+            ),
+            bookingId: params.getParam(
+              'bookingId',
+              ParamType.String,
+            ),
+          ),
         )
       ].map((r) => r.toRoute(appStateNotifier)).toList(),
     );

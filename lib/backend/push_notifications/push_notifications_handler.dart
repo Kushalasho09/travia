@@ -248,6 +248,12 @@ final parametersBuilderMap =
         },
       ),
   'RideBookingSent': ParameterData.none(),
+  'TrackParcel': (data) async => ParameterData(
+        allParams: {
+          'bookingRef': getParameter<DocumentReference>(data, 'bookingRef'),
+          'bookingId': getParameter<String>(data, 'bookingId'),
+        },
+      ),
   'ChatUsers': ParameterData.none(),
   'chat': (data) async => ParameterData(
         allParams: {

@@ -1,14 +1,9 @@
+import '/components/publish_ride_progress_header.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
-import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
-import '/flutter_flow/flutter_flow_widgets.dart';
-import 'dart:ui';
 import '/index.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:percent_indicator/percent_indicator.dart';
 import 'package:provider/provider.dart';
 import 'second_model.dart';
 export 'second_model.dart';
@@ -25,7 +20,6 @@ class SecondWidget extends StatefulWidget {
 
 class _SecondWidgetState extends State<SecondWidget> {
   late SecondModel _model;
-
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
@@ -33,19 +27,28 @@ class _SecondWidgetState extends State<SecondWidget> {
     super.initState();
     _model = createModel(context, () => SecondModel());
 
-    _model.numOfpassTextController ??= TextEditingController();
-    _model.numOfpassFocusNode ??=FocusNode();
+    _model.numOfpassTextController ??= TextEditingController(
+      text: FFAppState().numPassengers > 0 ? FFAppState().numPassengers.toString() : '1',
+    );
+    _model.numOfpassFocusNode ??= FocusNode();
 
-    _model.parcelDeliveryTextController ??= TextEditingController();
+    _model.parcelDeliveryTextController ??= TextEditingController(
+      text: FFAppState().totalDelvieryCost.isNotEmpty ? FFAppState().totalDelvieryCost : '',
+    );
     _model.parcelDeliveryFocusNode ??= FocusNode();
 
-    _model.passangerCostTextController ??= TextEditingController();
+    _model.passangerCostTextController ??= TextEditingController(
+      text: FFAppState().pricePerPassengers > 0 ? FFAppState().pricePerPassengers.toString() : '',
+    );
     _model.passangerCostFocusNode ??= FocusNode();
   }
 
+  @override
+  void dispose() {
+    _model.dispose();
+    super.dispose();
+  }
 
-
-// For exceed errors with auto-fill
   Future<void> _showExceedDialog({
     required BuildContext context,
     required String title,
@@ -59,142 +62,99 @@ class _SecondWidgetState extends State<SecondWidget> {
       builder: (context) {
         return Dialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(20.0),
           ),
           child: Padding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(22.0),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // ⚠️ Warning Icon
                 Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    color: Color(0xFFFF8C00).withOpacity(0.15),
+                  width: 52.0,
+                  height: 52.0,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFFFF6EE),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(
+                  child: const Icon(
                     Icons.warning_amber_rounded,
-                    color: Color(0xFFFF8C00),
-                    size: 30,
+                    color: Color(0xFFEE7B4D),
+                    size: 28.0,
                   ),
                 ),
-                const SizedBox(height: 16),
-
-                // 🏷 Title
+                const SizedBox(height: 14.0),
                 Text(
                   title,
                   textAlign: TextAlign.center,
-                  style: FlutterFlowTheme.of(context)
-                      .titleMedium
-                      .override(
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.2,
+                  style: GoogleFonts.inter(
+                    fontSize: 16.5,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF111827),
                   ),
                 ),
-                const SizedBox(height: 10),
-
-                // 📄 Message
+                const SizedBox(height: 8.0),
                 Text(
                   message,
                   textAlign: TextAlign.center,
-                  style: FlutterFlowTheme.of(context)
-                      .bodyMedium
-                      .override(
-                    color: Colors.grey[700],
+                  style: GoogleFonts.inter(
+                    fontSize: 13.0,
+                    color: const Color(0xFF4B5563),
                   ),
                 ),
-                const SizedBox(height: 16),
-
-                // 💰 Show max amounts
+                const SizedBox(height: 16.0),
                 Container(
-                  padding: EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(12.0),
                   decoration: BoxDecoration(
-                    color: Color(0xFFF5F5F5),
-                    borderRadius: BorderRadius.circular(10),
+                    color: const Color(0xFFF9FAFB),
+                    borderRadius: BorderRadius.circular(12.0),
+                    border: Border.all(color: const Color(0xFFE5E7EB)),
                   ),
-                  child: Column(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      Text(
-                        'Maximum allowed amounts:',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                        ),
-                      ),
-                      SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      Column(
                         children: [
-                          Column(
-                            children: [
-                              Text(
-                                '📦 Parcel',
-                                style: TextStyle(fontSize: 12),
-                              ),
-                              Text(
-                                '₹${maxParcel.toInt()}',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                  color: Color(0xFFFF8C00),
-                                ),
-                              ),
-                            ],
-                          ),
-                          Column(
-                            children: [
-                              Text(
-                                '🚗 Ride',
-                                style: TextStyle(fontSize: 12),
-                              ),
-                              Text(
-                                '₹${maxRide.toInt()}',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                  color: Color(0xFFFF8C00),
-                                ),
-                              ),
-                            ],
-                          ),
+                          Text('Max Parcel Rate', style: GoogleFonts.inter(fontSize: 11.5, color: const Color(0xFF6B7280))),
+                          const SizedBox(height: 2.0),
+                          Text('₹${maxParcel.toInt()}', style: GoogleFonts.inter(fontSize: 16.0, fontWeight: FontWeight.w700, color: const Color(0xFFEE7B4D))),
+                        ],
+                      ),
+                      Container(width: 1.0, height: 28.0, color: const Color(0xFFE5E7EB)),
+                      Column(
+                        children: [
+                          Text('Max Passenger Fare', style: GoogleFonts.inter(fontSize: 11.5, color: const Color(0xFF6B7280))),
+                          const SizedBox(height: 2.0),
+                          Text('₹${maxRide.toInt()}', style: GoogleFonts.inter(fontSize: 16.0, fontWeight: FontWeight.w700, color: const Color(0xFFEE7B4D))),
                         ],
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 22),
-
-                // ✅ Action button - Auto-fill max amounts
-                SizedBox(
-                  width: double.infinity,
-                  height: 44,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xFFFF8C00),
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
+                const SizedBox(height: 20.0),
+                InkWell(
+                  onTap: () {
+                    setState(() {
+                      _model.parcelDeliveryTextController.text = maxParcel.toInt().toString();
+                      _model.passangerCostTextController.text = maxRide.toInt().toString();
+                    });
+                    Navigator.pop(context);
+                  },
+                  borderRadius: BorderRadius.circular(14.0),
+                  child: Container(
+                    width: double.infinity,
+                    height: 46.0,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEE7B4D),
+                      borderRadius: BorderRadius.circular(14.0),
                     ),
-                    onPressed: () {
-                      setState(() {
-                        // Clear both fields
-                        _model.parcelDeliveryTextController?.clear();
-                        _model.passangerCostTextController?.clear();
-
-                        // Then auto-fill with max amounts
-                        _model.parcelDeliveryTextController.text = maxParcel.toInt().toString();
-                        _model.passangerCostTextController.text = maxRide.toInt().toString();
-                      });
-                      Navigator.pop(context);
-                    },
-                    child: Text(
-                      'Fill with maximum amount',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
+                    child: Center(
+                      child: Text(
+                        'Auto-Fill Maximum Limits',
+                        style: GoogleFonts.inter(
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                          fontSize: 14.0,
+                        ),
                       ),
                     ),
                   ),
@@ -207,98 +167,130 @@ class _SecondWidgetState extends State<SecondWidget> {
     );
   }
 
-// For info errors (missing details, invalid input, distance error)
   Future<void> _showInfoDialog(
-      BuildContext context, {
-        required String title,
-        required String message,
-      }) {
+    BuildContext context, {
+    required String title,
+    required String message,
+  }) {
     return showDialog(
       context: context,
-      barrierDismissible: true,
-      builder: (context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18.0),
+        ),
+        title: Text(
+          title,
+          style: GoogleFonts.inter(
+            fontWeight: FontWeight.w700,
+            fontSize: 16.5,
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    color: Color(0xFFFF8C00).withOpacity(0.15),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.info_outline,
-                    color: Color(0xFFFF8C00),
-                    size: 30,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  title,
-                  textAlign: TextAlign.center,
-                  style: FlutterFlowTheme.of(context)
-                      .titleMedium
-                      .override(
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.2,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  message,
-                  textAlign: TextAlign.center,
-                  style: FlutterFlowTheme.of(context)
-                      .bodyMedium
-                      .override(
-                    color: Colors.grey[700],
-                  ),
-                ),
-                const SizedBox(height: 22),
-                SizedBox(
-                  width: double.infinity,
-                  height: 44,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xFFFF8C00),
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    onPressed: () => Navigator.pop(context),
-                    child: Text(
-                      'Got it',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+        ),
+        content: Text(
+          message,
+          style: GoogleFonts.inter(
+            fontSize: 13.5,
+            color: const Color(0xFF4B5563),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Ok',
+              style: GoogleFonts.inter(
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFFEE7B4D),
+              ),
             ),
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 
-  @override
-  void dispose() {
-    _model.dispose();
+  void _proceedNext() async {
+    final passengerCountText = _model.numOfpassTextController.text.trim();
+    final parcelText = _model.parcelDeliveryTextController.text.trim();
+    final passengerText = _model.passangerCostTextController.text.trim();
 
-    super.dispose();
+    if (parcelText.isEmpty || passengerText.isEmpty || passengerCountText.isEmpty) {
+      await _showInfoDialog(
+        context,
+        title: 'Missing Details',
+        message: 'Please fill in seat count, passenger fare, and parcel delivery charges.',
+      );
+      return;
+    }
+
+    final passengerCount = double.tryParse(passengerCountText);
+    final parcelAmount = double.tryParse(parcelText);
+    final rideAmount = double.tryParse(passengerText);
+
+    if (parcelAmount == null || rideAmount == null || passengerCount == null) {
+      await _showInfoDialog(
+        context,
+        title: 'Invalid Input',
+        message: 'Please enter valid numeric amounts.',
+      );
+      return;
+    }
+
+    final travelTime = FFAppState().travelTime;
+    final kmMatch = RegExp(r'\((\d+)\s*km\)').firstMatch(travelTime);
+
+    double totalKm = 100.0;
+    if (kmMatch != null) {
+      totalKm = double.parse(kmMatch.group(1)!);
+    }
+
+    final maxParcel = totalKm * 1.5;
+    final maxRide = totalKm * 2.5;
+
+    if (parcelAmount > maxParcel && rideAmount > maxRide) {
+      await _showExceedDialog(
+        context: context,
+        title: 'Amounts Exceeded',
+        message: 'Both parcel and ride charges exceed standard community limits for this distance ($totalKm km).',
+        maxParcel: maxParcel,
+        maxRide: maxRide,
+      );
+      return;
+    }
+
+    if (parcelAmount > maxParcel) {
+      await _showExceedDialog(
+        context: context,
+        title: 'Parcel Limit Exceeded',
+        message: 'Your parcel charge exceeds the recommended limit of ₹${maxParcel.toInt()} for $totalKm km.',
+        maxParcel: maxParcel,
+        maxRide: maxRide,
+      );
+      return;
+    }
+
+    if (rideAmount > maxRide) {
+      await _showExceedDialog(
+        context: context,
+        title: 'Ride Fare Exceeded',
+        message: 'Your passenger fare exceeds the recommended limit of ₹${maxRide.toInt()} for $totalKm km.',
+        maxParcel: maxParcel,
+        maxRide: maxRide,
+      );
+      return;
+    }
+
+    FFAppState().totalDelvieryCost = parcelText;
+    FFAppState().pricePerPassengers = rideAmount.toInt();
+    FFAppState().numPassengers = passengerCount.toInt();
+    safeSetState(() {});
+
+    context.pushNamed(WhatyouCarry5Widget.routeName);
   }
 
   @override
   Widget build(BuildContext context) {
+    context.watch<FFAppState>();
+
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
@@ -306,591 +298,409 @@ class _SecondWidgetState extends State<SecondWidget> {
       },
       child: Scaffold(
         key: scaffoldKey,
-        backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
+        backgroundColor: const Color(0xFFF8FAFC),
         appBar: AppBar(
-          backgroundColor: FlutterFlowTheme.of(context).secondaryBackground,
+          backgroundColor: Colors.white,
           automaticallyImplyLeading: false,
           leading: FlutterFlowIconButton(
             borderColor: Colors.transparent,
             borderRadius: 30.0,
             borderWidth: 1.0,
-            buttonSize: 60.0,
-            icon: Icon(
+            buttonSize: 48.0,
+            icon: const Icon(
               Icons.arrow_back_rounded,
-              color: FlutterFlowTheme.of(context).primaryText,
-              size: 30.0,
+              color: Color(0xFF1F2937),
+              size: 24.0,
             ),
             onPressed: () async {
               context.pop();
             },
           ),
           title: Text(
-            'Parcel & Ride Cost',
-            style: FlutterFlowTheme.of(context).headlineMedium.override(
-                  font: GoogleFonts.interTight(
-                    fontWeight:
-                        FlutterFlowTheme.of(context).headlineMedium.fontWeight,
-                    fontStyle:
-                        FlutterFlowTheme.of(context).headlineMedium.fontStyle,
-                  ),
-                  color: FlutterFlowTheme.of(context).primaryText,
-                  fontSize: 20.0,
-                  letterSpacing: 0.0,
-                  fontWeight:
-                      FlutterFlowTheme.of(context).headlineMedium.fontWeight,
-                  fontStyle:
-                      FlutterFlowTheme.of(context).headlineMedium.fontStyle,
-                ),
+            'Publish Ride',
+            style: GoogleFonts.inter(
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF111827),
+              fontSize: 18.0,
+            ),
           ),
-          actions: [],
           centerTitle: true,
-          elevation: 2.0,
+          elevation: 0.0,
         ),
         body: SafeArea(
           top: true,
-          child: Padding(
-            padding: EdgeInsetsDirectional.fromSTEB(24.0, 0.0, 24.0, 0.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Expanded(
-                  child: Align(
-                    alignment: AlignmentDirectional(0.0, 0.0),
-                    child: Padding(
-                      padding: EdgeInsetsDirectional.fromSTEB(
-                          0.0, 22.0, 0.0, 0.0),
-                      child: ListView(
-                        padding: EdgeInsets.zero,
-                        primary: false,
-                        shrinkWrap: true,
-                        scrollDirection: Axis.vertical,
-                        children: [
-                          Align(
-                            alignment: AlignmentDirectional(1.0, 0.0),
-                            child: Padding(
-                              padding: EdgeInsetsDirectional.fromSTEB(
-                                  0.0, 0.0, 25.0, 0.0),
-                              child: FFButtonWidget(
-                                onPressed: () async {
-                                  context.pushNamed(
-                                      DriverDetail10Widget.routeName);
-                                },
-                                text: 'Skip',
-                                options: FFButtonOptions(
-                                  height: 40.0,
-                                  padding: EdgeInsetsDirectional.fromSTEB(
-                                      16.0, 0.0, 16.0, 0.0),
-                                  iconPadding: EdgeInsetsDirectional.fromSTEB(
-                                      0.0, 0.0, 0.0, 0.0),
-                                  color: Color(0x1F4CAF50),
-                                  textStyle: FlutterFlowTheme.of(context)
-                                      .titleSmall
-                                      .override(
-                                        font: GoogleFonts.interTight(
-                                          fontWeight:
-                                              FlutterFlowTheme.of(context)
-                                                  .titleSmall
-                                                  .fontWeight,
-                                          fontStyle:
-                                              FlutterFlowTheme.of(context)
-                                                  .titleSmall
-                                                  .fontStyle,
-                                        ),
-                                        color: FlutterFlowTheme.of(context)
-                                            .success,
-                                        letterSpacing: 0.0,
-                                        fontWeight:
-                                            FlutterFlowTheme.of(context)
-                                                .titleSmall
-                                                .fontWeight,
-                                        fontStyle:
-                                            FlutterFlowTheme.of(context)
-                                                .titleSmall
-                                                .fontStyle,
-                                      ),
-                                  elevation: 0.0,
-                                  borderSide: BorderSide(
-                                    color:
-                                        FlutterFlowTheme.of(context).success,
-                                  ),
-                                  borderRadius: BorderRadius.circular(8.0),
-                                ),
-                              ),
-                            ),
-                          ),
-                          Padding(
-                            padding: EdgeInsetsDirectional.fromSTEB(
-                                0.0, 0.0, 0.0, 20.0),
-                            child: CircularPercentIndicator(
-                              percent: 0.6,
-                              radius: 60.0,
-                              lineWidth: 12.0,
-                              animation: true,
-                              animateFromLastPercent: true,
-                              progressColor: Color(0xFFF57C3B),
-                              backgroundColor: Color(0xFFD8D5D5),
-                              center: Text(
-                                '60%',
-                                style: FlutterFlowTheme.of(context)
-                                    .headlineSmall
-                                    .override(
-                                      font: GoogleFonts.interTight(
-                                        fontWeight:
-                                            FlutterFlowTheme.of(context)
-                                                .headlineSmall
-                                                .fontWeight,
-                                        fontStyle:
-                                            FlutterFlowTheme.of(context)
-                                                .headlineSmall
-                                                .fontStyle,
-                                      ),
-                                      letterSpacing: 0.0,
-                                      fontWeight: FlutterFlowTheme.of(context)
-                                          .headlineSmall
-                                          .fontWeight,
-                                      fontStyle: FlutterFlowTheme.of(context)
-                                          .headlineSmall
-                                          .fontStyle,
-                                    ),
-                              ),
-                            ),
-                          ),
-                          Column(
-                            mainAxisSize: MainAxisSize.max,
-                            children: [
-                              // NUMBER OF PASSENGERS
-                              Align( // 👈 LEFT ALIGN HEADING
-                                alignment: AlignmentDirectional.centerStart,
-                                child: Padding(
-                                  padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 8.0), // 👈 REDUCED FROM 16 TO 8
-                                  child: Text(
-                                    'Number of Passengers',
-                                    style: FlutterFlowTheme.of(context).titleMedium.override(
-                                      font: GoogleFonts.interTight(
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                      color: Color(0xFF1A5FB4),
-                                      letterSpacing: 0.0,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              Container(
-                                width: double.infinity,
-                                child: TextFormField(
-                                  controller: _model.numOfpassTextController,
-                                  focusNode: _model.numOfpassFocusNode,
-                                  autofocus: false,
-                                  obscureText: false,
-                                  decoration: InputDecoration(
-                                    // labelText: 'Enter number of passengers',
-                                    hintText: 'Enter number of passengers',
-                                    hintStyle: FlutterFlowTheme.of(context).bodyMedium.override(
-                                      font: GoogleFonts.inter(),
-                                      color: Color(0xFF757575),
-                                      letterSpacing: 0.0,
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderSide: BorderSide(
-                                        color: Color(0xFF1A5FB4),
-                                        width: 1.5,
-                                      ),
-                                      borderRadius: BorderRadius.circular(12.0),
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderSide: BorderSide(
-                                        color: FlutterFlowTheme.of(context).primary,
-                                        width: 1.5,
-                                      ),
-                                      borderRadius: BorderRadius.circular(12.0),
-                                    ),
-                                    errorBorder: OutlineInputBorder(
-                                      borderSide: BorderSide(
-                                        color: FlutterFlowTheme.of(context).error,
-                                        width: 1.5,
-                                      ),
-                                      borderRadius: BorderRadius.circular(12.0),
-                                    ),
-                                    focusedErrorBorder: OutlineInputBorder(
-                                      borderSide: BorderSide(
-                                        color: FlutterFlowTheme.of(context).error,
-                                        width: 1.5,
-                                      ),
-                                      borderRadius: BorderRadius.circular(12.0),
-                                    ),
-                                    filled: true,
-                                    fillColor: Color(0xFFF5F5F5),
-                                    contentPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0), // 👈 ADDED FOR BETTER TEXT FIELD HEIGHT
-                                  ),
-                                  style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                    font: GoogleFonts.inter(),
-                                    color: Color(0xFF333333),
-                                    fontSize: 16.0,
-                                    letterSpacing: 0.0,
-                                  ),
-                                  textAlign: TextAlign.left,
-                                  keyboardType: TextInputType.number,
-                                  cursorColor: Color(0xFF1A5FB4),
-                                  validator: _model.numOfpassTextControllerValidator.asValidator(context),
-                                ),
-                              ),
-
-                              SizedBox(height: 16.0), // 👈 SPACING BEFORE NEXT SECTION
-
-                              // PARCEL DELIVERY COST
-                              Align( // 👈 LEFT ALIGN HEADING
-                                alignment: AlignmentDirectional.centerStart,
-                                child: Padding(
-                                  padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 8.0), // 👈 REDUCED FROM 16 TO 8
-                                  child: Text(
-                                    'Parcel Delivery Cost',
-                                    style: FlutterFlowTheme.of(context).titleMedium.override(
-                                      font: GoogleFonts.interTight(
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                      color: Color(0xFF1A5FB4),
-                                      letterSpacing: 0.0,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              Container(
-                                width: double.infinity,
-                                child: TextFormField(
-                                  controller: _model.parcelDeliveryTextController,
-                                  focusNode: _model.parcelDeliveryFocusNode,
-                                  autofocus: false,
-                                  textCapitalization: TextCapitalization.sentences,
-                                  textInputAction: TextInputAction.done,
-                                  obscureText: false,
-                                  decoration: InputDecoration(
-                                    // labelText: 'How much do you charge for parcel delivery?',
-                                    hintStyle: FlutterFlowTheme.of(context).bodyMedium.override(
-                                      font: GoogleFonts.inter(),
-                                      color: Color(0xFF757575),
-                                      letterSpacing: 0.0,
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderSide: BorderSide(
-                                        color: Color(0xFF1A5FB4),
-                                        width: 1.5,
-                                      ),
-                                      borderRadius: BorderRadius.circular(12.0),
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderSide: BorderSide(
-                                        color: FlutterFlowTheme.of(context).primary,
-                                        width: 1.5,
-                                      ),
-                                      borderRadius: BorderRadius.circular(12.0),
-                                    ),
-                                    errorBorder: OutlineInputBorder(
-                                      borderSide: BorderSide(
-                                        color: FlutterFlowTheme.of(context).error,
-                                        width: 1.5,
-                                      ),
-                                      borderRadius: BorderRadius.circular(12.0),
-                                    ),
-                                    focusedErrorBorder: OutlineInputBorder(
-                                      borderSide: BorderSide(
-                                        color: FlutterFlowTheme.of(context).error,
-                                        width: 1.5,
-                                      ),
-                                      borderRadius: BorderRadius.circular(12.0),
-                                    ),
-                                    filled: true,
-                                    fillColor: Color(0xFFF5F5F5),
-                                    contentPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0), // 👈 ADDED FOR CONSISTENCY
-                                  ),
-                                  style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                    font: GoogleFonts.inter(),
-                                    color: Color(0xFF333333),
-                                    letterSpacing: 0.0,
-                                  ),
-                                  keyboardType: TextInputType.number,
-                                  cursorColor: Color(0xFF1A5FB4),
-                                  validator: _model.parcelDeliveryTextControllerValidator.asValidator(context),
-                                ),
-                              ),
-                              Padding(
-                                padding: EdgeInsets.fromLTRB(10.0, 8.0, 10.0, 0.0), // 👈 REDUCED TOP PADDING
-                                child: Text(
-                                  '₹1.5/km, final logistics rate as per size & delicacy (to be discussed on call).',
-                                  textAlign: TextAlign.center,
-                                  style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                    font: GoogleFonts.inter(),
-                                    fontSize: 11.0,
-                                    letterSpacing: 0.0,
-                                  ),
-                                ),
-                              ),
-
-                              SizedBox(height: 16.0), // 👈 SPACING BEFORE NEXT SECTION
-
-                              // RIDE COST
-                              Align( // 👈 LEFT ALIGN HEADING
-                                alignment: AlignmentDirectional.centerStart,
-                                child: Padding(
-                                  padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 8.0), // 👈 REDUCED FROM 16 TO 8
-                                  child: Text(
-                                    'Ride Cost',
-                                    style: FlutterFlowTheme.of(context).titleMedium.override(
-                                      font: GoogleFonts.interTight(
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                      color: Color(0xFF1A5FB4),
-                                      letterSpacing: 0.0,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              Container(
-                                width: double.infinity,
-                                child: TextFormField(
-                                  controller: _model.passangerCostTextController,
-                                  focusNode: _model.passangerCostFocusNode,
-                                  autofocus: false,
-                                  textCapitalization: TextCapitalization.sentences,
-                                  textInputAction: TextInputAction.done,
-                                  obscureText: false,
-                                  decoration: InputDecoration(
-                                    // labelText: 'How much do you charge per passenger?',
-                                    hintStyle: FlutterFlowTheme.of(context).bodyMedium.override(
-                                      font: GoogleFonts.inter(),
-                                      color: Color(0xFF757575),
-                                      letterSpacing: 0.0,
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderSide: BorderSide(
-                                        color: Color(0xFF1A5FB4),
-                                        width: 1.5,
-                                      ),
-                                      borderRadius: BorderRadius.circular(12.0),
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderSide: BorderSide(
-                                        color: FlutterFlowTheme.of(context).primary,
-                                        width: 1.5,
-                                      ),
-                                      borderRadius: BorderRadius.circular(12.0),
-                                    ),
-                                    errorBorder: OutlineInputBorder(
-                                      borderSide: BorderSide(
-                                        color: FlutterFlowTheme.of(context).error,
-                                        width: 1.5,
-                                      ),
-                                      borderRadius: BorderRadius.circular(12.0),
-                                    ),
-                                    focusedErrorBorder: OutlineInputBorder(
-                                      borderSide: BorderSide(
-                                        color: FlutterFlowTheme.of(context).error,
-                                        width: 1.5,
-                                      ),
-                                      borderRadius: BorderRadius.circular(12.0),
-                                    ),
-                                    filled: true,
-                                    fillColor: Color(0xFFF5F5F5),
-                                    contentPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0), // 👈 ADDED FOR CONSISTENCY
-                                  ),
-                                  style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                    font: GoogleFonts.inter(),
-                                    color: Color(0xFF333333),
-                                    letterSpacing: 0.0,
-                                  ),
-                                  keyboardType: TextInputType.number,
-                                  cursorColor: Color(0xFF1A5FB4),
-                                  validator: _model.passangerCostTextControllerValidator.asValidator(context),
-                                ),
-                              ),
-                              Padding(
-                                padding: EdgeInsets.fromLTRB(10.0, 8.0, 10.0, 0.0), // 👈 REDUCED TOP PADDING
-                                child: Text(
-                                  '₹2.5/km, final rate as per number of passenger & location (to be discussed on call).',
-                                  textAlign: TextAlign.center,
-                                  style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                    font: GoogleFonts.inter(),
-                                    fontSize: 11.0,
-                                    letterSpacing: 0.0,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding:
-                      EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
+          child: Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
                   child: Column(
-                    mainAxisSize: MainAxisSize.max,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // if (_model.parcelDeliveryTextController.text != null &&
-                      //     _model.parcelDeliveryTextController.text != '')
-                        Align(
-                          alignment: AlignmentDirectional(1.0, 1.0),
-                          child: InkWell(
-                            splashColor: Colors.transparent,
-                            focusColor: Colors.transparent,
-                            hoverColor: Colors.transparent,
-                            highlightColor: Colors.transparent,
-                            onTap: () async {
-                              final passengerCountText = _model.numOfpassTextController.text.trim();
-                              final parcelText = _model.parcelDeliveryTextController.text.trim();
-                              final passengerText = _model.passangerCostTextController.text.trim();
+                      // Step Progress Header
+                      const PublishRideProgressHeader(
+                        currentStep: 6,
+                        totalSteps: 8,
+                        title: 'Pricing & Seat Capacity',
+                        subtitle: 'Set available seats, fare per passenger, and parcel charges.',
+                        badgeText: 'STEP 6 OF 8',
+                      ),
 
-                              print('📦 Parcel Delivery Cost: $parcelText');
-                              print('👥 Ride Cost: $passengerText');
-                              print('👥 Passenger Count: $passengerCountText');
-
-                              // Empty check
-                              if (parcelText.isEmpty || passengerText.isEmpty || passengerCountText.isEmpty) {
-                                await _showInfoDialog(
-                                  context,
-                                  title: 'Missing details',
-                                  message: 'Please fill all details',
-                                );
-                                return;
-                              }
-
-                              final passengerCount = double.tryParse(passengerCountText);
-                              final parcelAmount = double.tryParse(parcelText);
-                              final rideAmount = double.tryParse(passengerText);
-
-                              if (parcelAmount == null || rideAmount == null || passengerCount == null) {
-                                await _showInfoDialog(
-                                  context,
-                                  title: 'Invalid amount',
-                                  message: 'Please enter valid numeric values',
-                                );
-                                return;
-                              }
-
-                              // Extract KM
-                              final travelTime = FFAppState().travelTime;
-                              final kmMatch = RegExp(r'\((\d+)\s*km\)').firstMatch(travelTime);
-
-                              if (kmMatch == null) {
-                                await _showInfoDialog(
-                                  context,
-                                  title: 'Distance error',
-                                  message: 'Unable to calculate distance',
-                                );
-                                return;
-                              }
-
-                              final totalKm = double.parse(kmMatch.group(1)!);
-
-                              // Rates
-                              final maxParcel = totalKm * 1.5; // ₹1/km
-                              final maxRide = totalKm * 2.5;   // ₹2/km
-
-                              // Validation messages with auto-fill
-                              if (parcelAmount > maxParcel && rideAmount > maxRide) {
-                                await _showExceedDialog(
-                                  context: context,
-                                  title: 'Amount exceeded',
-                                  message: 'Both parcel and ride charges exceed the maximum limits.',
-                                  maxParcel: maxParcel,
-                                  maxRide: maxRide,
-                                );
-                                return;
-                              }
-
-                              if (parcelAmount > maxParcel) {
-                                await _showExceedDialog(
-                                  context: context,
-                                  title: 'Parcel charge exceeded',
-                                  message: 'Your parcel charge exceeds the maximum limit of ₹${maxParcel.toInt()}.',
-                                  maxParcel: maxParcel,
-                                  maxRide: maxRide,
-                                );
-                                return;
-                              }
-
-                              if (rideAmount > maxRide) {
-                                await _showExceedDialog(
-                                  context: context,
-                                  title: 'Ride charge exceeded',
-                                  message: 'Your ride charge exceeds the maximum limit of ₹${maxRide.toInt()}.',
-                                  maxParcel: maxParcel,
-                                  maxRide: maxRide,
-                                );
-                                return;
-                              }
-
-                              // ✅ SAVE TO PREFS
-                              FFAppState().totalDelvieryCost = parcelText;
-                              FFAppState().pricePerPassengers = rideAmount.toInt();
-                              FFAppState().numPassengers = passengerCount.toInt();
-                              safeSetState(() {});
-
-                              print('✅ State Updated - Parcel: ${FFAppState().totalDelvieryCost}');
-                              print('✅ State Updated - Ride: ${FFAppState().pricePerPassengers}');
-
-                              context.pushNamed(WhatyouCarry5Widget.routeName);
-                            },
-                            // onTap: () async {
-                            //   print('📦 Parcel Delivery Cost: ${_model.parcelDeliveryTextController.text}');
-                            //   print('👥 Passenger Cost: ${_model.passangerCostTextController.text}');
-                            //
-                            //   if (_model.parcelDeliveryTextController.text != null &&
-                            //       _model.parcelDeliveryTextController.text != '') {
-                            //     FFAppState().totalDelvieryCost = _model.parcelDeliveryTextController.text;
-                            //     FFAppState().pricePerPassengers = int.parse(_model.passangerCostTextController.text);
-                            //     safeSetState(() {});
-                            //
-                            //     print('✅ State Updated - Total Delivery: ${FFAppState().totalDelvieryCost}');
-                            //     print('✅ State Updated - Per Passenger: ${FFAppState().pricePerPassengers}');
-                            //
-                            //     context.pushNamed(WhatyouCarry5Widget.routeName);
-                            //   } else {
-                            //     await showDialog(
-                            //       context: context,
-                            //       builder: (alertDialogContext) {
-                            //         return AlertDialog(
-                            //           title: Text('Attention'),
-                            //           content: Text('Please fill all details'),
-                            //           actions: [
-                            //             TextButton(
-                            //               onPressed: () => Navigator.pop(alertDialogContext),
-                            //               child: Text('Ok'),
-                            //             ),
-                            //           ],
-                            //         );
-                            //       },
-                            //     );
-                            //   }
-                            // },
-                            child: Container(
-                              width: 80.0,
-                              height: 80.0,
-                              decoration: BoxDecoration(
-                                color: Color(0xFFFF8C00),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Align(
-                                alignment: AlignmentDirectional(0.0, 0.0),
-                                child: Icon(
-                                  Icons.arrow_forward,
-                                  color: Colors.white,
-                                  size: 30.0,
+                      // 1. Passenger Seats Card
+                      Container(
+                        width: double.infinity,
+                        margin: const EdgeInsets.only(bottom: 16.0),
+                        padding: const EdgeInsets.all(18.0),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20.0),
+                          border: Border.all(color: const Color(0xFFEAECEF)),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x0A000000),
+                              blurRadius: 16.0,
+                              offset: Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(8.0),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFF0ECFD),
+                                        borderRadius: BorderRadius.circular(10.0),
+                                      ),
+                                      child: const Icon(
+                                        Icons.airline_seat_recline_normal_rounded,
+                                        color: Color(0xFF6C4DF6),
+                                        size: 18.0,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10.0),
+                                    Text(
+                                      'Available Seats',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 14.5,
+                                        fontWeight: FontWeight.w700,
+                                        color: const Color(0xFF111827),
+                                      ),
+                                    ),
+                                  ],
                                 ),
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF9FAFB),
+                                    borderRadius: BorderRadius.circular(12.0),
+                                    border: Border.all(color: const Color(0xFFE5E7EB)),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.remove_rounded, size: 18.0),
+                                        onPressed: () {
+                                          int current = int.tryParse(_model.numOfpassTextController.text) ?? 1;
+                                          if (current > 1) {
+                                            _model.numOfpassTextController.text = (current - 1).toString();
+                                            safeSetState(() {});
+                                          }
+                                        },
+                                      ),
+                                      SizedBox(
+                                        width: 36.0,
+                                        child: Text(
+                                          _model.numOfpassTextController.text.isNotEmpty
+                                              ? _model.numOfpassTextController.text
+                                              : '1',
+                                          textAlign: TextAlign.center,
+                                          style: GoogleFonts.inter(
+                                            fontSize: 16.0,
+                                            fontWeight: FontWeight.w700,
+                                            color: const Color(0xFF111827),
+                                          ),
+                                        ),
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.add_rounded, size: 18.0),
+                                        onPressed: () {
+                                          int current = int.tryParse(_model.numOfpassTextController.text) ?? 1;
+                                          if (current < 8) {
+                                            _model.numOfpassTextController.text = (current + 1).toString();
+                                            safeSetState(() {});
+                                          }
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // 2. Passenger Fare Card
+                      Container(
+                        width: double.infinity,
+                        margin: const EdgeInsets.only(bottom: 16.0),
+                        padding: const EdgeInsets.all(18.0),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20.0),
+                          border: Border.all(color: const Color(0xFFEAECEF)),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x0A000000),
+                              blurRadius: 16.0,
+                              offset: Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8.0),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFFF6EE),
+                                    borderRadius: BorderRadius.circular(10.0),
+                                  ),
+                                  child: const Icon(
+                                    Icons.person_outline_rounded,
+                                    color: Color(0xFFEE7B4D),
+                                    size: 18.0,
+                                  ),
+                                ),
+                                const SizedBox(width: 10.0),
+                                Text(
+                                  'Price Per Passenger',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 14.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: const Color(0xFF111827),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 14.0),
+                            Container(
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF9FAFB),
+                                borderRadius: BorderRadius.circular(14.0),
+                                border: Border.all(color: const Color(0xFFE5E7EB)),
+                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 14.0),
+                              child: Row(
+                                children: [
+                                  Text(
+                                    '₹',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 20.0,
+                                      fontWeight: FontWeight.w700,
+                                      color: const Color(0xFFEE7B4D),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8.0),
+                                  Expanded(
+                                    child: TextField(
+                                      controller: _model.passangerCostTextController,
+                                      focusNode: _model.passangerCostFocusNode,
+                                      keyboardType: TextInputType.number,
+                                      style: GoogleFonts.inter(
+                                        fontSize: 16.0,
+                                        fontWeight: FontWeight.w700,
+                                        color: const Color(0xFF111827),
+                                      ),
+                                      decoration: InputDecoration(
+                                        hintText: 'e.g. 350',
+                                        hintStyle: GoogleFonts.inter(
+                                          fontSize: 15.0,
+                                          color: const Color(0xFF9CA3AF),
+                                        ),
+                                        border: InputBorder.none,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          ),
+                            const SizedBox(height: 8.0),
+                            Text(
+                              'Standard rate ~₹2.5/km based on route distance.',
+                              style: GoogleFonts.inter(
+                                fontSize: 11.5,
+                                color: const Color(0xFF6B7280),
+                              ),
+                            ),
+                          ],
                         ),
+                      ),
+
+                      // 3. Parcel Delivery Cost Card
+                      Container(
+                        width: double.infinity,
+                        margin: const EdgeInsets.only(bottom: 16.0),
+                        padding: const EdgeInsets.all(18.0),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20.0),
+                          border: Border.all(color: const Color(0xFFEAECEF)),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x0A000000),
+                              blurRadius: 16.0,
+                              offset: Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8.0),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFEEF7F2),
+                                    borderRadius: BorderRadius.circular(10.0),
+                                  ),
+                                  child: const Icon(
+                                    Icons.inventory_2_outlined,
+                                    color: Color(0xFF10B981),
+                                    size: 18.0,
+                                  ),
+                                ),
+                                const SizedBox(width: 10.0),
+                                Text(
+                                  'Parcel Carrying Charge',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 14.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: const Color(0xFF111827),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 14.0),
+                            Container(
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF9FAFB),
+                                borderRadius: BorderRadius.circular(14.0),
+                                border: Border.all(color: const Color(0xFFE5E7EB)),
+                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 14.0),
+                              child: Row(
+                                children: [
+                                  Text(
+                                    '₹',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 20.0,
+                                      fontWeight: FontWeight.w700,
+                                      color: const Color(0xFF10B981),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8.0),
+                                  Expanded(
+                                    child: TextField(
+                                      controller: _model.parcelDeliveryTextController,
+                                      focusNode: _model.parcelDeliveryFocusNode,
+                                      keyboardType: TextInputType.number,
+                                      style: GoogleFonts.inter(
+                                        fontSize: 16.0,
+                                        fontWeight: FontWeight.w700,
+                                        color: const Color(0xFF111827),
+                                      ),
+                                      decoration: InputDecoration(
+                                        hintText: 'e.g. 200',
+                                        hintStyle: GoogleFonts.inter(
+                                          fontSize: 15.0,
+                                          color: const Color(0xFF9CA3AF),
+                                        ),
+                                        border: InputBorder.none,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 8.0),
+                            Text(
+                              'Standard rate ~₹1.5/km based on parcel size & delicacy.',
+                              style: GoogleFonts.inter(
+                                fontSize: 11.5,
+                                color: const Color(0xFF6B7280),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
-              ],
-            ),
+              ),
+
+              // Bottom Fixed Action Button Container
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 14.0),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  border: Border(
+                    top: BorderSide(
+                      color: Color(0xFFF1F5F9),
+                      width: 1.0,
+                    ),
+                  ),
+                ),
+                child: InkWell(
+                  onTap: _proceedNext,
+                  borderRadius: BorderRadius.circular(16.0),
+                  child: Container(
+                    width: double.infinity,
+                    height: 52.0,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEE7B4D),
+                      borderRadius: BorderRadius.circular(16.0),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x33EE7B4D),
+                          blurRadius: 12.0,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Continue to Carry Items',
+                          style: GoogleFonts.inter(
+                            fontSize: 15.5,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(width: 8.0),
+                        const Icon(
+                          Icons.arrow_forward_rounded,
+                          color: Colors.white,
+                          size: 20.0,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

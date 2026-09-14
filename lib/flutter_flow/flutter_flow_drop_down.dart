@@ -295,18 +295,29 @@ class _FlutterFlowDropDownState<T> extends State<FlutterFlowDropDown<T>> {
       ),
       menuItemStyleData: MenuItemStyleData(
         overlayColor: overlayColor,
-        padding: EdgeInsets.zero,
+        padding: const EdgeInsets.symmetric(horizontal: 14.0),
+        height: 42.0,
       ),
       dropdownStyleData: DropdownStyleData(
-        elevation: widget.elevation.toInt(),
+        elevation: widget.elevation > 0 ? widget.elevation.toInt() : 6,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(4.0),
-          color: widget.fillColor,
+          borderRadius: BorderRadius.circular(widget.borderRadius > 0 ? widget.borderRadius : 12.0),
+          color: widget.fillColor != null && widget.fillColor != Colors.transparent
+              ? widget.fillColor
+              : Colors.white,
+          border: Border.all(color: const Color(0xFFE2E8F0), width: 1.0),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x1F000000),
+              blurRadius: 16.0,
+              offset: Offset(0, 6),
+            ),
+          ],
         ),
         isOverButton: widget.isOverButton,
-        offset: widget.menuOffset ?? Offset.zero,
-        maxHeight: widget.maxHeight,
-        padding: EdgeInsets.zero,
+        offset: widget.menuOffset ?? const Offset(0, -4),
+        maxHeight: widget.maxHeight ?? 260.0,
+        padding: const EdgeInsets.symmetric(vertical: 6.0),
       ),
       onChanged: widget.disabled
           ? null

@@ -1,13 +1,11 @@
+import '/components/publish_ride_progress_header.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
-import '/flutter_flow/flutter_flow_widgets.dart';
-import 'dart:ui';
 import '/index.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:percent_indicator/percent_indicator.dart';
 import 'package:provider/provider.dart';
 import 'cary_items5_model.dart';
 export 'cary_items5_model.dart';
@@ -24,14 +22,21 @@ class CaryItems5Widget extends StatefulWidget {
 
 class _CaryItems5WidgetState extends State<CaryItems5Widget> {
   late CaryItems5Model _model;
-
   final scaffoldKey = GlobalKey<ScaffoldState>();
+
+  final List<String> _suggestedItems = const [
+    'Laptop Bag',
+    'Travel Luggage',
+    'Documents',
+    'Electronics',
+    'Snacks / Food',
+    'Small Package',
+  ];
 
   @override
   void initState() {
     super.initState();
     _model = createModel(context, () => CaryItems5Model());
-
     _model.itemsTextController ??= TextEditingController();
     _model.itemsFocusNode ??= FocusNode();
   }
@@ -39,12 +44,41 @@ class _CaryItems5WidgetState extends State<CaryItems5Widget> {
   @override
   void dispose() {
     _model.dispose();
-
     super.dispose();
+  }
+
+  void _addItem(String text) {
+    final trimmed = text.trim();
+    if (trimmed.isNotEmpty && !_model.items11.contains(trimmed)) {
+      _model.addToItems11(trimmed);
+      _model.itemsTextController?.clear();
+      safeSetState(() {});
+    }
+  }
+
+  void _removeItem(String item) {
+    _model.removeFromItems11(item);
+    safeSetState(() {});
+  }
+
+  void _proceedNext() {
+    if (_model.items11.isNotEmpty) {
+      FFAppState().carryItemNormalRides = _model.items11.toList().cast<String>();
+      safeSetState(() {});
+    }
+
+    final transportModeValue = FFAppState().modeOfTransport;
+    if (transportModeValue == 'Car' || transportModeValue == 'Bike') {
+      context.pushNamed(FirstWidget.routeName);
+    } else {
+      context.pushNamed(ParcelCost6Widget.routeName);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    context.watch<FFAppState>();
+
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
@@ -52,478 +86,368 @@ class _CaryItems5WidgetState extends State<CaryItems5Widget> {
       },
       child: Scaffold(
         key: scaffoldKey,
-        backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
+        backgroundColor: const Color(0xFFF8FAFC),
         appBar: AppBar(
-          backgroundColor: FlutterFlowTheme.of(context).secondaryBackground,
+          backgroundColor: Colors.white,
           automaticallyImplyLeading: false,
           leading: FlutterFlowIconButton(
             borderColor: Colors.transparent,
             borderRadius: 30.0,
             borderWidth: 1.0,
-            buttonSize: 60.0,
-            icon: Icon(
+            buttonSize: 48.0,
+            icon: const Icon(
               Icons.arrow_back_rounded,
-              color: FlutterFlowTheme.of(context).primaryText,
-              size: 30.0,
+              color: Color(0xFF1F2937),
+              size: 24.0,
             ),
             onPressed: () async {
               context.pop();
             },
           ),
           title: Text(
-            'Stoppage',
-            style: FlutterFlowTheme.of(context).headlineMedium.override(
-                  font: GoogleFonts.interTight(
-                    fontWeight:
-                        FlutterFlowTheme.of(context).headlineMedium.fontWeight,
-                    fontStyle:
-                        FlutterFlowTheme.of(context).headlineMedium.fontStyle,
-                  ),
-                  color: FlutterFlowTheme.of(context).primaryText,
-                  fontSize: 20.0,
-                  letterSpacing: 0.0,
-                  fontWeight:
-                      FlutterFlowTheme.of(context).headlineMedium.fontWeight,
-                  fontStyle:
-                      FlutterFlowTheme.of(context).headlineMedium.fontStyle,
-                ),
+            'Publish Ride',
+            style: GoogleFonts.inter(
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF111827),
+              fontSize: 18.0,
+            ),
           ),
-          actions: [],
+          actions: [
+            TextButton(
+              onPressed: _proceedNext,
+              child: Text(
+                'Skip',
+                style: GoogleFonts.inter(
+                  fontSize: 14.0,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF6B7280),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8.0),
+          ],
           centerTitle: true,
-          elevation: 2.0,
+          elevation: 0.0,
         ),
         body: SafeArea(
           top: true,
-          child: Align(
-            alignment: AlignmentDirectional(0.0, 0.0),
-            child: SingleChildScrollView(
-              primary: false,
-              child: Column(
-                mainAxisSize: MainAxisSize.max,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Padding(
-                    padding:
-                        EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 20.0),
-                    child: CircularPercentIndicator(
-                      percent: 0.4,
-                      radius: 60.0,
-                      lineWidth: 12.0,
-                      animation: true,
-                      animateFromLastPercent: true,
-                      progressColor: Color(0xFFF57C3B),
-                      backgroundColor: Color(0xFFD8D5D5),
-                      center: Text(
-                        '45%',
-                        style:
-                            FlutterFlowTheme.of(context).headlineSmall.override(
-                                  font: GoogleFonts.interTight(
-                                    fontWeight: FlutterFlowTheme.of(context)
-                                        .headlineSmall
-                                        .fontWeight,
-                                    fontStyle: FlutterFlowTheme.of(context)
-                                        .headlineSmall
-                                        .fontStyle,
-                                  ),
-                                  letterSpacing: 0.0,
-                                  fontWeight: FlutterFlowTheme.of(context)
-                                      .headlineSmall
-                                      .fontWeight,
-                                  fontStyle: FlutterFlowTheme.of(context)
-                                      .headlineSmall
-                                      .fontStyle,
-                                ),
-                      ),
-                    ),
-                  ),
-                  Align(
-                    alignment: AlignmentDirectional(0.0, 0.0),
-                    child: Padding(
-                      padding:
-                          EdgeInsetsDirectional.fromSTEB(0.0, 24.0, 0.0, 32.0),
-                      child: Builder(
-                        builder: (context) {
-                          final itemsList = _model.items11.toList();
-
-                          return Wrap(
-                            spacing: 10.0,
-                            runSpacing: 10.0,
-                            alignment: WrapAlignment.start,
-                            crossAxisAlignment: WrapCrossAlignment.start,
-                            direction: Axis.horizontal,
-                            runAlignment: WrapAlignment.start,
-                            verticalDirection: VerticalDirection.down,
-                            clipBehavior: Clip.none,
-                            children: List.generate(itemsList.length,
-                                (itemsListIndex) {
-                              final itemsListItem = itemsList[itemsListIndex];
-                              return Container(
-                                decoration: BoxDecoration(
-                                  color: Color(0xFFF4F4F4),
-                                  borderRadius: BorderRadius.circular(20.0),
-                                  border: Border.all(
-                                    color: Color(0xFF4DABF7),
-                                  ),
-                                ),
-                                child: Padding(
-                                  padding: EdgeInsetsDirectional.fromSTEB(
-                                      16.0, 8.0, 16.0, 8.0),
-                                  child: InkWell(
-                                    splashColor: Colors.transparent,
-                                    focusColor: Colors.transparent,
-                                    hoverColor: Colors.transparent,
-                                    highlightColor: Colors.transparent,
-                                    onTap: () async {
-                                      safeSetState(() {});
-                                    },
-                                    child: Text(
-                                      itemsListItem,
-                                      style: FlutterFlowTheme.of(context)
-                                          .bodyMedium
-                                          .override(
-                                            font: GoogleFonts.inter(
-                                              fontWeight:
-                                                  FlutterFlowTheme.of(context)
-                                                      .bodyMedium
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  FlutterFlowTheme.of(context)
-                                                      .bodyMedium
-                                                      .fontStyle,
-                                            ),
-                                            color: Color(0xFF333333),
-                                            letterSpacing: 0.0,
-                                            fontWeight:
-                                                FlutterFlowTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontWeight,
-                                            fontStyle:
-                                                FlutterFlowTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontStyle,
-                                          ),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                  Row(
-                    mainAxisSize: MainAxisSize.max,
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          child: Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Step Progress Header
+                      const PublishRideProgressHeader(
+                        currentStep: 5,
+                        totalSteps: 8,
+                        title: 'Stoppages & Luggage',
+                        subtitle: 'Specify stoppage points or items you can carry on this ride.',
+                        badgeText: 'STEP 5 OF 8',
+                      ),
+
+                      // Input Card
                       Container(
-                        width: 250.0,
-                        child: TextFormField(
-                          controller: _model.itemsTextController,
-                          focusNode: _model.itemsFocusNode,
-                          onFieldSubmitted: (_) async {
-                            if (_model.itemsTextController.text != null &&
-                                _model.itemsTextController.text != '') {
-                              _model.addToItems11(
-                                  _model.itemsTextController.text);
-                              safeSetState(() {});
-                              safeSetState(() {
-                                _model.itemsTextController?.clear();
-                              });
-                            } else {
-                              await showDialog(
-                                context: context,
-                                builder: (alertDialogContext) {
-                                  return AlertDialog(
-                                    title: Text('Attention Required '),
-                                    content: Text('Please add carry items'),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.pop(alertDialogContext),
-                                        child: Text('Ok'),
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20.0),
+                          border: Border.all(color: const Color(0xFFEAECEF)),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x0A000000),
+                              blurRadius: 16.0,
+                              offset: Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        padding: const EdgeInsets.all(18.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Add Stoppage / Item Name',
+                              style: GoogleFonts.inter(
+                                fontSize: 14.0,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFF111827),
+                              ),
+                            ),
+                            const SizedBox(height: 10.0),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFF9FAFB),
+                                      borderRadius: BorderRadius.circular(14.0),
+                                      border: Border.all(color: const Color(0xFFE5E7EB)),
+                                    ),
+                                    child: TextField(
+                                      controller: _model.itemsTextController,
+                                      focusNode: _model.itemsFocusNode,
+                                      onSubmitted: (val) => _addItem(val),
+                                      style: GoogleFonts.inter(
+                                        fontSize: 14.0,
+                                        color: const Color(0xFF111827),
+                                        fontWeight: FontWeight.w500,
                                       ),
-                                    ],
-                                  );
-                                },
-                              );
-                            }
-                          },
-                          autofocus: false,
-                          obscureText: false,
-                          decoration: InputDecoration(
-                            isDense: true,
-                            labelStyle: FlutterFlowTheme.of(context)
-                                .labelMedium
-                                .override(
-                                  font: GoogleFonts.inter(
-                                    fontWeight: FlutterFlowTheme.of(context)
-                                        .labelMedium
-                                        .fontWeight,
-                                    fontStyle: FlutterFlowTheme.of(context)
-                                        .labelMedium
-                                        .fontStyle,
-                                  ),
-                                  letterSpacing: 0.0,
-                                  fontWeight: FlutterFlowTheme.of(context)
-                                      .labelMedium
-                                      .fontWeight,
-                                  fontStyle: FlutterFlowTheme.of(context)
-                                      .labelMedium
-                                      .fontStyle,
-                                ),
-                            hintText: 'Enter Stoppage',
-                            hintStyle: FlutterFlowTheme.of(context)
-                                .labelMedium
-                                .override(
-                                  font: GoogleFonts.inter(
-                                    fontWeight: FlutterFlowTheme.of(context)
-                                        .labelMedium
-                                        .fontWeight,
-                                    fontStyle: FlutterFlowTheme.of(context)
-                                        .labelMedium
-                                        .fontStyle,
-                                  ),
-                                  letterSpacing: 0.0,
-                                  fontWeight: FlutterFlowTheme.of(context)
-                                      .labelMedium
-                                      .fontWeight,
-                                  fontStyle: FlutterFlowTheme.of(context)
-                                      .labelMedium
-                                      .fontStyle,
-                                ),
-                            enabledBorder: OutlineInputBorder(
-                              borderSide: BorderSide(
-                                color: Color(0xFF4DABF7),
-                                width: 1.0,
-                              ),
-                              borderRadius: BorderRadius.circular(8.0),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderSide: BorderSide(
-                                color: FlutterFlowTheme.of(context).primary,
-                                width: 1.0,
-                              ),
-                              borderRadius: BorderRadius.circular(8.0),
-                            ),
-                            errorBorder: OutlineInputBorder(
-                              borderSide: BorderSide(
-                                color: FlutterFlowTheme.of(context).error,
-                                width: 1.0,
-                              ),
-                              borderRadius: BorderRadius.circular(8.0),
-                            ),
-                            focusedErrorBorder: OutlineInputBorder(
-                              borderSide: BorderSide(
-                                color: FlutterFlowTheme.of(context).error,
-                                width: 1.0,
-                              ),
-                              borderRadius: BorderRadius.circular(8.0),
-                            ),
-                            filled: true,
-                            fillColor: FlutterFlowTheme.of(context)
-                                .secondaryBackground,
-                          ),
-                          style:
-                              FlutterFlowTheme.of(context).bodyMedium.override(
-                                    font: GoogleFonts.inter(
-                                      fontWeight: FlutterFlowTheme.of(context)
-                                          .bodyMedium
-                                          .fontWeight,
-                                      fontStyle: FlutterFlowTheme.of(context)
-                                          .bodyMedium
-                                          .fontStyle,
+                                      decoration: InputDecoration(
+                                        hintText: 'e.g. Noida Sector 62, Medium Suitcase...',
+                                        hintStyle: GoogleFonts.inter(
+                                          color: const Color(0xFF9CA3AF),
+                                          fontSize: 13.0,
+                                        ),
+                                        border: InputBorder.none,
+                                        contentPadding: const EdgeInsets.symmetric(
+                                          horizontal: 14.0,
+                                          vertical: 12.0,
+                                        ),
+                                        isDense: true,
+                                      ),
                                     ),
-                                    letterSpacing: 0.0,
-                                    fontWeight: FlutterFlowTheme.of(context)
-                                        .bodyMedium
-                                        .fontWeight,
-                                    fontStyle: FlutterFlowTheme.of(context)
-                                        .bodyMedium
-                                        .fontStyle,
                                   ),
-                          cursorColor: FlutterFlowTheme.of(context).primaryText,
-                          validator: _model.itemsTextControllerValidator
-                              .asValidator(context),
-                        ),
-                      ),
-                      InkWell(
-                        splashColor: Colors.transparent,
-                        focusColor: Colors.transparent,
-                        hoverColor: Colors.transparent,
-                        highlightColor: Colors.transparent,
-                        onTap: () async {
-                          if (_model.itemsTextController.text != null &&
-                              _model.itemsTextController.text != '') {
-                            _model
-                                .addToItems11(_model.itemsTextController.text);
-                            safeSetState(() {});
-                            safeSetState(() {
-                              _model.itemsTextController?.clear();
-                            });
-                          } else {
-                            await showDialog(
-                              context: context,
-                              builder: (alertDialogContext) {
-                                return AlertDialog(
-                                  title: Text('Attention Required '),
-                                  content: Text('Please add carry items'),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () =>
-                                          Navigator.pop(alertDialogContext),
-                                      child: Text('Ok'),
+                                ),
+                                const SizedBox(width: 10.0),
+                                InkWell(
+                                  onTap: () => _addItem(_model.itemsTextController?.text ?? ''),
+                                  borderRadius: BorderRadius.circular(14.0),
+                                  child: Container(
+                                    height: 46.0,
+                                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFEE7B4D),
+                                      borderRadius: BorderRadius.circular(14.0),
+                                      boxShadow: const [
+                                        BoxShadow(
+                                          color: Color(0x28EE7B4D),
+                                          blurRadius: 8.0,
+                                          offset: Offset(0, 2),
+                                        ),
+                                      ],
                                     ),
-                                  ],
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(
+                                          Icons.add_rounded,
+                                          color: Colors.white,
+                                          size: 20.0,
+                                        ),
+                                        const SizedBox(width: 4.0),
+                                        Text(
+                                          'Add',
+                                          style: GoogleFonts.inter(
+                                            fontSize: 13.5,
+                                            fontWeight: FontWeight.w700,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 18.0),
+
+                            // Suggestions Quick Chips
+                            Text(
+                              'Popular Suggestions',
+                              style: GoogleFonts.inter(
+                                fontSize: 12.0,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF6B7280),
+                              ),
+                            ),
+                            const SizedBox(height: 8.0),
+                            Wrap(
+                              spacing: 8.0,
+                              runSpacing: 8.0,
+                              children: _suggestedItems.map((suggestion) {
+                                final isAdded = _model.items11.contains(suggestion);
+                                return InkWell(
+                                  onTap: () {
+                                    if (isAdded) {
+                                      _removeItem(suggestion);
+                                    } else {
+                                      _addItem(suggestion);
+                                    }
+                                  },
+                                  borderRadius: BorderRadius.circular(20.0),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+                                    decoration: BoxDecoration(
+                                      color: isAdded ? const Color(0xFFFFF6EE) : const Color(0xFFF3F4F6),
+                                      borderRadius: BorderRadius.circular(20.0),
+                                      border: Border.all(
+                                        color: isAdded ? const Color(0xFFEE7B4D) : Colors.transparent,
+                                        width: 1.0,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          isAdded ? Icons.check_rounded : Icons.add_rounded,
+                                          color: isAdded ? const Color(0xFFEE7B4D) : const Color(0xFF6B7280),
+                                          size: 14.0,
+                                        ),
+                                        const SizedBox(width: 4.0),
+                                        Text(
+                                          suggestion,
+                                          style: GoogleFonts.inter(
+                                            fontSize: 12.0,
+                                            fontWeight: isAdded ? FontWeight.w700 : FontWeight.w500,
+                                            color: isAdded ? const Color(0xFFEE7B4D) : const Color(0xFF374151),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 );
-                              },
-                            );
-                          }
-                        },
-                        child: Icon(
-                          Icons.add_circle,
-                          color: Color(0xFFF57C3B),
-                          size: 30.0,
+                              }).toList(),
+                            ),
+                          ],
                         ),
                       ),
+
+                      const SizedBox(height: 20.0),
+
+                      // Added Items Display Card
+                      if (_model.items11.isNotEmpty)
+                        Container(
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20.0),
+                            border: Border.all(color: const Color(0xFFEAECEF)),
+                          ),
+                          padding: const EdgeInsets.all(18.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  const Icon(
+                                    Icons.inventory_2_outlined,
+                                    color: Color(0xFF10B981),
+                                    size: 18.0,
+                                  ),
+                                  const SizedBox(width: 8.0),
+                                  Text(
+                                    'Added Items (${_model.items11.length})',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 14.5,
+                                      fontWeight: FontWeight.w700,
+                                      color: const Color(0xFF111827),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12.0),
+                              Wrap(
+                                spacing: 8.0,
+                                runSpacing: 8.0,
+                                children: _model.items11.map((item) {
+                                  return Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFF0ECFD),
+                                      borderRadius: BorderRadius.circular(20.0),
+                                      border: Border.all(color: const Color(0xFFE2DBFC)),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          item,
+                                          style: GoogleFonts.inter(
+                                            fontSize: 12.5,
+                                            fontWeight: FontWeight.w600,
+                                            color: const Color(0xFF6C4DF6),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6.0),
+                                        InkWell(
+                                          onTap: () => _removeItem(item),
+                                          borderRadius: BorderRadius.circular(10.0),
+                                          child: const Icon(
+                                            Icons.close_rounded,
+                                            color: Color(0xFF6C4DF6),
+                                            size: 16.0,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
+                            ],
+                          ),
+                        ),
                     ],
                   ),
-                  SizedBox(
-                    width: 120, // 👈 FIXED WIDTH
+                ),
+              ),
 
-                    child: InkWell(
-                      splashColor: Colors.transparent,
-                      focusColor: Colors.transparent,
-                      hoverColor: Colors.transparent,
-                      highlightColor: Colors.transparent,
-                      onTap: () async {
-                        final transportModeValue =  FFAppState().modeOfTransport;
-
-                        print("transportModeValue::::- ${transportModeValue}");
-                        if (transportModeValue == 'Car' ||
-                            transportModeValue == 'Bike') {
-                          context.pushNamed(FirstWidget.routeName);
-                        } else {
-                          context.pushNamed(ParcelCost6Widget.routeName);
-                        }
-                        // Direct navigation without any conditions
-                        // context.pushNamed(TransportMode4Widget.routeName);  // 👈 NEXT SCREEN
-
-                      },
-                      child: Container(
-                        margin: EdgeInsets.symmetric(horizontal: 4.0, vertical: 4.0),
-
-                        decoration: BoxDecoration(
-
-                          color: Colors.transparent,
-                          borderRadius: BorderRadius.circular(30.0), // 👈 RECTANGLE CIRCLE (rounded rectangle)
-                          border: Border.all(
-                            color: FlutterFlowTheme.of(context).otherColour, // 👈 TERNARY COLOR
-                            width: 1.5,
-                          ),
-                        ),
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 12.0, vertical: 12.0),
-                          child: Text(
-                            'Skip',
-                            textAlign: TextAlign.center,
-                            style: FlutterFlowTheme.of(context).bodyLarge.override(
-                              font: GoogleFonts.inter(
-                                fontWeight: FontWeight.w500,
-                              ),
-                              color: FlutterFlowTheme.of(context).otherColour, // 👈 TERNARY COLOR
-                              fontSize: 16.0,
-                              letterSpacing: 0.0,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ),
+              // Bottom Fixed Action Button Container
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 14.0),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  border: Border(
+                    top: BorderSide(
+                      color: Color(0xFFF1F5F9),
+                      width: 1.0,
                     ),
                   ),
-
-                  if (_model.items11.length > 0)
-                    Padding(
-                      padding: EdgeInsetsDirectional.fromSTEB(
-                          16.0, 16.0, 16.0, 16.0),
-                      child: FFButtonWidget(
-                        onPressed: () async {
-                          if (_model.items11.length > 0) {
-                            FFAppState().carryItemNormalRides =
-                                _model.items11.toList().cast<String>();
-                            safeSetState(() {});
-                            safeSetState(() {
-                              _model.itemsTextController?.clear();
-                            });
-
-                           final transportModeValue =  FFAppState().modeOfTransport;
-
-                           print("transportModeValue::::- ${transportModeValue}");
-                            if (transportModeValue == 'Car' ||
-                                transportModeValue == 'Bike') {
-                              context.pushNamed(FirstWidget.routeName);
-                            } else {
-                              context.pushNamed(ParcelCost6Widget.routeName);
-                            }
-                            // context.pushNamed(ParcelCost6Widget.routeName);
-                          } else {
-                            await showDialog(
-                              context: context,
-                              builder: (alertDialogContext) {
-                                return AlertDialog(
-                                  title: Text('Attention Required '),
-                                  content: Text('Please add carry items'),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () =>
-                                          Navigator.pop(alertDialogContext),
-                                      child: Text('Ok'),
-                                    ),
-                                  ],
-                                );
-                              },
-                            );
-                          }
-                        },
-                        text: 'Submit',
-                        options: FFButtonOptions(
-                          width: double.infinity,
-                          height: 50.0,
-                          padding: EdgeInsets.all(8.0),
-                          iconPadding: EdgeInsetsDirectional.fromSTEB(
-                              0.0, 0.0, 0.0, 0.0),
-                          color: Color(0xFFF67E4A),
-                          textStyle:
-                              FlutterFlowTheme.of(context).titleSmall.override(
-                                    font: GoogleFonts.interTight(
-                                      fontWeight: FlutterFlowTheme.of(context)
-                                          .titleSmall
-                                          .fontWeight,
-                                      fontStyle: FlutterFlowTheme.of(context)
-                                          .titleSmall
-                                          .fontStyle,
-                                    ),
-                                    color: FlutterFlowTheme.of(context).info,
-                                    letterSpacing: 0.0,
-                                    fontWeight: FlutterFlowTheme.of(context)
-                                        .titleSmall
-                                        .fontWeight,
-                                    fontStyle: FlutterFlowTheme.of(context)
-                                        .titleSmall
-                                        .fontStyle,
-                                  ),
-                          elevation: 2.0,
-                          borderSide: BorderSide(
-                            color: Colors.transparent,
-                            width: 1.0,
-                          ),
-                          borderRadius: BorderRadius.circular(8.0),
+                ),
+                child: InkWell(
+                  onTap: _proceedNext,
+                  borderRadius: BorderRadius.circular(16.0),
+                  child: Container(
+                    width: double.infinity,
+                    height: 52.0,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEE7B4D),
+                      borderRadius: BorderRadius.circular(16.0),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x33EE7B4D),
+                          blurRadius: 12.0,
+                          offset: Offset(0, 4),
                         ),
-                      ),
+                      ],
                     ),
-                ].divide(SizedBox(height: 12.0)),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Continue',
+                          style: GoogleFonts.inter(
+                            fontSize: 15.5,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(width: 8.0),
+                        const Icon(
+                          Icons.arrow_forward_rounded,
+                          color: Colors.white,
+                          size: 20.0,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
         ),
       ),

@@ -3,14 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
 import 'package:http/http.dart' as http;
-import 'package:percent_indicator/percent_indicator.dart';
 import 'package:provider/provider.dart';
 
-import '/flutter_flow/flutter_flow_drop_down.dart';
+import '/components/publish_ride_progress_header.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
-import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
-import '/flutter_flow/form_field_controller.dart';
 import '/index.dart';
 import 'transport_mode4_model.dart';
 export 'transport_mode4_model.dart';
@@ -165,7 +162,7 @@ class _TransportMode4WidgetState extends State<TransportMode4Widget> {
             final distanceMeters = (leg['distance']?['value'] as num?)?.toInt() ?? 0;
             final summary = (r['summary'] != null && (r['summary'] as String).trim().isNotEmpty)
                 ? r['summary'] as String
-                : 'Main Highway';
+                : 'Main Route';
 
             bool hasTolls = false;
             final warnings = r['warnings'] as List<dynamic>?;
@@ -267,9 +264,7 @@ class _TransportMode4WidgetState extends State<TransportMode4Widget> {
           gmaps.CameraUpdate.newLatLngZoom(currentRoute.startLocation!, 9.0),
         );
       }
-    } catch (e) {
-      // Platform channel may not be ready or disposed during navigation
-    }
+    } catch (_) {}
   }
 
   String _getGoogleTravelMode(String mode) {
@@ -335,7 +330,7 @@ class _TransportMode4WidgetState extends State<TransportMode4Widget> {
         gmaps.Polyline(
           polylineId: gmaps.PolylineId('route_polyline_$i'),
           points: r.polylinePoints,
-          color: isSelected ? const Color(0xFFF57C3B) : const Color(0xFFFFCC80),
+          color: isSelected ? const Color(0xFFEE7B4D) : const Color(0xFFFFCC80),
           width: isSelected ? 5 : 3,
           zIndex: isSelected ? 3 : 1,
         ),
@@ -370,6 +365,99 @@ class _TransportMode4WidgetState extends State<TransportMode4Widget> {
     return FFAppState().pickupTime!.add(Duration(minutes: totalMinutes));
   }
 
+  Widget _buildVehicleOptionCard({
+    required String mode,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+  }) {
+    final isSelected = (_model.transportModeValue ?? 'Car').toLowerCase() == mode.toLowerCase();
+
+    return Expanded(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () async {
+            _model.transportModeValue = mode;
+            safeSetState(() {});
+            await _fetchRoutesWithAlternatives();
+          },
+          borderRadius: BorderRadius.circular(16.0),
+          child: Container(
+            height: 116.0,
+            padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 4.0),
+            decoration: BoxDecoration(
+              color: isSelected ? const Color(0xFFFFF6EE) : Colors.white,
+              borderRadius: BorderRadius.circular(16.0),
+              border: Border.all(
+                color: isSelected ? const Color(0xFFEE7B4D) : const Color(0xFFEAECEF),
+                width: isSelected ? 2.0 : 1.0,
+              ),
+              boxShadow: isSelected
+                  ? const [
+                      BoxShadow(
+                        color: Color(0x1AEE7B4D),
+                        blurRadius: 8.0,
+                        offset: Offset(0, 3),
+                      ),
+                    ]
+                  : const [
+                      BoxShadow(
+                        color: Color(0x06000000),
+                        blurRadius: 4.0,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                  width: 40.0,
+                  height: 40.0,
+                  decoration: BoxDecoration(
+                    color: isSelected ? const Color(0xFFEE7B4D) : const Color(0xFFF3F4F6),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    icon,
+                    color: isSelected ? Colors.white : const Color(0xFF6B7280),
+                    size: 20.0,
+                  ),
+                ),
+                const SizedBox(height: 8.0),
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.inter(
+                    fontSize: 13.0,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                    color: isSelected ? const Color(0xFFEE7B4D) : const Color(0xFF1F2937),
+                  ),
+                ),
+                const SizedBox(height: 2.0),
+                Text(
+                  subtitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.inter(
+                    fontSize: 10.0,
+                    fontWeight: FontWeight.w500,
+                    color: isSelected ? const Color(0xFFD97706) : const Color(0xFF9CA3AF),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     context.watch<FFAppState>();
@@ -386,482 +474,469 @@ class _TransportMode4WidgetState extends State<TransportMode4Widget> {
       },
       child: Scaffold(
         key: scaffoldKey,
-        backgroundColor: FlutterFlowTheme.of(context).primaryBackground,
+        backgroundColor: const Color(0xFFF8FAFC),
         appBar: AppBar(
-          backgroundColor: FlutterFlowTheme.of(context).secondaryBackground,
+          backgroundColor: Colors.white,
           automaticallyImplyLeading: false,
           leading: FlutterFlowIconButton(
             borderColor: Colors.transparent,
             borderRadius: 30.0,
             borderWidth: 1.0,
-            buttonSize: 60.0,
-            icon: Icon(
+            buttonSize: 48.0,
+            icon: const Icon(
               Icons.arrow_back_rounded,
-              color: FlutterFlowTheme.of(context).primaryText,
-              size: 28.0,
+              color: Color(0xFF1F2937),
+              size: 24.0,
             ),
             onPressed: () async {
               context.pop();
             },
           ),
           title: Text(
-            'Mode of Transport',
-            style: FlutterFlowTheme.of(context).headlineMedium.override(
-                  font: GoogleFonts.interTight(
-                    fontWeight: FontWeight.bold,
-                  ),
-                  color: FlutterFlowTheme.of(context).primaryText,
-                  fontSize: 19.0,
-                ),
+            'Publish Ride',
+            style: GoogleFonts.inter(
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF111827),
+              fontSize: 18.0,
+            ),
           ),
           centerTitle: true,
-          elevation: 1.0,
+          elevation: 0.0,
         ),
         body: SafeArea(
           top: true,
-          child: Stack(
+          child: Column(
             children: [
-              SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.only(
-                  left: 20.0,
-                  right: 20.0,
-                  top: 16.0,
-                  bottom: 110.0,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    // =================== 1. 40% PROGRESS INDICATOR ===================
-                    Center(
-                      child: Padding(
-                        padding: const EdgeInsets.only(bottom: 16.0),
-                        child: CircularPercentIndicator(
-                          percent: 0.4,
-                          radius: 56.0,
-                          lineWidth: 11.0,
-                          animation: true,
-                          animateFromLastPercent: true,
-                          progressColor: const Color(0xFFF57C3B),
-                          backgroundColor: const Color(0xFFE2E8F0),
-                          center: Text(
-                            '40%',
-                            style: GoogleFonts.interTight(
-                              fontSize: 18.0,
-                              fontWeight: FontWeight.bold,
-                              color: const Color(0xFF0F172A),
-                            ),
-                          ),
-                        ),
+              Expanded(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Step Progress Header
+                      const PublishRideProgressHeader(
+                        currentStep: 4,
+                        totalSteps: 8,
+                        title: 'Transport Mode',
+                        subtitle: 'Select vehicle type and preferred navigation route.',
+                        badgeText: 'STEP 4 OF 8',
                       ),
-                    ),
 
-                    // =================== 2. MODE OF TRANSPORT DROPDOWN ===================
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Padding(
-                        padding: const EdgeInsets.only(left: 4.0, bottom: 8.0),
-                        child: Text(
-                          'Mode of transport',
-                          style: GoogleFonts.interTight(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 15.0,
-                            color: const Color(0xFF0F172A),
-                          ),
-                        ),
-                      ),
-                    ),
-                    FlutterFlowDropDown<String>(
-                      controller: _model.transportModeValueController ??= FormFieldController<String>(
-                        _model.transportModeValue ??= (FFAppState().modeOfTransport.isNotEmpty
-                            ? FFAppState().modeOfTransport
-                            : 'Car'),
-                      ),
-                      options: const ['Car', 'Bike', 'Bus', 'Train'],
-                      onChanged: (val) async {
-                        _model.transportModeValue = val;
-                        safeSetState(() {});
-                        if (val != null && val.isNotEmpty) {
-                          await _fetchRoutesWithAlternatives();
-                        }
-                      },
-                      width: double.infinity,
-                      height: 54.0,
-                      textStyle: GoogleFonts.inter(
-                        fontSize: 14.5,
-                        color: const Color(0xFF0F172A),
-                      ),
-                      hintText: 'Select...',
-                      icon: const Icon(
-                        Icons.keyboard_arrow_down_rounded,
-                        color: Color(0xFF64748B),
-                        size: 24.0,
-                      ),
-                      fillColor: Colors.white,
-                      elevation: 1.0,
-                      borderColor: const Color(0xFF4DABF7),
-                      borderWidth: 1.5,
-                      borderRadius: 10.0,
-                      margin: const EdgeInsetsDirectional.fromSTEB(14.0, 0.0, 14.0, 0.0),
-                      hidesUnderline: true,
-                      isOverButton: false,
-                      isSearchable: false,
-                      isMultiSelect: false,
-                    ),
-
-                    const SizedBox(height: 18.0),
-
-                    // =================== 3. INTERACTIVE ROUTE SELECTION & MAP (REPLACES OLD STATIC CARD) ===================
-                    if (_isFetchingRoutes)
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(16.0),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFF7ED),
-                          borderRadius: BorderRadius.circular(14.0),
-                          border: Border.all(color: const Color(0xFFFFEDD5)),
-                        ),
-                        child: const Row(
+                      // Vehicle Type Cards (Evenly aligned with IntrinsicHeight & equal 116px height)
+                      IntrinsicHeight(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            SizedBox(
-                              width: 22.0,
-                              height: 22.0,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2.5,
-                                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFF57C3B)),
-                              ),
+                            _buildVehicleOptionCard(
+                              mode: 'Car',
+                              icon: Icons.directions_car_rounded,
+                              title: 'Car',
+                              subtitle: 'Personal',
                             ),
-                            SizedBox(width: 12.0),
-                            Expanded(
-                              child: Text(
-                                'Finding the best routes with real-time traffic...',
-                                style: TextStyle(
-                                  color: Color(0xFFC2410C),
+                            const SizedBox(width: 8.0),
+                            _buildVehicleOptionCard(
+                              mode: 'Bike',
+                              icon: Icons.two_wheeler_rounded,
+                              title: 'Bike',
+                              subtitle: '2-Wheeler',
+                            ),
+                            const SizedBox(width: 8.0),
+                            _buildVehicleOptionCard(
+                              mode: 'Bus',
+                              icon: Icons.directions_bus_rounded,
+                              title: 'Bus',
+                              subtitle: 'Transit',
+                            ),
+                            const SizedBox(width: 8.0),
+                            _buildVehicleOptionCard(
+                              mode: 'Train',
+                              icon: Icons.train_rounded,
+                              title: 'Train',
+                              subtitle: 'Rail',
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 20.0),
+
+                      // Routes and Map Preview
+                      if (_isFetchingRoutes)
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(20.0),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFF7ED),
+                            borderRadius: BorderRadius.circular(16.0),
+                            border: Border.all(color: const Color(0xFFFFEDD5)),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const SizedBox(
+                                width: 20.0,
+                                height: 20.0,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFEE7B4D)),
+                                ),
+                              ),
+                              const SizedBox(width: 14.0),
+                              Text(
+                                'Calculating optimal routes & traffic...',
+                                style: GoogleFonts.inter(
+                                  color: const Color(0xFFC2410C),
                                   fontWeight: FontWeight.w600,
                                   fontSize: 13.0,
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                      )
-                    else if (_availableRoutes.isNotEmpty) ...[
-                      // A. Map Route Preview Container
-                      Container(
-                        height: 190.0,
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(16.0),
-                          border: Border.all(color: const Color(0xFFE2E8F0)),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.04),
-                              blurRadius: 8.0,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        clipBehavior: Clip.antiAlias,
-                        child: Stack(
-                          children: [
-                            gmaps.GoogleMap(
-                              initialCameraPosition: gmaps.CameraPosition(
-                                target: initialCenter,
-                                zoom: 8.0,
+                            ],
+                          ),
+                        )
+                      else if (_availableRoutes.isNotEmpty) ...[
+                        // Larger Map Preview Container (Increased to 280px)
+                        Container(
+                          height: 280.0,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20.0),
+                            border: Border.all(color: const Color(0xFFE5E7EB)),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Color(0x0A000000),
+                                blurRadius: 12.0,
+                                offset: Offset(0, 4),
                               ),
-                              onMapCreated: (controller) {
-                                _mapController = controller;
-                                Future.delayed(const Duration(milliseconds: 350), () {
-                                  if (mounted) {
-                                    _fitMapBounds();
-                                  }
-                                });
-                              },
-                              markers: _buildMarkers(),
-                              polylines: _buildPolylines(),
-                              zoomControlsEnabled: false,
-                              myLocationButtonEnabled: false,
-                              mapToolbarEnabled: false,
-                              compassEnabled: false,
-                            ),
-                            // Map badge
-                            Positioned(
-                              top: 10.0,
-                              right: 10.0,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.9),
-                                  borderRadius: BorderRadius.circular(8.0),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.06),
-                                      blurRadius: 4.0,
-                                    ),
-                                  ],
+                            ],
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: Stack(
+                            children: [
+                              gmaps.GoogleMap(
+                                initialCameraPosition: gmaps.CameraPosition(
+                                  target: initialCenter,
+                                  zoom: 8.0,
                                 ),
-                                child: Text(
-                                  _availableRoutes[_selectedRouteIndex].distanceText,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 11.5,
-                                    color: Color(0xFFF57C3B),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(height: 16.0),
-
-                      // B. Route Options Card
-                      Container(
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16.0),
-                          border: Border.all(color: const Color(0xFFE2E8F0)),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.02),
-                              blurRadius: 6.0,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'What is your route?',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 16.5,
-                                    fontWeight: FontWeight.bold,
-                                    color: const Color(0xFF0F172A),
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 3.0),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFF57C3B).withOpacity(0.12),
-                                    borderRadius: BorderRadius.circular(12.0),
-                                  ),
-                                  child: Text(
-                                    (_model.transportModeValue ?? 'CAR').toUpperCase(),
-                                    style: const TextStyle(
-                                      color: Color(0xFFF57C3B),
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 10.0,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12.0),
-
-                            // Routes list
-                            ..._availableRoutes.asMap().entries.map((entry) {
-                              final int index = entry.key;
-                              final route = entry.value;
-                              final bool isSelected = (index == _selectedRouteIndex);
-
-                              String titleText = route.durationText;
-                              if (route.hasTolls) {
-                                titleText += ' - Tolls';
-                              }
-                              String subtitleText = '${route.distanceText} - ${route.summary}';
-
-                              return InkWell(
-                                onTap: () {
-                                  setState(() {
-                                    _selectedRouteIndex = index;
-                                    _model.travelTime = '${route.durationText} (${route.distanceText})';
+                                onMapCreated: (controller) {
+                                  _mapController = controller;
+                                  Future.delayed(const Duration(milliseconds: 350), () {
+                                    if (mounted) {
+                                      _fitMapBounds();
+                                    }
                                   });
-                                  _fitMapBounds();
                                 },
-                                borderRadius: BorderRadius.circular(12.0),
+                                markers: _buildMarkers(),
+                                polylines: _buildPolylines(),
+                                zoomControlsEnabled: false,
+                                myLocationButtonEnabled: false,
+                                mapToolbarEnabled: false,
+                                compassEnabled: false,
+                              ),
+                              // Distance badge on map
+                              Positioned(
+                                top: 12.0,
+                                right: 12.0,
                                 child: Container(
-                                  margin: const EdgeInsets.only(bottom: 8.0),
-                                  padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 10.0),
+                                  padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 5.0),
                                   decoration: BoxDecoration(
-                                    color: isSelected
-                                        ? const Color(0xFFFFF7ED)
-                                        : const Color(0xFFF8FAFC),
-                                    borderRadius: BorderRadius.circular(12.0),
-                                    border: Border.all(
-                                      color: isSelected
-                                          ? const Color(0xFFF57C3B)
-                                          : const Color(0xFFE2E8F0),
-                                      width: isSelected ? 1.5 : 1.0,
-                                    ),
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(20.0),
+                                    boxShadow: const [
+                                      BoxShadow(
+                                        color: Color(0x1A000000),
+                                        blurRadius: 6.0,
+                                      ),
+                                    ],
                                   ),
                                   child: Row(
+                                    mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      // Radio Button matching Travia Theme
-                                      Container(
-                                        width: 20.0,
-                                        height: 20.0,
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          border: Border.all(
-                                            color: const Color(0xFFF57C3B),
-                                            width: isSelected ? 5.5 : 2.0,
-                                          ),
-                                          color: isSelected ? Colors.white : Colors.transparent,
-                                        ),
+                                      const Icon(
+                                        Icons.navigation_rounded,
+                                        size: 13.0,
+                                        color: Color(0xFFEE7B4D),
                                       ),
-                                      const SizedBox(width: 12.0),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              titleText,
-                                              style: GoogleFonts.inter(
-                                                fontSize: 14.0,
-                                                fontWeight: FontWeight.w700,
-                                                color: const Color(0xFF0F172A),
-                                              ),
-                                            ),
-                                            const SizedBox(height: 2.0),
-                                            Text(
-                                              subtitleText,
-                                              style: GoogleFonts.inter(
-                                                fontSize: 12.0,
-                                                color: const Color(0xFF64748B),
-                                              ),
-                                            ),
-                                          ],
+                                      const SizedBox(width: 4.0),
+                                      Text(
+                                        _availableRoutes[_selectedRouteIndex].distanceText,
+                                        style: GoogleFonts.inter(
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 12.0,
+                                          color: const Color(0xFF111827),
                                         ),
                                       ),
                                     ],
                                   ),
                                 ),
-                              );
-                            }).toList(),
-                          ],
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
 
-                      const SizedBox(height: 14.0),
+                        const SizedBox(height: 16.0),
 
-                      // C. Departure and Arrival Card
-                      Container(
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16.0),
-                          border: Border.all(color: const Color(0xFFE2E8F0)),
-                        ),
-                        padding: const EdgeInsets.all(14.0),
-                        child: Row(
-                          children: [
-                            // Departure
-                            Expanded(
-                              child: Container(
-                                padding: const EdgeInsets.all(10.0),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFF8FAFC),
-                                  borderRadius: BorderRadius.circular(10.0),
-                                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                        // Route Alternative Selection Cards
+                        Container(
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20.0),
+                            border: Border.all(color: const Color(0xFFEAECEF)),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Color(0x0A000000),
+                                blurRadius: 16.0,
+                                offset: Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Available Routes',
+                                style: GoogleFonts.inter(
+                                  fontSize: 15.0,
+                                  fontWeight: FontWeight.w700,
+                                  color: const Color(0xFF111827),
                                 ),
-                                child: Column(
-                                  children: [
-                                    const Text('Departure', style: TextStyle(color: Color(0xFF64748B), fontSize: 11.0)),
-                                    const SizedBox(height: 2.0),
-                                    Text(
-                                      FFAppState().pickupTime != null
-                                          ? dateTimeFormat('jm', FFAppState().pickupTime)
-                                          : '--:--',
-                                      style: const TextStyle(
-                                        color: Color(0xFF0F172A),
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 13.5,
+                              ),
+                              const SizedBox(height: 12.0),
+
+                              ..._availableRoutes.asMap().entries.map((entry) {
+                                final int index = entry.key;
+                                final route = entry.value;
+                                final bool isSelected = (index == _selectedRouteIndex);
+
+                                return InkWell(
+                                  onTap: () {
+                                    setState(() {
+                                      _selectedRouteIndex = index;
+                                      _model.travelTime = '${route.durationText} (${route.distanceText})';
+                                    });
+                                    _fitMapBounds();
+                                  },
+                                  borderRadius: BorderRadius.circular(14.0),
+                                  child: Container(
+                                    margin: const EdgeInsets.only(bottom: 8.0),
+                                    padding: const EdgeInsets.all(12.0),
+                                    decoration: BoxDecoration(
+                                      color: isSelected
+                                          ? const Color(0xFFFFF6EE)
+                                          : const Color(0xFFF9FAFB),
+                                      borderRadius: BorderRadius.circular(14.0),
+                                      border: Border.all(
+                                        color: isSelected
+                                            ? const Color(0xFFEE7B4D)
+                                            : const Color(0xFFE5E7EB),
+                                        width: isSelected ? 1.5 : 1.0,
                                       ),
                                     ),
-                                    if (FFAppState().pickupTime != null)
-                                      Text(
-                                        dateTimeFormat('yMMMd', FFAppState().pickupTime),
-                                        style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 9.5),
-                                      ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            const Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 8.0),
-                              child: Icon(Icons.arrow_forward_rounded, color: Color(0xFFF57C3B), size: 18.0),
-                            ),
-                            // Arrival
-                            Expanded(
-                              child: Container(
-                                padding: const EdgeInsets.all(10.0),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFFF7ED),
-                                  borderRadius: BorderRadius.circular(10.0),
-                                  border: Border.all(color: const Color(0xFFFFEDD5)),
-                                ),
-                                child: Column(
-                                  children: [
-                                    const Text('Arrival', style: TextStyle(color: Color(0xFFC2410C), fontSize: 11.0, fontWeight: FontWeight.w600)),
-                                    const SizedBox(height: 2.0),
-                                    Text(
-                                      arrivalDateTime != null
-                                          ? dateTimeFormat('jm', arrivalDateTime)
-                                          : '--:--',
-                                      style: const TextStyle(
-                                        color: Color(0xFFC2410C),
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 13.5,
-                                      ),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          width: 20.0,
+                                          height: 20.0,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                              color: const Color(0xFFEE7B4D),
+                                              width: isSelected ? 5.5 : 2.0,
+                                            ),
+                                            color: isSelected ? Colors.white : Colors.transparent,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12.0),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                children: [
+                                                  Text(
+                                                    route.durationText,
+                                                    style: GoogleFonts.inter(
+                                                      fontSize: 14.0,
+                                                      fontWeight: FontWeight.w700,
+                                                      color: const Color(0xFF111827),
+                                                    ),
+                                                  ),
+                                                  if (route.hasTolls) ...[
+                                                    const SizedBox(width: 6.0),
+                                                    Container(
+                                                      padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 1.5),
+                                                      decoration: BoxDecoration(
+                                                        color: const Color(0xFFFEF3C7),
+                                                        borderRadius: BorderRadius.circular(6.0),
+                                                      ),
+                                                      child: Text(
+                                                        'Tolls',
+                                                        style: GoogleFonts.inter(
+                                                          fontSize: 9.5,
+                                                          fontWeight: FontWeight.w700,
+                                                          color: const Color(0xFFD97706),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ],
+                                              ),
+                                              const SizedBox(height: 2.0),
+                                              Text(
+                                                '${route.distanceText} • via ${route.summary}',
+                                                style: GoogleFonts.inter(
+                                                  fontSize: 12.0,
+                                                  color: const Color(0xFF6B7280),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                    if (arrivalDateTime != null)
+                                  ),
+                                );
+                              }),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 14.0),
+
+                        // Departure & Arrival ETA Summary Card
+                        Container(
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16.0),
+                            border: Border.all(color: const Color(0xFFEAECEF)),
+                          ),
+                          padding: const EdgeInsets.all(14.0),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Container(
+                                  padding: const EdgeInsets.all(10.0),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF9FAFB),
+                                    borderRadius: BorderRadius.circular(12.0),
+                                  ),
+                                  child: Column(
+                                    children: [
                                       Text(
-                                        dateTimeFormat('yMMMd', arrivalDateTime),
-                                        style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 9.5),
+                                        'Departure',
+                                        style: GoogleFonts.inter(
+                                          color: const Color(0xFF6B7280),
+                                          fontSize: 11.0,
+                                        ),
                                       ),
-                                  ],
+                                      const SizedBox(height: 2.0),
+                                      Text(
+                                        FFAppState().pickupTime != null
+                                            ? dateTimeFormat('jm', FFAppState().pickupTime)
+                                            : '--:--',
+                                        style: GoogleFonts.inter(
+                                          color: const Color(0xFF111827),
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 14.0,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ] else if (_errorMessage != null)
-                      Container(
-                        padding: const EdgeInsets.all(14.0),
-                        decoration: BoxDecoration(
-                          color: Colors.orange.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12.0),
-                          border: Border.all(color: Colors.orange, width: 1.0),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 20.0),
-                            const SizedBox(width: 8.0),
-                            Expanded(
-                              child: Text(
-                                _errorMessage!,
-                                style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.w600, fontSize: 13.0),
+                              const Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 10.0),
+                                child: Icon(
+                                  Icons.arrow_forward_rounded,
+                                  color: Color(0xFFEE7B4D),
+                                  size: 18.0,
+                                ),
                               ),
-                            ),
-                          ],
+                              Expanded(
+                                child: Container(
+                                  padding: const EdgeInsets.all(10.0),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFFF6EE),
+                                    borderRadius: BorderRadius.circular(12.0),
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      Text(
+                                        'Estimated Arrival',
+                                        style: GoogleFonts.inter(
+                                          color: const Color(0xFFC2410C),
+                                          fontSize: 11.0,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2.0),
+                                      Text(
+                                        arrivalDateTime != null
+                                            ? dateTimeFormat('jm', arrivalDateTime)
+                                            : '--:--',
+                                        style: GoogleFonts.inter(
+                                          color: const Color(0xFFC2410C),
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 14.0,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                  ],
+                      ] else if (_errorMessage != null)
+                        Container(
+                          padding: const EdgeInsets.all(14.0),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFEF2F2),
+                            borderRadius: BorderRadius.circular(14.0),
+                            border: Border.all(color: const Color(0xFFFEE2E2)),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.info_outline_rounded,
+                                color: Color(0xFFEF4444),
+                                size: 20.0,
+                              ),
+                              const SizedBox(width: 10.0),
+                              Expanded(
+                                child: Text(
+                                  _errorMessage!,
+                                  style: GoogleFonts.inter(
+                                    color: const Color(0xFFB91C1C),
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 12.5,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
 
-              // =================== FLOATING ORANGE NEXT BUTTON (THEME COLOR) ===================
-              Positioned(
-                bottom: 24.0,
-                right: 20.0,
+              // Bottom Fixed Action Button Container
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 14.0),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  border: Border(
+                    top: BorderSide(
+                      color: Color(0xFFF1F5F9),
+                      width: 1.0,
+                    ),
+                  ),
+                ),
                 child: InkWell(
                   onTap: () async {
                     if (_model.transportModeValue != null && _model.transportModeValue!.isNotEmpty) {
@@ -881,38 +956,72 @@ class _TransportMode4WidgetState extends State<TransportMode4Widget> {
                       await showDialog(
                         context: context,
                         builder: (alertDialogContext) => AlertDialog(
-                          title: const Text('Attention'),
-                          content: const Text('Please select a mode of transport.'),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18.0),
+                          ),
+                          title: Text(
+                            'Select Transport Mode',
+                            style: GoogleFonts.inter(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 17.0,
+                            ),
+                          ),
+                          content: Text(
+                            'Please select your mode of transport to proceed.',
+                            style: GoogleFonts.inter(
+                              fontSize: 13.5,
+                              color: const Color(0xFF4B5563),
+                            ),
+                          ),
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.pop(alertDialogContext),
-                              child: const Text('Ok'),
+                              child: Text(
+                                'Ok',
+                                style: GoogleFonts.inter(
+                                  fontWeight: FontWeight.w700,
+                                  color: const Color(0xFFEE7B4D),
+                                ),
+                              ),
                             ),
                           ],
                         ),
                       );
                     }
                   },
+                  borderRadius: BorderRadius.circular(16.0),
                   child: Container(
-                    width: 70.0,
-                    height: 70.0,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFFF8C00),
-                      shape: BoxShape.circle,
-                      boxShadow: [
+                    width: double.infinity,
+                    height: 52.0,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEE7B4D),
+                      borderRadius: BorderRadius.circular(16.0),
+                      boxShadow: const [
                         BoxShadow(
-                          color: Color(0x40FF8C00),
-                          blurRadius: 10.0,
+                          color: Color(0x33EE7B4D),
+                          blurRadius: 12.0,
                           offset: Offset(0, 4),
                         ),
                       ],
                     ),
-                    child: const Center(
-                      child: Icon(
-                        Icons.arrow_forward_rounded,
-                        color: Colors.white,
-                        size: 30.0,
-                      ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Continue to Luggage & Items',
+                          style: GoogleFonts.inter(
+                            fontSize: 15.5,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(width: 8.0),
+                        const Icon(
+                          Icons.arrow_forward_rounded,
+                          color: Colors.white,
+                          size: 20.0,
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -924,129 +1033,3 @@ class _TransportMode4WidgetState extends State<TransportMode4Widget> {
     );
   }
 }
-
-/* ==========================================================================
-   PREVIOUS GREEN CARD UI & FORM (SAVED AS BACKUP FOR FUTURE USE)
-   ==========================================================================
-
-class _PreviousGreenCardBackup extends StatelessWidget {
-  const _PreviousGreenCardBackup();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.green.withOpacity(0.1),
-            Colors.green.withOpacity(0.05),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(16.0),
-        border: Border.all(color: Colors.green.withOpacity(0.3), width: 1.0),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.green.withOpacity(0.1),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8.0),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12.0),
-                  ),
-                  child: const Icon(Icons.directions_car, color: Colors.green, size: 20.0),
-                ),
-                const SizedBox(width: 12.0),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Trip Duration', style: TextStyle(color: Colors.green, fontSize: 12.0)),
-                      Text('5 hours 34 mins (305 km)',
-                          style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 18.0)),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
-                  decoration: BoxDecoration(
-                    color: Colors.green,
-                    borderRadius: BorderRadius.circular(20.0),
-                  ),
-                  child: const Text('CAR', style: TextStyle(color: Colors.white, fontSize: 10.0)),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16.0),
-            Row(
-              children: [
-                const Expanded(child: Divider(color: Colors.green, thickness: 1)),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                  child: Icon(Icons.access_time_filled, color: Colors.green[600], size: 18.0),
-                ),
-                const Expanded(child: Divider(color: Colors.green, thickness: 1)),
-              ],
-            ),
-            const SizedBox(height: 12.0),
-            Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.all(12.0),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.5),
-                      borderRadius: BorderRadius.circular(12.0),
-                      border: Border.all(color: Colors.green.withOpacity(0.2)),
-                    ),
-                    child: const Column(
-                      children: [
-                        Text('Departure', style: TextStyle(color: Colors.grey, fontSize: 11.0)),
-                        Text('4:17 PM', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
-                        Text('Aug 23, 2026', style: TextStyle(color: Colors.grey, fontSize: 10.0)),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8.0),
-                const Icon(Icons.arrow_forward, color: Colors.green, size: 16.0),
-                const SizedBox(width: 8.0),
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.all(12.0),
-                    decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12.0),
-                      border: Border.all(color: Colors.green.withOpacity(0.3)),
-                    ),
-                    child: const Column(
-                      children: [
-                        Text('Arrival', style: TextStyle(color: Colors.green, fontSize: 11.0)),
-                        Text('9:17 PM', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
-                        Text('Aug 23, 2026', style: TextStyle(color: Colors.grey, fontSize: 10.0)),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-========================================================================== */

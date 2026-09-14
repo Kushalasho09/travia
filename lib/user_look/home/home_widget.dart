@@ -323,23 +323,152 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  Widget _buildMyListedRideCard(RidesNewRecord ride) {
-    final statusColor = () {
-      final status = (ride.rideStatus ?? '').trim();
-      if (status.isEmpty || status == 'Under Review') {
-        return Colors.orange.shade700;
-      } else if (status == 'Live') {
-        return Colors.green.shade700;
-      } else if (status == 'Rejected') {
-        return const Color(0xFFDC0A46);
-      }
-      return FlutterFlowTheme.of(context).primaryText;
-    }();
+  Widget _buildDetailPill({
+    required IconData icon,
+    required String label,
+    required Color color,
+    Color? backgroundColor,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 5.0),
+      decoration: BoxDecoration(
+        color: backgroundColor ?? const Color(0xFFF3F4F6),
+        borderRadius: BorderRadius.circular(20.0),
+        border: Border.all(
+          color: backgroundColor != null ? color.withOpacity(0.2) : const Color(0xFFE5E7EB),
+          width: 0.8,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12.5, color: color),
+          const SizedBox(width: 5.0),
+          Flexible(
+            child: Text(
+              label,
+              style: GoogleFonts.inter(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w500,
+                color: const Color(0xFF374151),
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-    final statusText = () {
-      final status = (ride.rideStatus ?? '').trim();
-      return status.isEmpty ? 'Under Review' : status;
-    }();
+  Future<void> _confirmDeleteRide(BuildContext context, RidesNewRecord ride) async {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0)),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8.0),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEE2E2),
+                  borderRadius: BorderRadius.circular(10.0),
+                ),
+                child: const Icon(Icons.delete_outline_rounded, color: Color(0xFFDC2626), size: 22.0),
+              ),
+              const SizedBox(width: 10.0),
+              Text(
+                'Delete Ride?',
+                style: GoogleFonts.inter(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 18.0,
+                  color: const Color(0xFF1E293B),
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            'Are you sure you want to permanently delete this ride? This action cannot be undone.',
+            style: GoogleFonts.inter(
+              fontSize: 14.0,
+              color: const Color(0xFF64748B),
+              height: 1.4,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(
+                'Cancel',
+                style: GoogleFonts.inter(
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF64748B),
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.of(dialogContext).pop();
+                await ride.reference.delete();
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Ride deleted!'),
+                      backgroundColor: Color(0xFFFF9561),
+                    ),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFDC2626),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
+                padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 10.0),
+                elevation: 0,
+              ),
+              child: Text(
+                'Delete',
+                style: GoogleFonts.inter(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14.0,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildMyListedRideCard(RidesNewRecord ride) {
+    final rawStatus = ride.rideStatus.trim();
+    final statusText = rawStatus.isEmpty ? 'Under Review' : rawStatus;
+
+    Color statusBg;
+    Color statusBorder;
+    Color statusFg;
+    IconData statusIcon;
+
+    if (statusText == 'Live') {
+      statusBg = const Color(0xFFECFDF5);
+      statusBorder = const Color(0xFFA7F3D0);
+      statusFg = const Color(0xFF059669);
+      statusIcon = Icons.check_circle_rounded;
+    } else if (statusText == 'Rejected') {
+      statusBg = const Color(0xFFFEF2F2);
+      statusBorder = const Color(0xFFFECACA);
+      statusFg = const Color(0xFFDC2626);
+      statusIcon = Icons.cancel_rounded;
+    } else {
+      statusBg = const Color(0xFFFFFBEB);
+      statusBorder = const Color(0xFFFDE68A);
+      statusFg = const Color(0xFFD97706);
+      statusIcon = Icons.schedule_rounded;
+    }
 
     final departureStr = ride.pickupTime != null
         ? dateTimeFormat("hh:mm a", ride.pickupTime).toLowerCase()
@@ -347,689 +476,857 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
     final arrivalStr = ride.dropTime != null
         ? dateTimeFormat("hh:mm a", ride.dropTime).toLowerCase()
         : 'N/A';
+    final dateStr = ride.pickupTime != null
+        ? dateTimeFormat("yMMMd", ride.pickupTime)
+        : '';
 
-    return Stack(
-      children: [
-        InkWell(
-          splashColor: Colors.transparent,
-          focusColor: Colors.transparent,
-          hoverColor: Colors.transparent,
-          highlightColor: Colors.transparent,
-          onTap: () async {
-            context.pushNamed(
-              RideDetailsCustomerWidget.routeName,
-              queryParameters: {
-                'rideDetails': serializeParam(
-                  ride.reference,
-                  ParamType.DocumentReference,
-                ),
-              }.withoutNulls,
-            );
-          },
-          child: Material(
-            color: Colors.transparent,
-            elevation: 10.0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12.0),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12.0),
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: FlutterFlowTheme.of(context).primaryBackground,
-                  boxShadow: [
-                    BoxShadow(
-                      blurRadius: 4.0,
-                      color: const Color(0x1A000000),
-                      offset: const Offset(0.0, 2.0),
-                    )
-                  ],
-                  borderRadius: BorderRadius.circular(12.0),
-                  border: Border.all(
-                    color: FlutterFlowTheme.of(context).tertiary,
-                  ),
-                ),
-                alignment: const AlignmentDirectional(1.0, 0.0),
-                child: Padding(
-                  padding: const EdgeInsetsDirectional.fromSTEB(10.0, 10.0, 5.0, 10.0),
-                  child: Container(
-                    color: Colors.transparent,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Start Location Row
-                        Row(
-                          mainAxisSize: MainAxisSize.max,
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            Icon(
-                              Icons.location_on_outlined,
-                              color: FlutterFlowTheme.of(context).primary,
-                              size: 24.0,
-                            ),
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(10.0),
-                              child: Container(
-                                width: 170.0,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFE3E6E0),
-                                  borderRadius: BorderRadius.circular(15.0),
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsetsDirectional.fromSTEB(15.0, 5.0, 10.0, 5.0),
-                                  child: Text(
-                                    _truncateAddress(ride.rideStartLocation),
-                                    style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                      font: GoogleFonts.inter(),
-                                      fontSize: 12.0,
-                                      fontWeight: FontWeight.normal,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8.0),
-                        // Travel time & Departure/Arrival Column
-                        Padding(
-                          padding: const EdgeInsetsDirectional.fromSTEB(25.0, 0.0, 0.0, 0.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  if (ride.modeOfTransport == 'Bike')
-                                    const Padding(
-                                      padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 6.0, 0.0),
-                                      child: Icon(
-                                        Icons.motorcycle_sharp,
-                                        color: Color(0xFF8A8888),
-                                        size: 18.0,
-                                      ),
-                                    ),
-                                  if (ride.modeOfTransport == 'Train')
-                                    const Padding(
-                                      padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 6.0, 0.0),
-                                      child: Icon(
-                                        Icons.train,
-                                        color: Color(0xFF929090),
-                                        size: 18.0,
-                                      ),
-                                    ),
-                                  if (ride.modeOfTransport == 'Car')
-                                    const Padding(
-                                      padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 6.0, 0.0),
-                                      child: FaIcon(
-                                        FontAwesomeIcons.carSide,
-                                        color: Color(0xFF8F9192),
-                                        size: 14.0,
-                                      ),
-                                    ),
-                                  if (ride.modeOfTransport == 'Bus')
-                                    const Padding(
-                                      padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 6.0, 0.0),
-                                      child: FaIcon(
-                                        FontAwesomeIcons.bus,
-                                        color: Color(0xFF919191),
-                                        size: 14.0,
-                                      ),
-                                    ),
-                                  Text(
-                                    'Travel time: ${ride.travelTime.isNotEmpty ? ride.travelTime : "N/A"}',
-                                    style: FlutterFlowTheme.of(context).labelSmall.override(
-                                      font: GoogleFonts.inter(),
-                                      fontSize: 12.0,
-                                      color: FlutterFlowTheme.of(context).secondaryText,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 4.0),
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.access_time,
-                                    color: FlutterFlowTheme.of(context).secondaryText,
-                                    size: 14.0,
-                                  ),
-                                  const SizedBox(width: 6.0),
-                                  Text(
-                                    'Dep: $departureStr  |  Arr: $arrivalStr',
-                                    style: FlutterFlowTheme.of(context).labelSmall.override(
-                                      font: GoogleFonts.inter(),
-                                      fontSize: 12.0,
-                                      color: FlutterFlowTheme.of(context).secondaryText,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 8.0),
-                        // End Location Row
-                        Row(
-                          mainAxisSize: MainAxisSize.max,
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            Icon(
-                              Icons.location_on_outlined,
-                              color: FlutterFlowTheme.of(context).primary,
-                              size: 24.0,
-                            ),
-                            Container(
-                              width: 170.0,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFE3E6E0),
-                                borderRadius: BorderRadius.circular(15.0),
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsetsDirectional.fromSTEB(15.0, 5.0, 10.0, 5.0),
-                                child: Text(
-                                  _truncateAddress(ride.rideEndLocation),
-                                  style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                    font: GoogleFonts.inter(),
-                                    fontSize: 12.0,
-                                    fontWeight: FontWeight.normal,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12.0),
-                        // Status and Actions Row
-                        Row(
-                          mainAxisSize: MainAxisSize.max,
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  'Current Status: ',
-                                  style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                    font: GoogleFonts.inter(),
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 15.0,
-                                  ),
-                                ),
-                                Text(
-                                  statusText,
-                                  style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                    font: GoogleFonts.inter(),
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 15.0,
-                                    color: statusColor,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Expanded(
-                              child: Center(
-                                child: InkWell(
-                                  splashColor: Colors.transparent,
-                                  focusColor: Colors.transparent,
-                                  hoverColor: Colors.transparent,
-                                  highlightColor: Colors.transparent,
-                                  onTap: () => showDialog<void>(
-                                    context: context,
-                                    barrierDismissible: false,
-                                    builder: (BuildContext dialogContext) {
-                                      return AlertDialog(
-                                        backgroundColor: FlutterFlowTheme.of(context).secondaryBackground,
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
-                                        title: Row(
-                                          children: [
-                                            const Icon(Icons.warning_amber_rounded, color: Color(0xFFFF9561), size: 30.0),
-                                            const SizedBox(width: 12.0),
-                                            Text(
-                                              'Delete Ride?',
-                                              style: FlutterFlowTheme.of(context).headlineSmall.override(fontWeight: FontWeight.w700),
-                                            ),
-                                          ],
-                                        ),
-                                        content: Text(
-                                          'Are you sure you want to permanently delete this ride? This action cannot be undone.',
-                                          style: FlutterFlowTheme.of(context).bodyMedium.override(lineHeight: 1.5),
-                                        ),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () => Navigator.of(dialogContext).pop(),
-                                            child: Text('Cancel', style: FlutterFlowTheme.of(context).bodyMedium.override(fontWeight: FontWeight.w600)),
-                                          ),
-                                          ElevatedButton(
-                                            onPressed: () async {
-                                              Navigator.of(dialogContext).pop();
-                                              await ride.reference.delete();
-                                              if (mounted) {
-                                                ScaffoldMessenger.of(context).showSnackBar(
-                                                  const SnackBar(content: Text('Ride deleted!'), backgroundColor: Color(0xFFFF9561)),
-                                                );
-                                              }
-                                            },
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: const Color(0xFFFF9561),
-                                              foregroundColor: Colors.white,
-                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-                                              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
-                                            ),
-                                            child: Text('Delete', style: FlutterFlowTheme.of(context).bodyMedium.override(fontWeight: FontWeight.w700, fontSize: 16.0, color: Colors.white)),
-                                          ),
-                                        ],
-                                      );
-                                    },
-                                  ),
-                                  child: const Icon(Icons.delete, color: Color(0xFFDC0A46), size: 24.0),
-                                ),
-                              ),
-                            ),
-                            FFButtonWidget(
-                              onPressed: () async {
-                                context.pushNamed(
-                                  RideEditPageWidget.routeName,
-                                  queryParameters: {
-                                    'rideEdit': serializeParam(
-                                      ride.reference,
-                                      ParamType.DocumentReference,
-                                    ),
-                                  }.withoutNulls,
-                                );
-                              },
-                              text: 'Edit',
-                              options: FFButtonOptions(
-                                width: 80.0,
-                                height: 30.0,
-                                padding: const EdgeInsetsDirectional.fromSTEB(16.0, 0.0, 16.0, 0.0),
-                                color: FlutterFlowTheme.of(context).accent3,
-                                textStyle: FlutterFlowTheme.of(context).bodyMedium.override(
-                                  font: GoogleFonts.inter(),
-                                  color: FlutterFlowTheme.of(context).primaryText,
-                                ),
-                                elevation: 0.0,
-                                borderSide: BorderSide(
-                                  color: FlutterFlowTheme.of(context).accent3,
-                                  width: 1.0,
-                                ),
-                                borderRadius: BorderRadius.circular(8.0),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-        Align(
-          alignment: const AlignmentDirectional(0.97, -0.96),
-          child: Padding(
-            padding: const EdgeInsetsDirectional.fromSTEB(10.0, 10.0, 5.0, 0.0),
-            child: Container(
-              width: MediaQuery.sizeOf(context).width * 0.12,
-              constraints: const BoxConstraints(
-                minWidth: 55.0,
-                maxWidth: 70.0,
-                minHeight: 85.0,
-                maxHeight: 100.0,
-              ),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF97E4C),
-                borderRadius: BorderRadius.circular(12.0),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Padding(
-                    padding: const EdgeInsetsDirectional.fromSTEB(0.0, 5.0, 0.0, 0.0),
-                    child: Text(
-                      'Ride',
-                      style: FlutterFlowTheme.of(context).bodyMedium.override(
-                        font: GoogleFonts.inter(),
-                        color: FlutterFlowTheme.of(context).info,
-                        fontSize: 12.0,
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 4.0),
-                    child: AutoSizeText(
-                      '₹${formatNumber(ride.pricePerPassengers, formatType: FormatType.custom, format: '', locale: '')}',
-                      style: FlutterFlowTheme.of(context).bodyMedium.override(
-                        font: GoogleFonts.inter(),
-                        color: FlutterFlowTheme.of(context).info,
-                        fontSize: 15.0,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      maxLines: 1,
-                      minFontSize: 12,
-                    ),
-                  ),
-                  Container(
-                    width: double.infinity,
-                    constraints: const BoxConstraints(minHeight: 48.0, maxHeight: 55.0),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFF9561),
-                      borderRadius: BorderRadius.circular(10.0),
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsetsDirectional.fromSTEB(0.0, 3.0, 0.0, 0.0),
-                          child: Text(
-                            'Parcel',
-                            textAlign: TextAlign.center,
-                            style: FlutterFlowTheme.of(context).labelSmall.override(
-                              font: GoogleFonts.inter(),
-                              color: FlutterFlowTheme.of(context).info,
-                              fontSize: 11.0,
-                            ),
-                          ),
-                        ),
-                        AutoSizeText(
-                          '₹${ride.totalDeliveryCost}',
-                          textAlign: TextAlign.center,
-                          style: FlutterFlowTheme.of(context).labelSmall.override(
-                            font: GoogleFonts.inter(),
-                            color: FlutterFlowTheme.of(context).info,
-                            fontSize: 14.0,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          maxLines: 1,
-                          minFontSize: 11,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildBookingCard(BookingsRecord booking, RidesNewRecord ride, UsersRecord creator) {
-    final itemName = booking.itemName;
-    final bookingType = booking.bookingType;
-    final receiverName = booking.receiverName;
-    final passengerName = booking.rideNameOfPerson;
-    
-    final phoneNum = booking.phoneNumber.isNotEmpty 
-        ? booking.phoneNumber 
-        : booking.ridePersonContactNumber;
-        
-    final meetupAddr = booking.meetupLocation.isNotEmpty
-        ? booking.meetupLocation
-        : booking.rideMeetupAddress;
-        
-    final addInfo = booking.additionalInformation.isNotEmpty
-        ? booking.additionalInformation
-        : booking.rideAdditionalInformation;
-
-    Widget _buildDetailRow(IconData icon, String label, String value) {
-      if (value.isEmpty) return const SizedBox.shrink();
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 8.0),
-        child: Row(
-          children: [
-            Icon(icon, color: FlutterFlowTheme.of(context).secondaryText, size: 20.0),
-            const SizedBox(width: 8.0),
-            SizedBox(
-              width: 110.0,
-              child: Text(
-                label,
-                style: FlutterFlowTheme.of(context).bodyMedium.override(
-                  font: GoogleFonts.inter(),
-                  fontWeight: FontWeight.w600,
-                  color: FlutterFlowTheme.of(context).primaryText,
-                ),
-              ),
-            ),
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8.0),
-                  border: Border.all(color: const Color(0xFFE0E0E0)),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 6.0),
-                child: Text(
-                  value,
-                  style: FlutterFlowTheme.of(context).bodyMedium.override(
-                    font: GoogleFonts.inter(),
-                    color: FlutterFlowTheme.of(context).primaryText,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
+    Widget modeIcon;
+    if (ride.modeOfTransport == 'Bike') {
+      modeIcon = const Icon(Icons.two_wheeler_rounded, color: Color(0xFFEE7B4D), size: 18.0);
+    } else if (ride.modeOfTransport == 'Train') {
+      modeIcon = const Icon(Icons.train_rounded, color: Color(0xFFEE7B4D), size: 18.0);
+    } else if (ride.modeOfTransport == 'Bus') {
+      modeIcon = const FaIcon(FontAwesomeIcons.bus, color: Color(0xFFEE7B4D), size: 16.0);
+    } else {
+      modeIcon = const FaIcon(FontAwesomeIcons.carSide, color: Color(0xFFEE7B4D), size: 16.0);
     }
 
-    return Material(
-      color: Colors.transparent,
-      elevation: 6.0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16.0),
-      ),
+    return InkWell(
+      splashColor: Colors.transparent,
+      focusColor: Colors.transparent,
+      hoverColor: Colors.transparent,
+      highlightColor: Colors.transparent,
+      onTap: () async {
+        context.pushNamed(
+          RideDetailsCustomerWidget.routeName,
+          queryParameters: {
+            'rideDetails': serializeParam(
+              ride.reference,
+              ParamType.DocumentReference,
+            ),
+          }.withoutNulls,
+        );
+      },
       child: Container(
         width: double.infinity,
         decoration: BoxDecoration(
-          color: FlutterFlowTheme.of(context).containerColour,
-          borderRadius: BorderRadius.circular(16.0),
-          border: Border.all(color: const Color(0xFFE0E0E0), width: 1.0),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(22.0),
+          border: Border.all(color: const Color(0xFFE5E7EB), width: 1.0),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x0C2C3550),
+              blurRadius: 16.0,
+              offset: Offset(0, 4),
+            ),
+          ],
         ),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: double.infinity,
-              decoration: const BoxDecoration(
-                color: Color(0xFFF18C5E),
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(16.0),
-                  topRight: Radius.circular(16.0),
+            // Top Header: Circular Mode Icon + Mode Name/Departure + Status Badge
+            Row(
+              children: [
+                Container(
+                  width: 40.0,
+                  height: 40.0,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFFFF0E9),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(child: modeIcon),
                 ),
-              ),
-              padding: const EdgeInsets.all(12.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
+                const SizedBox(width: 10.0),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Container(
-                        width: 44.0,
-                        height: 44.0,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2.0),
+                      Text(
+                        ride.modeOfTransport.isNotEmpty ? ride.modeOfTransport : 'Ride Share',
+                        style: GoogleFonts.inter(
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFF1F2937),
                         ),
-                        child: ClipOval(
-                          child: creator.photoUrl.isNotEmpty
-                              ? CachedNetworkImage(
-                                  imageUrl: creator.photoUrl,
-                                  fit: BoxFit.cover,
-                                  placeholder: (context, url) => const SizedBox(),
-                                  errorWidget: (context, url, error) => Image.asset('assets/images/userIconTr.png', fit: BoxFit.cover),
-                                )
-                              : Image.asset('assets/images/userIconTr.png', fit: BoxFit.cover),
-                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(width: 10.0),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            creator.displayName.isNotEmpty ? creator.displayName : 'User',
-                            style: GoogleFonts.inter(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15.0,
-                            ),
-                          ),
-                          Text(
-                            'Verified Account',
-                            style: GoogleFonts.inter(
-                              color: const Color(0xFFFFF9C4),
-                              fontSize: 12.0,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
+                      const SizedBox(height: 2.0),
+                      Text(
+                        dateStr.isNotEmpty
+                            ? '$dateStr • Dep $departureStr'
+                            : 'Dep $departureStr ${arrivalStr != 'N/A' ? "• Arr $arrivalStr" : ""}',
+                        style: GoogleFonts.inter(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w400,
+                          color: const Color(0xFF6B7280),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(14.0),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
-                    child: Text(
-                      booking.status,
-                      style: GoogleFonts.inter(
-                        color: const Color(0xFFF18C5E),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12.0,
+                ),
+                const SizedBox(width: 8.0),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 5.0),
+                  decoration: BoxDecoration(
+                    color: statusBg,
+                    borderRadius: BorderRadius.circular(30.0),
+                    border: Border.all(color: statusBorder, width: 0.8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(statusIcon, size: 12.0, color: statusFg),
+                      const SizedBox(width: 4.0),
+                      Text(
+                        statusText,
+                        style: GoogleFonts.inter(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600,
+                          color: statusFg,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 14.0),
+
+            // Route Card Container
+            Container(
+              padding: const EdgeInsets.all(12.0),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF9FAFB),
+                borderRadius: BorderRadius.circular(14.0),
+                border: Border.all(color: const Color(0xFFF1F5F9), width: 1.0),
+              ),
+              child: Column(
+                children: [
+                  // Origin
+                  Row(
+                    children: [
+                      Container(
+                        width: 9.0,
+                        height: 9.0,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF10B981),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 10.0),
+                      Expanded(
+                        child: Text(
+                          _truncateAddress(ride.rideStartLocation),
+                          style: GoogleFonts.inter(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF1F2937),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 3.5),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Container(
+                        width: 2.0,
+                        height: 14.0,
+                        color: const Color(0xFFE5E7EB),
                       ),
                     ),
+                  ),
+                  // Destination
+                  Row(
+                    children: [
+                      Container(
+                        width: 9.0,
+                        height: 9.0,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFEE7B4D),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 10.0),
+                      Expanded(
+                        child: Text(
+                          _truncateAddress(ride.rideEndLocation),
+                          style: GoogleFonts.inter(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF1F2937),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (itemName.isNotEmpty) _buildDetailRow(Icons.inventory_2, 'Parcel Detail', itemName),
-                  if (bookingType.isNotEmpty) _buildDetailRow(FontAwesomeIcons.carSide, 'Booked For', bookingType),
-                  if (receiverName.isNotEmpty) _buildDetailRow(Icons.person, 'Recipient name', receiverName),
-                  if (passengerName.isNotEmpty && passengerName != receiverName) _buildDetailRow(Icons.person, 'Passenger name', passengerName),
-                  if (phoneNum.isNotEmpty) _buildDetailRow(Icons.phone, 'Contact Number', phoneNum),
-                  if (meetupAddr.isNotEmpty) _buildDetailRow(Icons.location_on, 'Location', meetupAddr),
-                  if (addInfo.isNotEmpty) _buildDetailRow(Icons.note_add, 'Additional Info', addInfo),
-                  
-                  if (booking.createdTime != null)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 12.0),
-                      child: Row(
-                        children: [
-                          Icon(Icons.access_time_filled, color: FlutterFlowTheme.of(context).secondaryText, size: 20.0),
-                          const SizedBox(width: 8.0),
-                          SizedBox(
-                            width: 110.0,
-                            child: Text(
-                              'Requested at',
-                              style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                font: GoogleFonts.inter(),
-                                fontWeight: FontWeight.w600,
-                                color: FlutterFlowTheme.of(context).primaryText,
+
+            const SizedBox(height: 12.0),
+
+            // Specs & Pricing Row
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Wrap(
+                    spacing: 6.0,
+                    runSpacing: 4.0,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 9.0, vertical: 4.0),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF3F4F6),
+                          borderRadius: BorderRadius.circular(20.0),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.event_seat_rounded, size: 12.5, color: Color(0xFF4B5563)),
+                            const SizedBox(width: 4.0),
+                            Text(
+                              '${ride.numPassengers} seats',
+                              style: GoogleFonts.inter(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w500,
+                                color: const Color(0xFF374151),
                               ),
                             ),
+                          ],
+                        ),
+                      ),
+                      if (ride.numBagAllowed > 0)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 9.0, vertical: 4.0),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF3F4F6),
+                            borderRadius: BorderRadius.circular(20.0),
                           ),
-                          Expanded(
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(8.0),
-                                      border: Border.all(color: const Color(0xFFE0E0E0)),
-                                    ),
-                                    padding: const EdgeInsets.symmetric(vertical: 6.0),
-                                    alignment: Alignment.center,
-                                    child: Text(
-                                      dateTimeFormat("hh:mm a", booking.createdTime),
-                                      style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                        font: GoogleFonts.inter(),
-                                        fontSize: 12.0,
-                                      ),
-                                    ),
-                                  ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.luggage_rounded, size: 12.5, color: Color(0xFF4B5563)),
+                              const SizedBox(width: 4.0),
+                              Text(
+                                '${ride.numBagAllowed} bags',
+                                style: GoogleFonts.inter(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w500,
+                                  color: const Color(0xFF374151),
                                 ),
-                                const SizedBox(width: 6.0),
-                                Expanded(
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(8.0),
-                                      border: Border.all(color: const Color(0xFFE0E0E0)),
-                                    ),
-                                    padding: const EdgeInsets.symmetric(vertical: 6.0),
-                                    alignment: Alignment.center,
-                                    child: Text(
-                                      dateTimeFormat("dd-MM-yyyy", booking.createdTime),
-                                      style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                        font: GoogleFonts.inter(),
-                                        fontSize: 12.0,
-                                      ),
-                                    ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8.0),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: [
+                        Text(
+                          '₹${formatNumber(ride.pricePerPassengers, formatType: FormatType.custom, format: '', locale: '')}',
+                          style: GoogleFonts.inter(
+                            fontSize: 16.5,
+                            fontWeight: FontWeight.w800,
+                            color: const Color(0xFF111827),
+                          ),
+                        ),
+                        Text(
+                          ' /seat',
+                          style: GoogleFonts.inter(
+                            fontSize: 11.0,
+                            fontWeight: FontWeight.w500,
+                            color: const Color(0xFF6B7280),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (ride.totalDeliveryCost.isNotEmpty && ride.totalDeliveryCost != '0')
+                      Text(
+                        'Parcel: ₹${ride.totalDeliveryCost}',
+                        style: GoogleFonts.inter(
+                          fontSize: 11.0,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFFEE7B4D),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 12.0),
+            const Divider(height: 1.0, thickness: 0.8, color: Color(0xFFF1F5F9)),
+            const SizedBox(height: 10.0),
+
+            // Action Toolbar Footer
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 28.0,
+                      height: 28.0,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFFFF0E9),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        size: 11.0,
+                        color: Color(0xFFEE7B4D),
+                      ),
+                    ),
+                    const SizedBox(width: 8.0),
+                    Text(
+                      'View Ride Details',
+                      style: GoogleFonts.inter(
+                        fontSize: 12.0,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFFEE7B4D),
+                      ),
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    // Edit Button
+                    InkWell(
+                      onTap: () async {
+                        context.pushNamed(
+                          RideEditPageWidget.routeName,
+                          queryParameters: {
+                            'rideEdit': serializeParam(
+                              ride.reference,
+                              ParamType.DocumentReference,
+                            ),
+                          }.withoutNulls,
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(10.0),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF3F4F6),
+                          borderRadius: BorderRadius.circular(10.0),
+                          border: Border.all(color: const Color(0xFFE5E7EB), width: 0.8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.edit_outlined, size: 14.0, color: Color(0xFF374151)),
+                            const SizedBox(width: 4.0),
+                            Text(
+                              'Edit',
+                              style: GoogleFonts.inter(
+                                fontSize: 12.0,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF374151),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8.0),
+                    // Delete Button
+                    InkWell(
+                      onTap: () => _confirmDeleteRide(context, ride),
+                      borderRadius: BorderRadius.circular(10.0),
+                      child: Container(
+                        padding: const EdgeInsets.all(7.0),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEF2F2),
+                          borderRadius: BorderRadius.circular(10.0),
+                          border: Border.all(color: const Color(0xFFFECACA), width: 0.8),
+                        ),
+                        child: const Icon(
+                          Icons.delete_outline_rounded,
+                          size: 16.0,
+                          color: Color(0xFFDC2626),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBookingCard(BookingsRecord booking, RidesNewRecord ride, UsersRecord creator) {
+    final bookingStatus = (booking.status.isNotEmpty ? booking.status : 'Pending').trim();
+    Color statusBg;
+    Color statusBorder;
+    Color statusFg;
+    IconData statusIcon;
+
+    if (bookingStatus == 'Accepted') {
+      statusBg = const Color(0xFFECFDF5);
+      statusBorder = const Color(0xFFA7F3D0);
+      statusFg = const Color(0xFF059669);
+      statusIcon = Icons.check_circle_rounded;
+    } else if (bookingStatus == 'Completed') {
+      statusBg = const Color(0xFFEFF6FF);
+      statusBorder = const Color(0xFFBFDBFE);
+      statusFg = const Color(0xFF2563EB);
+      statusIcon = Icons.task_alt_rounded;
+    } else if (bookingStatus == 'Rejected') {
+      statusBg = const Color(0xFFFEF2F2);
+      statusBorder = const Color(0xFFFECACA);
+      statusFg = const Color(0xFFDC2626);
+      statusIcon = Icons.cancel_rounded;
+    } else {
+      statusBg = const Color(0xFFFFFBEB);
+      statusBorder = const Color(0xFFFDE68A);
+      statusFg = const Color(0xFFD97706);
+      statusIcon = Icons.schedule_rounded;
+    }
+
+    final creatorName = creator.displayName.trim().isNotEmpty
+        ? creator.displayName.trim()
+        : (creator.userName.trim().isNotEmpty
+            ? creator.userName.trim()
+            : 'Ride Host');
+
+    final itemName = booking.itemName.trim();
+    final bookingType = booking.bookingType.trim();
+    final receiverName = booking.receiverName.trim();
+    final passengerName = booking.rideNameOfPerson.trim();
+    final phoneNum = booking.phoneNumber.isNotEmpty
+        ? booking.phoneNumber
+        : booking.ridePersonContactNumber;
+    final meetupAddr = booking.meetupLocation.isNotEmpty
+        ? booking.meetupLocation
+        : booking.rideMeetupAddress;
+    final addInfo = booking.additionalInformation.isNotEmpty
+        ? booking.additionalInformation
+        : booking.rideAdditionalInformation;
+    final isParcel = bookingType.toLowerCase().contains('parcel') || itemName.isNotEmpty;
+
+    final hasRideRoute = ride.rideStartLocation.isNotEmpty;
+    final startLoc = _truncateAddress(ride.rideStartLocation);
+    final endLoc = _truncateAddress(ride.rideEndLocation);
+    final ridePickupTimeStr = ride.pickupTime != null
+        ? '${dateTimeFormat("hh:mm a", ride.pickupTime)} • ${dateTimeFormat("yMMMd", ride.pickupTime)}'
+        : '';
+
+    final requestedTimeStr = booking.createdTime != null
+        ? '${dateTimeFormat("hh:mm a", booking.createdTime)} • ${dateTimeFormat("dd MMM yyyy", booking.createdTime)}'
+        : '';
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22.0),
+        border: Border.all(color: const Color(0xFFE5E7EB), width: 1.0),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0C2C3550),
+            blurRadius: 16.0,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Top Creator Bar
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+            decoration: const BoxDecoration(
+              color: Color(0xFFF9FAFB),
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(22.0),
+                topRight: Radius.circular(22.0),
+              ),
+              border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9), width: 1.0)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 38.0,
+                        height: 38.0,
+                        clipBehavior: Clip.antiAlias,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: const Color(0xFFE5E7EB), width: 1.5),
+                        ),
+                        child: creator.photoUrl.trim().isNotEmpty
+                            ? CachedNetworkImage(
+                                imageUrl: creator.photoUrl,
+                                fit: BoxFit.cover,
+                                placeholder: (_, __) => const SizedBox(),
+                                errorWidget: (_, __, ___) => Image.asset('assets/images/userIconTr.png', fit: BoxFit.cover),
+                              )
+                            : Image.asset('assets/images/userIconTr.png', fit: BoxFit.cover),
+                      ),
+                      const SizedBox(width: 10.0),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              creatorName,
+                              style: GoogleFonts.inter(
+                                fontSize: 14.0,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF1E293B),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 2.0),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.verified_user_rounded,
+                                  size: 12.0,
+                                  color: Color(0xFFEE7B4D),
+                                ),
+                                const SizedBox(width: 3.0),
+                                Text(
+                                  'Ride Host',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w500,
+                                    color: const Color(0xFF64748B),
                                   ),
                                 ),
                               ],
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8.0),
+                // Status Pill
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 5.0),
+                  decoration: BoxDecoration(
+                    color: statusBg,
+                    borderRadius: BorderRadius.circular(30.0),
+                    border: Border.all(color: statusBorder, width: 0.8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(statusIcon, size: 12.0, color: statusFg),
+                      const SizedBox(width: 4.0),
+                      Text(
+                        bookingStatus,
+                        style: GoogleFonts.inter(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600,
+                          color: statusFg,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Card Content Body
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Route Card (if ride route exists)
+                if (hasRideRoute) ...[
+                  Container(
+                    padding: const EdgeInsets.all(12.0),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF9FAFB),
+                      borderRadius: BorderRadius.circular(14.0),
+                      border: Border.all(color: const Color(0xFFF1F5F9), width: 1.0),
                     ),
-                    
-                  const SizedBox(height: 4.0),
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              width: 9.0,
+                              height: 9.0,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF10B981),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 10.0),
+                            Expanded(
+                              child: Text(
+                                startLoc,
+                                style: GoogleFonts.inter(
+                                  fontSize: 13.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: const Color(0xFF1F2937),
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(left: 3.5),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Container(
+                              width: 2.0,
+                              height: 14.0,
+                              color: const Color(0xFFE5E7EB),
+                            ),
+                          ),
+                        ),
+                        Row(
+                          children: [
+                            Container(
+                              width: 9.0,
+                              height: 9.0,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFEE7B4D),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 10.0),
+                            Expanded(
+                              child: Text(
+                                endLoc,
+                                style: GoogleFonts.inter(
+                                  fontSize: 13.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: const Color(0xFF1F2937),
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12.0),
+                ],
+
+                // Detail pills
+                Wrap(
+                  spacing: 6.0,
+                  runSpacing: 6.0,
+                  children: [
+                    if (bookingType.isNotEmpty)
+                      _buildDetailPill(
+                        icon: isParcel ? Icons.inventory_2_outlined : FontAwesomeIcons.carSide,
+                        label: bookingType,
+                        color: const Color(0xFFEE7B4D),
+                        backgroundColor: const Color(0xFFFFF0E9),
+                      ),
+                    if (itemName.isNotEmpty)
+                      _buildDetailPill(
+                        icon: Icons.local_shipping_outlined,
+                        label: 'Parcel: $itemName',
+                        color: const Color(0xFF4B5563),
+                      ),
+                    if (passengerName.isNotEmpty)
+                      _buildDetailPill(
+                        icon: Icons.person_outline_rounded,
+                        label: 'Passenger: $passengerName',
+                        color: const Color(0xFF4B5563),
+                      )
+                    else if (receiverName.isNotEmpty)
+                      _buildDetailPill(
+                        icon: Icons.person_outline_rounded,
+                        label: 'Recipient: $receiverName',
+                        color: const Color(0xFF4B5563),
+                      ),
+                    if (phoneNum.isNotEmpty)
+                      _buildDetailPill(
+                        icon: Icons.phone_outlined,
+                        label: phoneNum,
+                        color: const Color(0xFF4B5563),
+                      ),
+                  ],
+                ),
+
+                if (meetupAddr.isNotEmpty || addInfo.isNotEmpty) ...[
+                  const SizedBox(height: 10.0),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 8.0),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF9FAFB),
+                      borderRadius: BorderRadius.circular(10.0),
+                      border: Border.all(color: const Color(0xFFE5E7EB), width: 0.6),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (meetupAddr.isNotEmpty)
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Icon(Icons.place_outlined, size: 14.0, color: Color(0xFF6B7280)),
+                              const SizedBox(width: 6.0),
+                              Expanded(
+                                child: Text(
+                                  'Meetup: $meetupAddr',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12.0,
+                                    color: const Color(0xFF374151),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        if (meetupAddr.isNotEmpty && addInfo.isNotEmpty)
+                          const SizedBox(height: 4.0),
+                        if (addInfo.isNotEmpty)
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Icon(Icons.notes_rounded, size: 14.0, color: Color(0xFF6B7280)),
+                              const SizedBox(width: 6.0),
+                              Expanded(
+                                child: Text(
+                                  'Note: $addInfo',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12.0,
+                                    color: const Color(0xFF4B5563),
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+
+                if (requestedTimeStr.isNotEmpty) ...[
+                  const SizedBox(height: 10.0),
                   Row(
                     children: [
+                      const Icon(Icons.access_time_rounded, size: 12.5, color: Color(0xFF9CA3AF)),
+                      const SizedBox(width: 4.0),
                       Expanded(
-                        child: InkWell(
-                          onTap: () async {
-                            context.pushNamed(
-                              RideDetailsCustomerWidget.routeName,
-                              queryParameters: {
-                                'rideDetails': serializeParam(
-                                  ride.reference,
-                                  ParamType.DocumentReference,
-                                ),
-                              }.withoutNulls,
-                            );
-                          },
-                          child: Container(
-                            height: 36.0,
-                            decoration: BoxDecoration(
-                              color: const Color(0x1F4CAF50),
-                              borderRadius: BorderRadius.circular(18.0),
-                              border: Border.all(color: const Color(0xFF2E7D32), width: 1.0),
-                            ),
-                            alignment: Alignment.center,
-                            child: Text(
-                              'View Ride Details',
-                              style: GoogleFonts.inter(
-                                color: const Color(0xFF2E7D32),
-                                fontWeight: FontWeight.w600,
-                                fontSize: 13.0,
+                        child: Text(
+                          'Booked on $requestedTimeStr',
+                          style: GoogleFonts.inter(
+                            fontSize: 11.5,
+                            color: const Color(0xFF9CA3AF),
+                            fontWeight: FontWeight.w400,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+
+                const SizedBox(height: 12.0),
+                const Divider(height: 1.0, thickness: 0.8, color: Color(0xFFF1F5F9)),
+                const SizedBox(height: 12.0),
+
+                // Responsive Action Buttons Row (NEVER OVERFLOWS)
+                Row(
+                  children: [
+                    // Primary Action: View Ride
+                    Expanded(
+                      child: InkWell(
+                        onTap: () async {
+                          context.pushNamed(
+                            RideDetailsCustomerWidget.routeName,
+                            queryParameters: {
+                              'rideDetails': serializeParam(
+                                ride.reference,
+                                ParamType.DocumentReference,
+                              ),
+                            }.withoutNulls,
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(12.0),
+                        child: Container(
+                          height: 38.0,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEE7B4D),
+                            borderRadius: BorderRadius.circular(12.0),
+                          ),
+                          alignment: Alignment.center,
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(
+                                    Icons.remove_red_eye_outlined,
+                                    size: 15.0,
+                                    color: Colors.white,
+                                  ),
+                                  const SizedBox(width: 5.0),
+                                  Text(
+                                    'View Ride',
+                                    style: GoogleFonts.inter(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 12.5,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
                         ),
                       ),
-                      const SizedBox(width: 10.0),
+                    ),
+
+                    // Add Review button (Only for completed or accepted rides)
+                    if (booking.status == 'Completed' || booking.status == 'Accepted') ...[
+                      const SizedBox(width: 8.0),
                       Expanded(
                         child: InkWell(
                           onTap: () async {
@@ -1043,121 +1340,167 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                               }.withoutNulls,
                             );
                           },
+                          borderRadius: BorderRadius.circular(12.0),
                           child: Container(
-                            height: 36.0,
+                            height: 38.0,
                             decoration: BoxDecoration(
-                              color: const Color(0xFFFFF9C4),
-                              borderRadius: BorderRadius.circular(18.0),
-                              border: Border.all(color: const Color(0xFFF57F17), width: 1.0),
+                              color: const Color(0xFFFFFBEB),
+                              borderRadius: BorderRadius.circular(12.0),
+                              border: Border.all(color: const Color(0xFFFDE68A), width: 1.0),
                             ),
                             alignment: Alignment.center,
-                            child: Text(
-                              'Add reviews',
-                              style: GoogleFonts.inter(
-                                color: const Color(0xFFF57F17),
-                                fontWeight: FontWeight.w600,
-                                fontSize: 13.0,
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(Icons.star_rounded, size: 15.0, color: Color(0xFFD97706)),
+                                    const SizedBox(width: 4.0),
+                                    Text(
+                                      'Add Review',
+                                      style: GoogleFonts.inter(
+                                        color: const Color(0xFFD97706),
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 12.5,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
                         ),
                       ),
                     ],
-                  ),
-                  
-                  if (_model.myBookingStatus != 'Completed') ...[
-                    const SizedBox(height: 10.0),
-                    Row(
-                      children: [
-                        if (booking.status != 'Accepted' && booking.status != 'Completed' && booking.status != 'Rejected')
-                          Expanded(
-                            child: InkWell(
-                              onTap: () async {
-                                final confirm = await showDialog<bool>(
-                                  context: context,
-                                  builder: (context) => AlertDialog(
-                                    title: const Text('Delete Booking'),
-                                    content: const Text('Are you sure you want to delete this booking?'),
-                                    actions: [
-                                      TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-                                      TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Delete')),
-                                    ],
-                                  ),
-                                );
-                                if (confirm == true) {
-                                  await booking.reference.delete();
-                                  if (mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Booking deleted successfully')),
-                                    );
-                                  }
-                                }
-                              },
-                              child: Container(
-                                height: 36.0,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFFEBEE),
-                                  borderRadius: BorderRadius.circular(18.0),
-                                  border: Border.all(color: const Color(0xFFC62828), width: 1.0),
-                                ),
-                                alignment: Alignment.center,
-                                child: Text(
-                                  'Delete',
-                                  style: GoogleFonts.inter(
-                                    color: const Color(0xFFC62828),
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 13.0,
-                                  ),
+
+                    // Edit button (If Pending)
+                    if (booking.status == 'Pending') ...[
+                      const SizedBox(width: 8.0),
+                      InkWell(
+                        onTap: () async {
+                          context.pushNamed(
+                            EditBookingsWidget.routeName,
+                            queryParameters: {
+                              'editBookings': serializeParam(
+                                booking.reference,
+                                ParamType.DocumentReference,
+                              ),
+                            }.withoutNulls,
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(12.0),
+                        child: Container(
+                          height: 38.0,
+                          padding: const EdgeInsets.symmetric(horizontal: 14.0),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF3F4F6),
+                            borderRadius: BorderRadius.circular(12.0),
+                            border: Border.all(color: const Color(0xFFE5E7EB), width: 0.8),
+                          ),
+                          alignment: Alignment.center,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.edit_outlined, size: 14.0, color: Color(0xFF374151)),
+                              const SizedBox(width: 4.0),
+                              Text(
+                                'Edit',
+                                style: GoogleFonts.inter(
+                                  color: const Color(0xFF374151),
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 12.0,
                                 ),
                               ),
-                            ),
-                          )
-                        else
-                          const Spacer(),
-                        const SizedBox(width: 10.0),
-                        if (booking.status == 'Pending')
-                          Expanded(
-                            child: InkWell(
-                              onTap: () async {
-                                context.pushNamed(
-                                  EditBookingsWidget.routeName,
-                                  queryParameters: {
-                                    'editBookings': serializeParam(
-                                      booking.reference,
-                                      ParamType.DocumentReference,
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+
+                    // Delete button (If can be deleted)
+                    if (booking.status != 'Accepted' && booking.status != 'Completed' && booking.status != 'Rejected') ...[
+                      const SizedBox(width: 8.0),
+                      InkWell(
+                        onTap: () async {
+                          final confirm = await showDialog<bool>(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              backgroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0)),
+                              title: Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(8.0),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFFEE2E2),
+                                      borderRadius: BorderRadius.circular(10.0),
                                     ),
-                                  }.withoutNulls,
-                                );
-                              },
-                              child: Container(
-                                height: 36.0,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFF5F5F5),
-                                  borderRadius: BorderRadius.circular(18.0),
-                                  border: Border.all(color: const Color(0xFF424242), width: 1.0),
-                                ),
-                                alignment: Alignment.center,
-                                child: Text(
-                                  'Edit Details',
-                                  style: GoogleFonts.inter(
-                                    color: const Color(0xFF424242),
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 13.0,
+                                    child: const Icon(Icons.delete_outline_rounded, color: Color(0xFFDC2626), size: 20.0),
                                   ),
-                                ),
+                                  const SizedBox(width: 10.0),
+                                  Text(
+                                    'Delete Booking',
+                                    style: GoogleFonts.inter(
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 17.0,
+                                      color: const Color(0xFF1E293B),
+                                    ),
+                                  ),
+                                ],
                               ),
+                              content: Text(
+                                'Are you sure you want to delete this booking?',
+                                style: GoogleFonts.inter(fontSize: 14.0, color: const Color(0xFF64748B)),
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, false),
+                                  child: Text('Cancel', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: const Color(0xFF64748B))),
+                                ),
+                                ElevatedButton(
+                                  onPressed: () => Navigator.pop(context, true),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFFDC2626),
+                                    foregroundColor: Colors.white,
+                                    elevation: 0,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
+                                  ),
+                                  child: Text('Delete', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white)),
+                                ),
+                              ],
                             ),
-                          )
-                        else
-                          const Spacer(),
-                      ],
-                    ),
+                          );
+                          if (confirm == true) {
+                            await booking.reference.delete();
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Booking deleted successfully')),
+                              );
+                            }
+                          }
+                        },
+                        borderRadius: BorderRadius.circular(12.0),
+                        child: Container(
+                          width: 38.0,
+                          height: 38.0,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFEF2F2),
+                            borderRadius: BorderRadius.circular(12.0),
+                            border: Border.all(color: const Color(0xFFFECACA), width: 0.8),
+                          ),
+                          alignment: Alignment.center,
+                          child: const Icon(Icons.delete_outline_rounded, size: 16.0, color: Color(0xFFDC2626)),
+                        ),
+                      ),
+                    ],
                   ],
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -4054,63 +4397,66 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
                                             Padding(
-                                              padding: EdgeInsetsDirectional.fromSTEB(0.0, 10.0, 0.0, 0.0),
-                                              child: Row(
-                                                mainAxisSize: MainAxisSize.max,
-                                                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                                children: [
-                                                  Text(
-                                                    'Check By Status',
-                                                    style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                          font: GoogleFonts.inter(
-                                                            fontWeight: FontWeight.w600,
-                                                            fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                              padding: const EdgeInsetsDirectional.fromSTEB(12.0, 12.0, 12.0, 4.0),
+                                              child: SingleChildScrollView(
+                                                scrollDirection: Axis.horizontal,
+                                                child: Row(
+                                                  children: ['All Bookings', 'Pending', 'Accepted', 'Completed', 'Rejected'].map((status) {
+                                                    final isSelected = _model.myBookingStatus == status;
+                                                    return Padding(
+                                                      padding: const EdgeInsets.only(right: 8.0),
+                                                      child: InkWell(
+                                                        splashColor: Colors.transparent,
+                                                        focusColor: Colors.transparent,
+                                                        hoverColor: Colors.transparent,
+                                                        highlightColor: Colors.transparent,
+                                                        onTap: () {
+                                                          safeSetState(() {
+                                                            _model.myBookingStatus = status;
+                                                            _model.bookingDropDownValue = status;
+                                                          });
+                                                        },
+                                                        child: AnimatedContainer(
+                                                          duration: const Duration(milliseconds: 200),
+                                                          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                                                          decoration: BoxDecoration(
+                                                            color: isSelected ? const Color(0xFFEE7B4D) : Colors.white,
+                                                            borderRadius: BorderRadius.circular(30.0),
+                                                            border: Border.all(
+                                                              color: isSelected
+                                                                  ? const Color(0xFFEE7B4D)
+                                                                  : const Color(0xFFE5E7EB),
+                                                              width: 1.0,
+                                                            ),
+                                                            boxShadow: isSelected
+                                                                ? [
+                                                                    BoxShadow(
+                                                                      color: const Color(0xFFEE7B4D).withOpacity(0.25),
+                                                                      blurRadius: 8.0,
+                                                                      offset: const Offset(0.0, 2.0),
+                                                                    ),
+                                                                  ]
+                                                                : const [
+                                                                    BoxShadow(
+                                                                      color: Color(0x06000000),
+                                                                      blurRadius: 4.0,
+                                                                      offset: Offset(0.0, 1.0),
+                                                                    ),
+                                                                  ],
                                                           ),
-                                                          fontSize: 16.0,
-                                                          letterSpacing: 0.0,
-                                                          fontWeight: FontWeight.w600,
-                                                          fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                        ),
-                                                  ),
-                                                  FlutterFlowDropDown<String>(
-                                                    controller: _model.bookingDropDownValueController ??= FormFieldController<String>(
-                                                      _model.bookingDropDownValue ??= _model.myBookingStatus,
-                                                    ),
-                                                    options: ['All Bookings', 'Pending', 'Accepted', 'Completed', 'Rejected'],
-                                                    onChanged: (val) async {
-                                                      safeSetState(() => _model.bookingDropDownValue = val);
-                                                      _model.myBookingStatus = _model.bookingDropDownValue!;
-                                                      safeSetState(() {});
-                                                    },
-                                                    width: 200.0,
-                                                    height: 40.0,
-                                                    textStyle: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                          font: GoogleFonts.inter(
-                                                            fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
-                                                            fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                          child: Text(
+                                                            status,
+                                                            style: GoogleFonts.inter(
+                                                              fontSize: 13.0,
+                                                              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                                                              color: isSelected ? Colors.white : const Color(0xFF4B5563),
+                                                            ),
                                                           ),
-                                                          letterSpacing: 0.0,
-                                                          fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
-                                                          fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
                                                         ),
-                                                    hintText: 'Select Status...',
-                                                    icon: Icon(
-                                                      Icons.keyboard_arrow_down_rounded,
-                                                      color: FlutterFlowTheme.of(context).secondaryText,
-                                                      size: 24.0,
-                                                    ),
-                                                    fillColor: FlutterFlowTheme.of(context).secondaryBackground,
-                                                    elevation: 2.0,
-                                                    borderColor: FlutterFlowTheme.of(context).primaryText,
-                                                    borderWidth: 0.0,
-                                                    borderRadius: 8.0,
-                                                    margin: EdgeInsetsDirectional.fromSTEB(12.0, 0.0, 12.0, 0.0),
-                                                    hidesUnderline: true,
-                                                    isOverButton: false,
-                                                    isSearchable: false,
-                                                    isMultiSelect: false,
-                                                  ),
-                                                ],
+                                                      ),
+                                                    );
+                                                  }).toList(),
+                                                ),
                                               ),
                                             ),
                                             if (_model.myBookingStatus == 'All Bookings')
@@ -4586,64 +4932,72 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
                                             Padding(
-                                              padding: EdgeInsetsDirectional.fromSTEB(0.0, 10.0, 0.0, 0.0),
-                                              child: Row(
-                                                mainAxisSize: MainAxisSize.max,
-                                                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                                children: [
-                                                  Text(
-                                                    'Check By Status',
-                                                    style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                          font: GoogleFonts.inter(
-                                                            fontWeight: FontWeight.w600,
-                                                            fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                              padding: const EdgeInsetsDirectional.fromSTEB(12.0, 12.0, 12.0, 4.0),
+                                              child: SingleChildScrollView(
+                                                scrollDirection: Axis.horizontal,
+                                                child: Row(
+                                                  children: [
+                                                    {'label': 'All Rides', 'value': 'All Rides', 'ddVal': 'All'},
+                                                    {'label': 'Live', 'value': 'Live', 'ddVal': 'Live'},
+                                                    {'label': 'Under Review', 'value': 'Under Review', 'ddVal': 'Under Review'},
+                                                    {'label': 'Rejected', 'value': 'Rejected', 'ddVal': 'Rejected'},
+                                                  ].map((item) {
+                                                    final val = item['value']!;
+                                                    final isSelected = _model.myRidesStatus == val;
+                                                    return Padding(
+                                                      padding: const EdgeInsets.only(right: 8.0),
+                                                      child: InkWell(
+                                                        splashColor: Colors.transparent,
+                                                        focusColor: Colors.transparent,
+                                                        hoverColor: Colors.transparent,
+                                                        highlightColor: Colors.transparent,
+                                                        onTap: () {
+                                                          safeSetState(() {
+                                                            _model.myRidesStatus = val;
+                                                            _model.postedRidesDropDownValue = item['ddVal'];
+                                                          });
+                                                        },
+                                                        child: AnimatedContainer(
+                                                          duration: const Duration(milliseconds: 200),
+                                                          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                                                          decoration: BoxDecoration(
+                                                            color: isSelected ? const Color(0xFFEE7B4D) : Colors.white,
+                                                            borderRadius: BorderRadius.circular(30.0),
+                                                            border: Border.all(
+                                                              color: isSelected
+                                                                  ? const Color(0xFFEE7B4D)
+                                                                  : const Color(0xFFE5E7EB),
+                                                              width: 1.0,
+                                                            ),
+                                                            boxShadow: isSelected
+                                                                ? [
+                                                                    BoxShadow(
+                                                                      color: const Color(0xFFEE7B4D).withOpacity(0.25),
+                                                                      blurRadius: 8.0,
+                                                                      offset: const Offset(0.0, 2.0),
+                                                                    ),
+                                                                  ]
+                                                                : const [
+                                                                    BoxShadow(
+                                                                      color: Color(0x06000000),
+                                                                      blurRadius: 4.0,
+                                                                      offset: Offset(0.0, 1.0),
+                                                                    ),
+                                                                  ],
                                                           ),
-                                                          fontSize: 16.0,
-                                                          letterSpacing: 0.0,
-                                                          fontWeight: FontWeight.w600,
-                                                          fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                        ),
-                                                  ),
-                                                  FlutterFlowDropDown<String>(
-                                                    controller: _model.postedRidesDropDownValueController ??= FormFieldController<String>(
-                                                      _model.postedRidesDropDownValue ??= _model.myBookingStatus,
-                                                    ),
-                                                    options: ['All', 'Live', 'Under Review', 'Rejected'],
-                                                    onChanged: (val) async {
-                                                      safeSetState(() {
-                                                        _model.postedRidesDropDownValue = val;
-                                                        _model.myRidesStatus = val == 'All' ? 'All Rides' : (val ?? 'All Rides');
-                                                      });
-                                                    },
-                                                    width: 200.0,
-                                                    height: 40.0,
-                                                    textStyle: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                          font: GoogleFonts.inter(
-                                                            fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
-                                                            fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
+                                                          child: Text(
+                                                            item['label']!,
+                                                            style: GoogleFonts.inter(
+                                                              fontSize: 13.0,
+                                                              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                                                              color: isSelected ? Colors.white : const Color(0xFF4B5563),
+                                                            ),
                                                           ),
-                                                          letterSpacing: 0.0,
-                                                          fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
-                                                          fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
                                                         ),
-                                                    hintText: 'Select Status...',
-                                                    icon: Icon(
-                                                      Icons.keyboard_arrow_down_rounded,
-                                                      color: FlutterFlowTheme.of(context).secondaryText,
-                                                      size: 24.0,
-                                                    ),
-                                                    fillColor: FlutterFlowTheme.of(context).secondaryBackground,
-                                                    elevation: 2.0,
-                                                    borderColor: FlutterFlowTheme.of(context).primaryText,
-                                                    borderWidth: 0.0,
-                                                    borderRadius: 8.0,
-                                                    margin: EdgeInsetsDirectional.fromSTEB(12.0, 0.0, 12.0, 0.0),
-                                                    hidesUnderline: true,
-                                                    isOverButton: false,
-                                                    isSearchable: false,
-                                                    isMultiSelect: false,
-                                                  ),
-                                                ],
+                                                      ),
+                                                    );
+                                                  }).toList(),
+                                                ),
                                               ),
                                             ),
                                             if (_model.myRidesStatus == 'All Rides')
@@ -4676,456 +5030,6 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                                                       if (allRidesRidesNewRecordList.isEmpty) {
                                                         return NoRidePostedWidget();
                                                       }
-
-                                                      // return ListView.separated(
-                                                      //   padding: EdgeInsets.zero,
-                                                      //   primary: false,
-                                                      //   shrinkWrap: true,
-                                                      //   scrollDirection: Axis.vertical,
-                                                      //   itemCount: allRidesRidesNewRecordList.length,
-                                                      //   separatorBuilder: (_, __) => SizedBox(height: 15.0),
-                                                      //   itemBuilder: (context, allRidesIndex) {
-                                                      //     final allRidesRidesNewRecord = allRidesRidesNewRecordList[allRidesIndex];
-                                                      //     return StreamBuilder<UsersRecord>(
-                                                      //       stream: UsersRecord.getDocument(allRidesRidesNewRecord.creatorID!),
-                                                      //       builder: (context, snapshot) {
-                                                      //         // Customize what your widget looks like when it's loading.
-                                                      //         if (!snapshot.hasData) {
-                                                      //           return Center(
-                                                      //             child: SizedBox(
-                                                      //               width: 50.0,
-                                                      //               height: 50.0,
-                                                      //               child: SpinKitFadingCircle(
-                                                      //                 color: Color(0xFF2B3C58),
-                                                      //                 size: 50.0,
-                                                      //               ),
-                                                      //             ),
-                                                      //           );
-                                                      //         }
-                                                      //
-                                                      //         final containerUsersRecord = snapshot.data!;
-                                                      //
-                                                      //         return InkWell(
-                                                      //           splashColor: Colors.transparent,
-                                                      //           focusColor: Colors.transparent,
-                                                      //           hoverColor: Colors.transparent,
-                                                      //           highlightColor: Colors.transparent,
-                                                      //           onTap: () async {
-                                                      //             context.pushNamed(
-                                                      //               RideDetailsCustomerWidget.routeName,
-                                                      //               queryParameters: {
-                                                      //                 'rideDetails': serializeParam(
-                                                      //                   allRidesRidesNewRecord.reference,
-                                                      //                   ParamType.DocumentReference,
-                                                      //                 ),
-                                                      //               }.withoutNulls,
-                                                      //             );
-                                                      //           },
-                                                      //           child: Container(
-                                                      //             width: double.infinity,
-                                                      //             decoration: BoxDecoration(
-                                                      //               color: Color(0xFFF4F4F4),
-                                                      //               boxShadow: [
-                                                      //                 BoxShadow(
-                                                      //                   blurRadius: 4.0,
-                                                      //                   color: Color(0x1A000000),
-                                                      //                   offset: Offset(
-                                                      //                     0.0,
-                                                      //                     2.0,
-                                                      //                   ),
-                                                      //                 )
-                                                      //               ],
-                                                      //               borderRadius: BorderRadius.circular(12.0),
-                                                      //               border: Border.all(
-                                                      //                 color: Color(0xFF4DABF7),
-                                                      //               ),
-                                                      //             ),
-                                                      //             child: Padding(
-                                                      //               padding: EdgeInsetsDirectional.fromSTEB(10.0, 10.0, 5.0, 10.0),
-                                                      //               child: Column(
-                                                      //                 mainAxisSize: MainAxisSize.min,
-                                                      //                 crossAxisAlignment: CrossAxisAlignment.start,
-                                                      //                 children: [
-                                                      //                   Row(
-                                                      //                     mainAxisSize: MainAxisSize.max,
-                                                      //                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                      //                     children: [
-                                                      //                       Row(
-                                                      //                         mainAxisSize: MainAxisSize.max,
-                                                      //                         children: [
-                                                      //                           Icon(
-                                                      //                             Icons.location_on_outlined,
-                                                      //                             color: FlutterFlowTheme.of(context).primary,
-                                                      //                             size: 24.0,
-                                                      //                           ),
-                                                      //                           Container(
-                                                      //                             width: 200.0,
-                                                      //                             decoration: BoxDecoration(
-                                                      //                               color: Color(0xFFE3E6E0),
-                                                      //                               borderRadius: BorderRadius.circular(15.0),
-                                                      //                             ),
-                                                      //                             child: Padding(
-                                                      //                               padding: EdgeInsetsDirectional.fromSTEB(15.0, 5.0, 10.0, 5.0),
-                                                      //                               child: Text(
-                                                      //                                 _truncateAddress(allRidesRidesNewRecord.rideStartLocation),
-                                                      //                                 style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                      //                                       font: GoogleFonts.inter(
-                                                      //                                         fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
-                                                      //                                         fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                      //                                       ),
-                                                      //                                       fontSize: 12.0,
-                                                      //                                       letterSpacing: 0.0,
-                                                      //                                       fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
-                                                      //                                       fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                      //                                     ),
-                                                      //                               ),
-                                                      //                             ),
-                                                      //                           ),
-                                                      //                         ],
-                                                      //                       ),
-                                                      //                       if (allRidesRidesNewRecord.modeOfTransport == 'Car')
-                                                      //                         Padding(
-                                                      //                           padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
-                                                      //                           child: FaIcon(
-                                                      //                             FontAwesomeIcons.carSide,
-                                                      //                             color: Color(0xFF8F9192),
-                                                      //                             size: 20.0,
-                                                      //                           ),
-                                                      //                         ),
-                                                      //                       if (allRidesRidesNewRecord.modeOfTransport == 'Train')
-                                                      //                         Padding(
-                                                      //                           padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
-                                                      //                           child: Icon(
-                                                      //                             Icons.train,
-                                                      //                             color: Color(0xFF929090),
-                                                      //                             size: 30.0,
-                                                      //                           ),
-                                                      //                         ),
-                                                      //                       if (allRidesRidesNewRecord.modeOfTransport == 'Bike')
-                                                      //                         Padding(
-                                                      //                           padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
-                                                      //                           child: Icon(
-                                                      //                             Icons.motorcycle_sharp,
-                                                      //                             color: Color(0xFF8A8888),
-                                                      //                             size: 30.0,
-                                                      //                           ),
-                                                      //                         ),
-                                                      //                       if (allRidesRidesNewRecord.modeOfTransport == 'Bus')
-                                                      //                         Padding(
-                                                      //                           padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 10.0, 0.0),
-                                                      //                           child: FaIcon(
-                                                      //                             FontAwesomeIcons.bus,
-                                                      //                             color: Color(0xFF919191),
-                                                      //                             size: 20.0,
-                                                      //                           ),
-                                                      //                         ),
-                                                      //                     ].divide(SizedBox(width: 5.0)),
-                                                      //                   ),
-                                                      //                   Align(
-                                                      //                     alignment: AlignmentDirectional(0.0, 0.0),
-                                                      //                     child: Row(
-                                                      //                       mainAxisSize: MainAxisSize.max,
-                                                      //                       mainAxisAlignment: MainAxisAlignment.center,
-                                                      //                       children: [
-                                                      //                         Align(
-                                                      //                           alignment: AlignmentDirectional(0.0, 0.0),
-                                                      //                           child: Text(
-                                                      //                             'Travel time: ',
-                                                      //                             style: FlutterFlowTheme.of(context).labelMedium.override(
-                                                      //                                   font: GoogleFonts.inter(
-                                                      //                                     fontWeight: FlutterFlowTheme.of(context).labelMedium.fontWeight,
-                                                      //                                     fontStyle: FlutterFlowTheme.of(context).labelMedium.fontStyle,
-                                                      //                                   ),
-                                                      //                                   color: FlutterFlowTheme.of(context).secondaryText,
-                                                      //                                   fontSize: 12.0,
-                                                      //                                   letterSpacing: 0.0,
-                                                      //                                   fontWeight: FlutterFlowTheme.of(context).labelMedium.fontWeight,
-                                                      //                                   fontStyle: FlutterFlowTheme.of(context).labelMedium.fontStyle,
-                                                      //                                 ),
-                                                      //                           ),
-                                                      //                         ),
-                                                      //                         Align(
-                                                      //                           alignment: AlignmentDirectional(0.0, 0.0),
-                                                      //                           child: Text(
-                                                      //                             allRidesRidesNewRecord.travelTime,
-                                                      //                             style: FlutterFlowTheme.of(context).labelMedium.override(
-                                                      //                                   font: GoogleFonts.inter(
-                                                      //                                     fontWeight: FlutterFlowTheme.of(context).labelMedium.fontWeight,
-                                                      //                                     fontStyle: FlutterFlowTheme.of(context).labelMedium.fontStyle,
-                                                      //                                   ),
-                                                      //                                   color: FlutterFlowTheme.of(context).secondaryText,
-                                                      //                                   fontSize: 12.0,
-                                                      //                                   letterSpacing: 0.0,
-                                                      //                                   fontWeight: FlutterFlowTheme.of(context).labelMedium.fontWeight,
-                                                      //                                   fontStyle: FlutterFlowTheme.of(context).labelMedium.fontStyle,
-                                                      //                                 ),
-                                                      //                           ),
-                                                      //                         ),
-                                                      //                       ],
-                                                      //                     ),
-                                                      //                   ),
-                                                      //                   Row(
-                                                      //                     mainAxisSize: MainAxisSize.max,
-                                                      //                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                      //                     children: [
-                                                      //                       Row(
-                                                      //                         mainAxisSize: MainAxisSize.max,
-                                                      //                         children: [
-                                                      //                           Icon(
-                                                      //                             Icons.location_on_outlined,
-                                                      //                             color: FlutterFlowTheme.of(context).primary,
-                                                      //                             size: 24.0,
-                                                      //                           ),
-                                                      //                           Container(
-                                                      //                             width: 200.0,
-                                                      //                             decoration: BoxDecoration(
-                                                      //                               color: Color(0xFFE3E6E0),
-                                                      //                               borderRadius: BorderRadius.circular(15.0),
-                                                      //                             ),
-                                                      //                             child: Padding(
-                                                      //                               padding: EdgeInsetsDirectional.fromSTEB(15.0, 5.0, 10.0, 5.0),
-                                                      //                               child: Text(
-                                                      //                                 _truncateAddress(allRidesRidesNewRecord.rideEndLocation),
-                                                      //                                 style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                      //                                       font: GoogleFonts.inter(
-                                                      //                                         fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
-                                                      //                                         fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                      //                                       ),
-                                                      //                                       fontSize: 12.0,
-                                                      //                                       letterSpacing: 0.0,
-                                                      //                                       fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
-                                                      //                                       fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                      //                                     ),
-                                                      //                               ),
-                                                      //                             ),
-                                                      //                           ),
-                                                      //                         ],
-                                                      //                       ),
-                                                      //                     ].divide(SizedBox(width: 5.0)),
-                                                      //                   ),
-                                                      //                   Row(
-                                                      //                     mainAxisSize: MainAxisSize.max,
-                                                      //                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                      //                     children: [
-                                                      //                       Row(
-                                                      //                         mainAxisSize: MainAxisSize.max,
-                                                      //                         children: [
-                                                      //                           Container(
-                                                      //                             width: 40.0,
-                                                      //                             height: 40.0,
-                                                      //                             decoration: BoxDecoration(
-                                                      //                               color: FlutterFlowTheme.of(context).secondaryBackground,
-                                                      //                               // image:
-                                                      //                               //     DecorationImage(
-                                                      //                               //   fit: BoxFit.cover,
-                                                      //                               //   image: Image.asset(
-                                                      //                               //     "assets/images/profileIcon.png",
-                                                      //                               //   ).image,
-                                                      //                               // ),
-                                                      //                               shape: BoxShape.circle,
-                                                      //                               border: Border.all(
-                                                      //                                 color: Color(0xFF4DABF7),
-                                                      //                                 width: 2.0,
-                                                      //                               ),
-                                                      //                             ),
-                                                      //                             child: Container(
-                                                      //                                 width: 200.0,
-                                                      //                                 height: 200.0,
-                                                      //                                 clipBehavior: Clip.antiAlias,
-                                                      //                                 decoration: BoxDecoration(
-                                                      //                                   shape: BoxShape.circle,
-                                                      //                                 ),
-                                                      //                                 child: CachedNetworkImage(
-                                                      //                                     imageUrl: containerUsersRecord.photoUrl ?? '',
-                                                      //                                     fit: BoxFit.cover,
-                                                      //                                     fadeInDuration: const Duration(milliseconds: 500),
-                                                      //                                     fadeOutDuration: const Duration(milliseconds: 500),
-                                                      //                                     placeholder: (context, url) => const Center(
-                                                      //                                           child: CircularProgressIndicator(),
-                                                      //                                         ),
-                                                      //                                     errorWidget: (context, url, error) => SizedBox.shrink())),
-                                                      //                           ),
-                                                      //                           Padding(
-                                                      //                             padding: EdgeInsetsDirectional.fromSTEB(12.0, 0.0, 12.0, 0.0),
-                                                      //                             child: Column(
-                                                      //                               mainAxisSize: MainAxisSize.min,
-                                                      //                               crossAxisAlignment: CrossAxisAlignment.start,
-                                                      //                               children: [
-                                                      //                                 Text(
-                                                      //                                   containerUsersRecord.displayName,
-                                                      //                                   style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                      //                                         font: GoogleFonts.inter(
-                                                      //                                           fontWeight: FontWeight.w600,
-                                                      //                                           fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                      //                                         ),
-                                                      //                                         letterSpacing: 0.0,
-                                                      //                                         fontWeight: FontWeight.w600,
-                                                      //                                         fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                      //                                       ),
-                                                      //                                 ),
-                                                      //                               ],
-                                                      //                             ),
-                                                      //                           ),
-                                                      //                           Stack(
-                                                      //                             alignment: AlignmentDirectional(0.0, 0.0),
-                                                      //                             children: [
-                                                      //                               ClipRRect(
-                                                      //                                 borderRadius: BorderRadius.circular(8.0),
-                                                      //                                 child: Image.asset(
-                                                      //                                   'assets/images/Ride_Search_Icons.png',
-                                                      //                                   width: 34.0,
-                                                      //                                   height: 35.8,
-                                                      //                                   fit: BoxFit.cover,
-                                                      //                                 ),
-                                                      //                               ),
-                                                      //                               Text(
-                                                      //                                 '4.8',
-                                                      //                                 style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                      //                                       font: GoogleFonts.inter(
-                                                      //                                         fontWeight: FontWeight.w900,
-                                                      //                                         fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                      //                                       ),
-                                                      //                                       color: FlutterFlowTheme.of(context).accent4,
-                                                      //                                       fontSize: 10.0,
-                                                      //                                       letterSpacing: 0.0,
-                                                      //                                       fontWeight: FontWeight.w900,
-                                                      //                                       fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                      //                                     ),
-                                                      //                               ),
-                                                      //                             ],
-                                                      //                           ),
-                                                      //                         ],
-                                                      //                       ),
-                                                      //                       Padding(
-                                                      //                         padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 15.0, 0.0),
-                                                      //                         child: Container(
-                                                      //                           width: 50.0,
-                                                      //                           height: 50.0,
-                                                      //                           decoration: BoxDecoration(
-                                                      //                             color: Color(0xFFF77F4A),
-                                                      //                             shape: BoxShape.circle,
-                                                      //                           ),
-                                                      //                           child: Align(
-                                                      //                             alignment: AlignmentDirectional(0.0, 0.0),
-                                                      //                             child: Text(
-                                                      //                               allRidesRidesNewRecord.totalDeliveryCost,
-                                                      //                               textAlign: TextAlign.center,
-                                                      //                               style: FlutterFlowTheme.of(context).titleMedium.override(
-                                                      //                                     font: GoogleFonts.interTight(
-                                                      //                                       fontWeight: FontWeight.w500,
-                                                      //                                       fontStyle: FlutterFlowTheme.of(context).titleMedium.fontStyle,
-                                                      //                                     ),
-                                                      //                                     color: Colors.white,
-                                                      //                                     fontSize: 14.0,
-                                                      //                                     letterSpacing: 0.0,
-                                                      //                                     fontWeight: FontWeight.w500,
-                                                      //                                     fontStyle: FlutterFlowTheme.of(context).titleMedium.fontStyle,
-                                                      //                                   ),
-                                                      //                             ),
-                                                      //                           ),
-                                                      //                         ),
-                                                      //                       ),
-                                                      //                     ],
-                                                      //                   ),
-                                                      //                   Row(
-                                                      //                     mainAxisSize: MainAxisSize.max,
-                                                      //                     mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                                      //                     children: [
-                                                      //                       Text(
-                                                      //                         'Current Status:',
-                                                      //                         style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                      //                               font: GoogleFonts.inter(
-                                                      //                                 fontWeight: FontWeight.w600,
-                                                      //                                 fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                      //                               ),
-                                                      //                               fontSize: 16.0,
-                                                      //                               letterSpacing: 0.0,
-                                                      //                               fontWeight: FontWeight.w600,
-                                                      //                               fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                      //                             ),
-                                                      //                       ),
-                                                      //                       Text(
-                                                      //                         allRidesRidesNewRecord.rideStatus,
-                                                      //                         style: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                      //                               font: GoogleFonts.inter(
-                                                      //                                 fontWeight: FontWeight.w600,
-                                                      //                                 fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                      //                               ),
-                                                      //                               fontSize: 16.0,
-                                                      //                               letterSpacing: 0.0,
-                                                      //                               fontWeight: FontWeight.w600,
-                                                      //                               fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                      //                             ),
-                                                      //                       ),
-                                                      //                     ],
-                                                      //                   ),
-                                                      //                   if (allRidesRidesNewRecord.rideStatus != 'Under Review')
-                                                      //                     Row(
-                                                      //                       mainAxisSize: MainAxisSize.max,
-                                                      //                       mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                                      //                       children: [
-                                                      //                         InkWell(
-                                                      //                           splashColor: Colors.transparent,
-                                                      //                           focusColor: Colors.transparent,
-                                                      //                           hoverColor: Colors.transparent,
-                                                      //                           highlightColor: Colors.transparent,
-                                                      //                           onTap: () async {
-                                                      //                             await allRidesRidesNewRecord.reference.delete();
-                                                      //                           },
-                                                      //                           child: Icon(
-                                                      //                             Icons.delete,
-                                                      //                             color: Color(0xFFDC0A46),
-                                                      //                             size: 24.0,
-                                                      //                           ),
-                                                      //                         ),
-                                                      //                         FFButtonWidget(
-                                                      //                           onPressed: () async {
-                                                      //                             context.pushNamed(
-                                                      //                               RideEditPageWidget.routeName,
-                                                      //                               queryParameters: {
-                                                      //                                 'rideEdit': serializeParam(
-                                                      //                                   allRidesRidesNewRecord.reference,
-                                                      //                                   ParamType.DocumentReference,
-                                                      //                                 ),
-                                                      //                               }.withoutNulls,
-                                                      //                             );
-                                                      //                           },
-                                                      //                           text: 'Edit',
-                                                      //                           options: FFButtonOptions(
-                                                      //                             width: 80.5,
-                                                      //                             height: 26.2,
-                                                      //                             padding: EdgeInsetsDirectional.fromSTEB(16.0, 0.0, 16.0, 0.0),
-                                                      //                             iconPadding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 0.0),
-                                                      //                             color: FlutterFlowTheme.of(context).accent3,
-                                                      //                             textStyle: FlutterFlowTheme.of(context).bodyMedium.override(
-                                                      //                                   font: GoogleFonts.inter(
-                                                      //                                     fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
-                                                      //                                     fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                      //                                   ),
-                                                      //                                   color: FlutterFlowTheme.of(context).primaryText,
-                                                      //                                   letterSpacing: 0.0,
-                                                      //                                   fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,
-                                                      //                                   fontStyle: FlutterFlowTheme.of(context).bodyMedium.fontStyle,
-                                                      //                                 ),
-                                                      //                             elevation: 0.0,
-                                                      //                             borderSide: BorderSide(
-                                                      //                               color: FlutterFlowTheme.of(context).accent3,
-                                                      //                               width: 1.0,
-                                                      //                             ),
-                                                      //                             borderRadius: BorderRadius.circular(8.0),
-                                                      //                           ),
-                                                      //                         ),
-                                                      //                       ],
-                                                      //                     ),
-                                                      //                 ].divide(SizedBox(height: 12.0)),
-                                                      //               ),
-                                                      //             ),
-                                                      //           ),
-                                                      //         );
-                                                      //       },
-                                                      //     );
-                                                      //   },
-                                                      // );
 
                                                       return ListView.separated(
                                                         padding: EdgeInsets.zero,
