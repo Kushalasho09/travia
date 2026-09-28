@@ -17,12 +17,15 @@ import 'firebase_user_provider.dart';
 import 'google_auth.dart';
 import 'jwt_token_auth.dart';
 import 'github_auth.dart';
+import '../apitxt_auth/apitxt_service.dart';
 
 export '../base_auth_user_provider.dart';
 
 class FirebasePhoneAuthManager extends ChangeNotifier {
   bool? _triggerOnCodeSent;
-  FirebaseAuthException? phoneAuthError;
+  dynamic phoneAuthError;
+  String? phoneNumber;
+  int? resendToken;
   // Set when using phone verification (after phone number is provided).
   String? phoneAuthVerificationCode;
   // Set when using phone sign in in web mode (ignored otherwise).
@@ -196,6 +199,28 @@ class FirebaseAuthManager extends AuthManager
   ) =>
       _signInOrCreateAccount(context, () => jwtTokenSignIn(jwtToken), 'JWT');
 
+  static String getAuthErrorMessage(FirebaseAuthException e) {
+    return switch (e.code) {
+      'invalid-phone-number' =>
+        'The phone number entered is invalid. Please check and try again.',
+      'quota-exceeded' =>
+        'SMS quota exceeded. Please try again later or contact support.',
+      'too-many-requests' =>
+        'Too many attempts from this device. Please try again later.',
+      'app-not-authorized' =>
+        'App is not authorized. Please verify SHA certificate fingerprints in Firebase Console.',
+      'captcha-check-failed' =>
+        'Device verification failed. Please try again.',
+      'invalid-verification-code' =>
+        'The verification code entered is incorrect. Please try again.',
+      'session-expired' =>
+        'The verification code has expired. Please request a new code.',
+      _ => e.message != null && e.message!.isNotEmpty
+          ? 'Error: ${e.message}'
+          : 'Authentication error (${e.code}).',
+    };
+  }
+
   void handlePhoneAuthStateChanges(BuildContext context) {
     phoneAuthManager.addListener(() {
       if (!context.mounted) {
@@ -208,8 +233,13 @@ class FirebaseAuthManager extends AuthManager
             .update(() => phoneAuthManager.triggerOnCodeSent = false);
       } else if (phoneAuthManager.phoneAuthError != null) {
         final e = phoneAuthManager.phoneAuthError!;
+        final errorMsg = e is FirebaseAuthException
+            ? getAuthErrorMessage(e)
+            : e.toString();
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Error: ${e.message!}'),
+          content: Text(errorMsg),
+          backgroundColor: Colors.red.shade700,
         ));
         phoneAuthManager.update(() => phoneAuthManager.phoneAuthError = null);
       }
@@ -222,80 +252,89 @@ class FirebaseAuthManager extends AuthManager
     required String phoneNumber,
     required void Function(BuildContext) onCodeSent,
   }) async {
-    phoneAuthManager.update(() => phoneAuthManager.onCodeSent = onCodeSent);
-    if (kIsWeb) {
-      phoneAuthManager.webPhoneAuthConfirmationResult =
-          await FirebaseAuth.instance.signInWithPhoneNumber(phoneNumber);
-      phoneAuthManager.update(() => phoneAuthManager.triggerOnCodeSent = true);
-      return;
-    }
-    final completer = Completer<bool>();
-    // If you'd like auto-verification, without the user having to enter the SMS
-    // code manually. Follow these instructions:
-    // * For Android: https://firebase.google.com/docs/auth/android/phone-auth?authuser=0#enable-app-verification (SafetyNet set up)
-    // * For iOS: https://firebase.google.com/docs/auth/ios/phone-auth?authuser=0#start-receiving-silent-notifications
-    // * Finally modify verificationCompleted below as instructed.
-    await FirebaseAuth.instance.verifyPhoneNumber(
-      phoneNumber: phoneNumber,
-      timeout:
-          Duration(seconds: 0), // Skips Android's default auto-verification
-      verificationCompleted: (phoneAuthCredential) async {
-        await FirebaseAuth.instance.signInWithCredential(phoneAuthCredential);
-        phoneAuthManager.update(() {
-          phoneAuthManager.triggerOnCodeSent = false;
-          phoneAuthManager.phoneAuthError = null;
-        });
-        // If you've implemented auto-verification, navigate to home page or
-        // onboarding page here manually. Uncomment the lines below and replace
-        // DestinationPage() with the desired widget.
-        // await Navigator.push(
-        //   context,
-        //   MaterialPageRoute(builder: (_) => DestinationPage()),
-        // );
-      },
-      verificationFailed: (e) {
-        phoneAuthManager.update(() {
-          phoneAuthManager.triggerOnCodeSent = false;
-          phoneAuthManager.phoneAuthError = e;
-        });
-        completer.complete(false);
-      },
-      codeSent: (verificationId, _) {
-        phoneAuthManager.update(() {
-          phoneAuthManager.phoneAuthVerificationCode = verificationId;
-          phoneAuthManager.triggerOnCodeSent = true;
-          phoneAuthManager.phoneAuthError = null;
-        });
-        completer.complete(true);
-      },
-      codeAutoRetrievalTimeout: (_) {},
-    );
+    phoneAuthManager.update(() {
+      phoneAuthManager.phoneNumber = phoneNumber;
+      phoneAuthManager.onCodeSent = onCodeSent;
+      phoneAuthManager.phoneAuthError = null;
+    });
 
-    return completer.future;
+    final result = await ApitxtService.instance.sendOtp(phoneNumber);
+
+    if (result['success'] == true) {
+      phoneAuthManager.update(() {
+        phoneAuthManager.triggerOnCodeSent = true;
+        phoneAuthManager.phoneAuthError = null;
+      });
+      // If no listener (like handlePhoneAuthStateChanges) handled triggerOnCodeSent,
+      // invoke onCodeSent directly:
+      if (phoneAuthManager.triggerOnCodeSent && context.mounted) {
+        phoneAuthManager.update(() => phoneAuthManager.triggerOnCodeSent = false);
+        onCodeSent(context);
+      }
+      return true;
+    } else {
+      final errorMsg = result['message'] ?? 'Failed to send OTP via SMS';
+      phoneAuthManager.update(() {
+        phoneAuthManager.triggerOnCodeSent = false;
+        phoneAuthManager.phoneAuthError = errorMsg;
+      });
+      return false;
+    }
   }
 
   @override
   Future verifySmsCode({
     required BuildContext context,
     required String smsCode,
-  }) {
-    if (kIsWeb) {
-      return _signInOrCreateAccount(
-        context,
-        () => phoneAuthManager.webPhoneAuthConfirmationResult!.confirm(smsCode),
-        'PHONE',
+  }) async {
+    // 1. Verify entered code against the code sent via APITxT
+    final verifyResult = ApitxtService.instance.verifyOtp(smsCode);
+    if (verifyResult['success'] != true) {
+      final errorMsg = verifyResult['message'] ?? 'Invalid verification code.';
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMsg),
+          backgroundColor: Colors.red.shade700,
+        ),
       );
-    } else {
-      final authCredential = PhoneAuthProvider.credential(
-        verificationId: phoneAuthManager.phoneAuthVerificationCode!,
-        smsCode: smsCode,
-      );
-      return _signInOrCreateAccount(
-        context,
-        () => FirebaseAuth.instance.signInWithCredential(authCredential),
-        'PHONE',
-      );
+      return null;
     }
+
+    // 2. Sign in or create account in Firebase Auth to establish the user session
+    final cleanPhone = ApitxtService.instance.clean10DigitPhone;
+    final syntheticEmail = 'phone_$cleanPhone@travia.internal';
+    final syntheticPassword = 'TraviaAuth_${cleanPhone}_#Secure2026!';
+    final actualPhone = phoneAuthManager.phoneNumber ?? '+91$cleanPhone';
+
+    final user = await _signInOrCreateAccount(
+      context,
+      () async {
+        try {
+          return await FirebaseAuth.instance.signInWithEmailAndPassword(
+            email: syntheticEmail,
+            password: syntheticPassword,
+          );
+        } on FirebaseAuthException catch (e) {
+          if (e.code == 'user-not-found' ||
+              e.code == 'INVALID_LOGIN_CREDENTIALS' ||
+              e.code == 'invalid-credential') {
+            return await FirebaseAuth.instance.createUserWithEmailAndPassword(
+              email: syntheticEmail,
+              password: syntheticPassword,
+            );
+          }
+          rethrow;
+        }
+      },
+      'PHONE',
+      phoneNumberOverride: actualPhone,
+    );
+
+    if (user != null) {
+      ApitxtService.instance.clear();
+    }
+    return user;
   }
 
   /// Tries to sign in or create an account using Firebase Auth.
@@ -303,12 +342,14 @@ class FirebaseAuthManager extends AuthManager
   Future<BaseAuthUser?> _signInOrCreateAccount(
     BuildContext context,
     Future<UserCredential?> Function() signInFunc,
-    String authProvider,
-  ) async {
+    String authProvider, {
+    String? phoneNumberOverride,
+  }) async {
     try {
       final userCredential = await signInFunc();
       if (userCredential?.user != null) {
-        await maybeCreateUser(userCredential!.user!);
+        await maybeCreateUser(userCredential!.user!,
+            phoneNumberOverride: phoneNumberOverride);
       }
       return userCredential == null
           ? null
@@ -319,11 +360,20 @@ class FirebaseAuthManager extends AuthManager
           'Error: The email is already in use by a different account',
         'INVALID_LOGIN_CREDENTIALS' =>
           'Error: The supplied auth credential is incorrect, malformed or has expired',
-        _ => 'Error: ${e.message!}',
+        'invalid-verification-code' =>
+          'The verification code is incorrect. Please double check and try again.',
+        'session-expired' =>
+          'The verification code has expired. Please request a new code.',
+        _ => e.message != null && e.message!.isNotEmpty
+            ? 'Error: ${e.message}'
+            : 'Authentication error (${e.code}).',
       };
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(errorMsg)),
+        SnackBar(
+          content: Text(errorMsg),
+          backgroundColor: Colors.red.shade700,
+        ),
       );
       return null;
     }

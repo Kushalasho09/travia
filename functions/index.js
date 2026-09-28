@@ -492,3 +492,140 @@ exports.debugUserTokens = functions.https.onCall(async (data, context) => {
     throw new functions.https.HttpsError("internal", error.message);
   }
 });
+
+// ==================== SUBSCRIPTION EXPIRY CRON TRIGGER ====================
+// Runs periodically to expire completed passes (24h, 30d, 90d) and send 24h warnings
+exports.checkSubscriptionExpirySchedule = functions.pubsub
+  .schedule("every 15 minutes")
+  .onRun(async (context) => {
+    console.log("⏰ Running Subscription Expiry Check Cron Job...");
+    const now = admin.firestore.Timestamp.now();
+    const nowDate = now.toDate();
+    const in24HoursDate = new Date(nowDate.getTime() + 24 * 60 * 60 * 1000);
+    const in24HoursTimestamp = admin.firestore.Timestamp.fromDate(in24HoursDate);
+
+    const usersRef = admin.firestore().collection("Users");
+
+    try {
+      // 1. Find all active premium users whose subscription has expired
+      const expiredSnapshot = await usersRef
+        .where("is_premium", "==", true)
+        .where("subscription_expires_at", "<=", now)
+        .get();
+
+      console.log(`Found ${expiredSnapshot.size} expired subscriptions.`);
+
+      const batch = admin.firestore().batch();
+      for (const doc of expiredSnapshot.docs) {
+        const userData = doc.data();
+        console.log(`Expiring subscription for user ${doc.id} (Tier: ${userData.subscription_tier})`);
+
+        batch.update(doc.ref, {
+          is_premium: false,
+          isPremium: false,
+          subscription_status: "expired",
+          plan_expired_at: now,
+          notified_expiring_soon: false,
+        });
+
+        // If user has FCM token, send push notification
+        if (userData.fcmToken) {
+          try {
+            await admin.messaging().send({
+              token: userData.fcmToken,
+              notification: {
+                title: "⚠️ Your Travia VIP Pass Has Expired",
+                body: "Your pass has ended. Tap to renew your VIP status & direct driver calling!",
+              },
+              data: {
+                type: "subscription_expired",
+                page: "Plans",
+              },
+            });
+          } catch (err) {
+            console.error(`Error sending push to ${doc.id}:`, err);
+          }
+        }
+      }
+
+      if (expiredSnapshot.size > 0) {
+        await batch.commit();
+        console.log("Expired subscriptions successfully updated in batch.");
+      }
+
+      // 2. Find subscriptions expiring within next 24 hours that haven't been warned
+      const expiringSoonSnapshot = await usersRef
+        .where("is_premium", "==", true)
+        .where("subscription_expires_at", ">", now)
+        .where("subscription_expires_at", "<=", in24HoursTimestamp)
+        .get();
+
+      console.log(`Found ${expiringSoonSnapshot.size} subscriptions expiring within 24 hours.`);
+
+      for (const doc of expiringSoonSnapshot.docs) {
+        const userData = doc.data();
+        if (userData.notified_expiring_soon === true) continue;
+
+        console.log(`Sending 24h expiry reminder to user ${doc.id}`);
+        await doc.ref.update({ notified_expiring_soon: true });
+
+        if (userData.fcmToken) {
+          try {
+            await admin.messaging().send({
+              token: userData.fcmToken,
+              notification: {
+                title: "⏳ Travia VIP Pass Expiring Soon",
+                body: "Your pass expires within 24 hours! Renew today to prevent interruption of your VIP perks.",
+              },
+              data: {
+                type: "subscription_expiring_soon",
+                page: "Plans",
+              },
+            });
+          } catch (err) {
+            console.error(`Error sending 24h warning to ${doc.id}:`, err);
+          }
+        }
+      }
+
+      return null;
+    } catch (error) {
+      console.error("Error in checkSubscriptionExpirySchedule:", error);
+      return null;
+    }
+  });
+
+// Callable function for client app to instantly check & sync its subscription expiry
+exports.checkMySubscriptionExpiry = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "User must be logged in");
+  }
+  const uid = context.auth.uid;
+  const userRef = admin.firestore().collection("Users").doc(uid);
+  const userDoc = await userRef.get();
+
+  if (!userDoc.exists) {
+    throw new functions.https.HttpsError("not-found", "User not found");
+  }
+
+  const userData = userDoc.data();
+  const isPremium = userData.is_premium === true || userData.isPremium === true;
+  const expiresAt = userData.subscription_expires_at;
+
+  if (isPremium && expiresAt) {
+    const now = admin.firestore.Timestamp.now();
+    if (expiresAt.toMillis() <= now.toMillis()) {
+      await userRef.update({
+        is_premium: false,
+        isPremium: false,
+        subscription_status: "expired",
+        plan_expired_at: now,
+        notified_expiring_soon: false,
+      });
+      return { status: "expired", is_premium: false };
+    }
+    return { status: "active", is_premium: true, expires_at: expiresAt.toDate().toISOString() };
+  }
+
+  return { status: "inactive", is_premium: false };
+});

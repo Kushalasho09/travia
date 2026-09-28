@@ -47,3 +47,8 @@ flutter_*.png
 *.tar
 *.gz
 *.zip
+
+# Secrets and Credentials
+*.csv
+*secret*
+rzp-key.csv

@@ -741,12 +741,37 @@ Future<FFFirestorePage<T>> queryCollectionPage<T>(
 }
 
 // Creates a Firestore document representing the logged in user if it doesn't yet exist
-Future maybeCreateUser(User user) async {
+Future maybeCreateUser(User user, {String? phoneNumberOverride}) async {
   final userRecord = UsersRecord.collection.doc(user.uid);
   final userExists = await userRecord.get().then((u) => u.exists);
+  final phone = phoneNumberOverride ?? user.phoneNumber ?? '';
+
   if (userExists) {
     currentUserDocument = await UsersRecord.getDocumentOnce(userRecord);
+    if (phone.isNotEmpty && (currentUserDocument?.phoneNumber.isEmpty ?? true)) {
+      await userRecord.update({'phone_number': phone});
+      currentUserDocument = await UsersRecord.getDocumentOnce(userRecord);
+    }
     return;
+  }
+
+  // Check if an existing profile exists with this phone number (e.g. from previous phone auth)
+  if (phone.isNotEmpty) {
+    try {
+      final existingUsers = await UsersRecord.collection
+          .where('phone_number', isEqualTo: phone)
+          .limit(1)
+          .get();
+      if (existingUsers.docs.isNotEmpty) {
+        final oldData = existingUsers.docs.first.data() as Map<String, dynamic>;
+        final mergedData = Map<String, dynamic>.from(oldData);
+        mergedData['uid'] = user.uid;
+        await userRecord.set(mergedData, SetOptions(merge: true));
+        currentUserDocument =
+            UsersRecord.getDocumentFromData(mergedData, userRecord);
+        return;
+      }
+    } catch (_) {}
   }
 
   final userData = createUsersRecordData(
@@ -757,7 +782,7 @@ Future maybeCreateUser(User user) async {
         user.displayName ?? FirebaseAuth.instance.currentUser?.displayName,
     photoUrl: user.photoURL,
     uid: user.uid,
-    phoneNumber: user.phoneNumber,
+    phoneNumber: phone,
     createdTime: getCurrentTimestamp,
   );
 

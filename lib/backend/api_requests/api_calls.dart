@@ -9,6 +9,46 @@ export 'api_manager.dart' show ApiCallResponse;
 
 const _kPrivateApiFunctionName = 'ffPrivateApiCall';
 
+/// Start APITxT OTP Verification Group Code
+
+class ApitxtGroup {
+  static const String baseUrl = 'https://apitxt.com/api/';
+  static const String authKey =
+      '_WM9DlQ8GtVMj8Bn8mfW6iWNjqgfyCaXztTEfl4Ctw8';
+
+  static ApitxtSendOtpCall sendOtpCall = ApitxtSendOtpCall();
+}
+
+class ApitxtSendOtpCall {
+  Future<ApiCallResponse> call({
+    required String mobile,
+    required String otp,
+  }) async {
+    return ApiManager.instance.makeApiCall(
+      callName: 'ApitxtSendOTP',
+      apiUrl: '${ApitxtGroup.baseUrl}sendOTP',
+      callType: ApiCallType.POST,
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      params: {
+        'authkey': ApitxtGroup.authKey,
+        'mobile': mobile,
+        'otp': otp,
+      },
+      bodyType: BodyType.X_WWW_FORM_URL_ENCODED,
+      returnBody: true,
+      encodeBodyUtf8: false,
+      decodeUtf8: false,
+      cache: false,
+      isStreamingApi: false,
+      alwaysAllowBody: false,
+    );
+  }
+}
+
+/// End APITxT OTP Verification Group Code
+
 /// Start OTP Verification Group Code
 
 class OTPVerificationGroup {

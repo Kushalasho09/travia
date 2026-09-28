@@ -36,10 +36,20 @@ class _PhoneNumberLoginWidgetState extends State<PhoneNumberLoginWidget> {
 
     _model.phoneNumberMask = MaskTextInputFormatter(mask: '+91##########');
     authManager.handlePhoneAuthStateChanges(context);
+    authManager.phoneAuthManager.addListener(_onPhoneAuthStateChanged);
+  }
+
+  void _onPhoneAuthStateChanged() {
+    if (authManager.phoneAuthManager.phoneAuthError != null && mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override
   void dispose() {
+    authManager.phoneAuthManager.removeListener(_onPhoneAuthStateChanged);
     _model.dispose();
 
     super.dispose();
@@ -338,25 +348,44 @@ class _PhoneNumberLoginWidgetState extends State<PhoneNumberLoginWidget> {
                           onPressed: _isLoading
                               ? null
                               : () async {
-                                  final phoneNumberVal =
-                                      _model.phoneNumberTextController.text;
-                                  if (phoneNumberVal.isEmpty ||
-                                      !phoneNumberVal.startsWith('+')) {
+                                  final rawPhone =
+                                      _model.phoneNumberTextController.text.trim();
+                                  if (rawPhone.isEmpty) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
-                                        content: Text(
-                                            'Phone Number is required and has to start with +.'),
+                                        content: Text('Please enter your phone number.'),
                                       ),
                                     );
                                     return;
                                   }
+
+                                  // Sanitize phone number into valid E.164 format (+91XXXXXXXXXX)
+                                  String cleanDigits = rawPhone.replaceAll(RegExp(r'[^0-9+]'), '');
+                                  String formattedPhone;
+                                  if (cleanDigits.startsWith('+')) {
+                                    formattedPhone = cleanDigits;
+                                  } else if (cleanDigits.startsWith('91') && cleanDigits.length == 12) {
+                                    formattedPhone = '+$cleanDigits';
+                                  } else {
+                                    formattedPhone = '+91$cleanDigits';
+                                  }
+
+                                  if (formattedPhone.length < 12) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Please enter a valid 10-digit mobile number.'),
+                                      ),
+                                    );
+                                    return;
+                                  }
+
                                   setState(() {
                                     _isLoading = true;
                                   });
                                   try {
-                                    await authManager.beginPhoneAuth(
+                                    final success = await authManager.beginPhoneAuth(
                                       context: context,
-                                      phoneNumber: phoneNumberVal,
+                                      phoneNumber: formattedPhone,
                                       onCodeSent: (context) async {
                                         if (mounted) {
                                           setState(() {
@@ -370,6 +399,11 @@ class _PhoneNumberLoginWidgetState extends State<PhoneNumberLoginWidget> {
                                         );
                                       },
                                     );
+                                    if (success == false && mounted) {
+                                      setState(() {
+                                        _isLoading = false;
+                                      });
+                                    }
                                   } catch (e) {
                                     if (mounted) {
                                       setState(() {

@@ -142,8 +142,102 @@ class UsersRecord extends FirestoreRecord {
   bool get isPremium => _isPremium ?? false;
   bool hasIsPremium() => _isPremium != null;
 
+  // "subscription_tier" field.
+  String? _subscriptionTier;
+  String get subscriptionTier => _subscriptionTier ?? '';
+  bool hasSubscriptionTier() => _subscriptionTier != null;
+
+  // "subscription_expires_at" field.
+  DateTime? _subscriptionExpiresAt;
+  DateTime? get subscriptionExpiresAt => _subscriptionExpiresAt;
+  bool hasSubscriptionExpiresAt() => _subscriptionExpiresAt != null;
+
+  // "subscription_started_at" field.
+  DateTime? _subscriptionStartedAt;
+  DateTime? get subscriptionStartedAt => _subscriptionStartedAt;
+  bool hasSubscriptionStartedAt() => _subscriptionStartedAt != null;
+
+  // "payment_provider" field.
+  String? _paymentProvider;
+  String get paymentProvider => _paymentProvider ?? '';
+  bool hasPaymentProvider() => _paymentProvider != null;
+
+  // "free_rides_used" field.
+  int? _freeRidesUsed;
+  int get freeRidesUsed => _freeRidesUsed ?? 0;
+  bool hasFreeRidesUsed() => _freeRidesUsed != null;
+
+  // Plan Quotas
+  int? _ridesLimit;
+  int get ridesLimit => _ridesLimit ?? -1;
+  bool hasRidesLimit() => _ridesLimit != null;
+
+  int? _marketplaceLimit;
+  int get marketplaceLimit => _marketplaceLimit ?? -1;
+  bool hasMarketplaceLimit() => _marketplaceLimit != null;
+
+  int? _ridesUsedInPeriod;
+  int get ridesUsedInPeriod => _ridesUsedInPeriod ?? 0;
+  bool hasRidesUsedInPeriod() => _ridesUsedInPeriod != null;
+
+  int? _marketplaceUsedInPeriod;
+  int get marketplaceUsedInPeriod => _marketplaceUsedInPeriod ?? 0;
+  bool hasMarketplaceUsedInPeriod() => _marketplaceUsedInPeriod != null;
+
+  bool get canBookRide => !isSubscriptionActive
+      ? false
+      : (ridesLimit == -1 || ridesUsedInPeriod < ridesLimit);
+
+  bool get canPostMarketplace => !isSubscriptionActive
+      ? false
+      : (marketplaceLimit == -1 || marketplaceUsedInPeriod < marketplaceLimit);
+
+  String get remainingRidesDisplay =>
+      ridesLimit == -1 ? 'Unlimited' : '${(ridesLimit - ridesUsedInPeriod).clamp(0, ridesLimit)} left';
+
+  String get remainingMarketplaceDisplay =>
+      marketplaceLimit == -1 ? 'Unlimited' : '${(marketplaceLimit - marketplaceUsedInPeriod).clamp(0, marketplaceLimit)} left';
+
+  // Subscription computed status helpers
+  bool get isSubscriptionActive =>
+      isPremium &&
+      subscriptionExpiresAt != null &&
+      DateTime.now().isBefore(subscriptionExpiresAt!);
+
+  bool get isSubscriptionExpired =>
+      !isSubscriptionActive &&
+      (subscriptionTier.isNotEmpty || subscriptionExpiresAt != null);
+
+  bool get isExpiringSoon =>
+      isSubscriptionActive &&
+      subscriptionExpiresAt != null &&
+      subscriptionExpiresAt!.difference(DateTime.now()).inHours <= 24;
+
   void _initializeFields() {
     _isPremium = snapshotData['is_premium'] as bool? ?? snapshotData['isPremium'] as bool?;
+    final rawExpiry = snapshotData['subscription_expires_at'];
+    if (rawExpiry is Timestamp) {
+      _subscriptionExpiresAt = rawExpiry.toDate();
+    } else if (rawExpiry is DateTime) {
+      _subscriptionExpiresAt = rawExpiry;
+    } else {
+      _subscriptionExpiresAt = null;
+    }
+
+    final rawStarted = snapshotData['subscription_started_at'];
+    if (rawStarted is Timestamp) {
+      _subscriptionStartedAt = rawStarted.toDate();
+    } else if (rawStarted is DateTime) {
+      _subscriptionStartedAt = rawStarted;
+    } else {
+      _subscriptionStartedAt = null;
+    }
+    _paymentProvider = snapshotData['payment_provider'] as String?;
+    _freeRidesUsed = castToType<int>(snapshotData['free_rides_used']);
+    _ridesLimit = castToType<int>(snapshotData['rides_limit']);
+    _marketplaceLimit = castToType<int>(snapshotData['marketplace_limit']);
+    _ridesUsedInPeriod = castToType<int>(snapshotData['rides_used_in_period']);
+    _marketplaceUsedInPeriod = castToType<int>(snapshotData['marketplace_used_in_period']);
     _email = snapshotData['email'] as String?;
     _displayName = snapshotData['display_name'] as String?;
     _photoUrl = snapshotData['photo_url'] as String?;

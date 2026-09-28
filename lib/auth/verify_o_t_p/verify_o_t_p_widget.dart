@@ -1,3 +1,4 @@
+import 'dart:async';
 import '/auth/firebase_auth/auth_util.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/index.dart';
@@ -24,6 +25,9 @@ class VerifyOTPWidget extends StatefulWidget {
 class _VerifyOTPWidgetState extends State<VerifyOTPWidget> {
   late VerifyOTPModel _model;
   bool _isVerifying = false;
+  bool _isResending = false;
+  int _resendSecondsRemaining = 30;
+  Timer? _resendTimer;
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -33,22 +37,86 @@ class _VerifyOTPWidgetState extends State<VerifyOTPWidget> {
     _model = createModel(context, () => VerifyOTPModel());
 
     _model.pinCodeFocusNode ??= FocusNode();
+    _startResendCountdown();
+  }
+
+  void _startResendCountdown() {
+    _resendTimer?.cancel();
+    setState(() {
+      _resendSecondsRemaining = 30;
+    });
+    _resendTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_resendSecondsRemaining > 0) {
+        if (mounted) {
+          setState(() {
+            _resendSecondsRemaining--;
+          });
+        }
+      } else {
+        timer.cancel();
+      }
+    });
   }
 
   @override
   void dispose() {
+    _resendTimer?.cancel();
     _model.dispose();
 
     super.dispose();
   }
 
-  Future<void> _handleVerifyOTP() async {
-    if (_isVerifying) return;
-    final smsCodeVal = _model.pinCodeController!.text;
-    if (smsCodeVal.isEmpty) {
+  Future<void> _handleResendOTP() async {
+    if (_resendSecondsRemaining > 0 || _isResending) return;
+    final phoneNumber = authManager.phoneAuthManager.phoneNumber;
+    if (phoneNumber == null || phoneNumber.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Enter SMS verification code.'),
+          content: Text('Phone number not found. Please go back and try again.'),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isResending = true;
+    });
+
+    try {
+      final success = await authManager.beginPhoneAuth(
+        context: context,
+        phoneNumber: phoneNumber,
+        onCodeSent: (context) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Verification code resent successfully!'),
+                backgroundColor: Color(0xFF10B981),
+              ),
+            );
+          }
+        },
+      );
+      if (success != false) {
+        _startResendCountdown();
+      }
+    } catch (_) {
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isResending = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _handleVerifyOTP() async {
+    if (_isVerifying) return;
+    final smsCodeVal = _model.pinCodeController!.text.trim();
+    if (smsCodeVal.length < 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter the complete 6-digit SMS verification code.'),
         ),
       );
       return;
@@ -292,7 +360,10 @@ class _VerifyOTPWidgetState extends State<VerifyOTPWidget> {
                       ),
                       const SizedBox(height: 8.0),
                       Text(
-                        'We\'ve sent a 6-digit verification code to your phone number',
+                        authManager.phoneAuthManager.phoneNumber != null &&
+                                authManager.phoneAuthManager.phoneNumber!.isNotEmpty
+                            ? 'We\'ve sent a 6-digit verification code to\n${authManager.phoneAuthManager.phoneNumber}'
+                            : 'We\'ve sent a 6-digit verification code to your phone number',
                         textAlign: TextAlign.center,
                         style: GoogleFonts.inter(
                           fontSize: 13.0,
@@ -359,15 +430,19 @@ class _VerifyOTPWidgetState extends State<VerifyOTPWidget> {
                             ),
                           ),
                           GestureDetector(
-                            onTap: () {
-                              // Resend action
-                            },
+                            onTap: _resendSecondsRemaining == 0 && !_isResending
+                                ? _handleResendOTP
+                                : null,
                             child: Text(
-                              'Resend',
+                              _resendSecondsRemaining > 0
+                                  ? 'Resend in ${_resendSecondsRemaining}s'
+                                  : (_isResending ? 'Sending...' : 'Resend'),
                               style: GoogleFonts.inter(
                                 fontSize: 13.0,
                                 fontWeight: FontWeight.bold,
-                                color: const Color(0xFFEE7B4D),
+                                color: _resendSecondsRemaining > 0 || _isResending
+                                    ? const Color(0xFF9CA3AF)
+                                    : const Color(0xFFEE7B4D),
                               ),
                             ),
                           ),
