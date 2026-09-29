@@ -125,13 +125,13 @@ const List<TraviaPlanItem> kTraviaBlueprintPlans = [
 
 class RazorpayService {
   // Toggle this to TRUE for Live Mode, FALSE for Test Mode
-  static bool isLiveMode = false;
+  static bool isLiveMode = true;
 
   // Test Key ID (Used for testing / development)
   static const String testKeyId = 'rzp_test_TeL5T7XX1QCJ13';
   
-  // Live Key ID (Paste your Razorpay Live Key ID starting with rzp_live_...)
-  static String liveKeyId = '';
+  // Live Key ID (Razorpay Live Key)
+  static const String liveKeyId = 'rzp_live_ThrboJCQ6t99fb';
 
   static String get activeKeyId {
     if (isLiveMode && liveKeyId.isNotEmpty) {
