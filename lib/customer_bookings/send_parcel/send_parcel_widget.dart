@@ -575,7 +575,6 @@ class _SendParcelWidgetState extends State<SendParcelWidget> {
                                     ),
                                     textStyle: GoogleFonts.inter(fontSize: 13.5, color: const Color(0xFF1E293B)),
                                     debounceTime: 600,
-                                    countries: const ["in"],
                                     isLatLngRequired: true,
                                     getPlaceDetailWithLatLng: (prediction) {
                                       if (prediction.lat != null && prediction.lng != null) {

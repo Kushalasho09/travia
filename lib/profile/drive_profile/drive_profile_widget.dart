@@ -153,6 +153,11 @@ class _DriveProfileWidgetState extends State<DriveProfileWidget> {
                 // 8. LOG OUT BUTTON
                 _buildLogoutButton(context),
 
+                const SizedBox(height: 12.0),
+
+                // 9. DELETE ACCOUNT BUTTON (DPDP Act)
+                _buildDeleteAccountButton(context),
+
                 const SizedBox(height: 28.0),
               ],
             ),
@@ -1309,6 +1314,144 @@ class _DriveProfileWidgetState extends State<DriveProfileWidget> {
         ),
       ),
     ).animate().fade(delay: 700.ms, duration: 500.ms).slideY(begin: 0.08, end: 0, curve: Curves.easeOutCubic);
+  }
+
+  // ==========================================
+  // 9. DELETE ACCOUNT BUTTON (DPDP Act)
+  // ==========================================
+  Widget _buildDeleteAccountButton(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () async {
+          final confirm = await showDialog<bool>(
+            context: context,
+            builder: (alertDialogContext) {
+              return AlertDialog(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20.0),
+                ),
+                title: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8.0),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFEE2E2),
+                        borderRadius: BorderRadius.circular(10.0),
+                      ),
+                      child: const Icon(Icons.warning_amber_rounded, color: Color(0xFFDC2626), size: 22.0),
+                    ),
+                    const SizedBox(width: 10.0),
+                    Expanded(
+                      child: Text(
+                        'Delete Account',
+                        style: GoogleFonts.inter(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 18.0,
+                          color: const Color(0xFF111827),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                content: Text(
+                  'Are you sure you want to permanently delete your account and personal data? This action cannot be undone (DPDP Act Compliance).',
+                  style: GoogleFonts.inter(
+                    fontSize: 14.0,
+                    color: const Color(0xFF4B5563),
+                    height: 1.45,
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(alertDialogContext, false),
+                    child: Text(
+                      'Cancel',
+                      style: GoogleFonts.inter(
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF6B7280),
+                      ),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(alertDialogContext, true),
+                    child: Text(
+                      'Delete Account',
+                      style: GoogleFonts.inter(
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFFDC2626),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          );
+
+          if (confirm == true) {
+            try {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Deleting your account and data...')),
+              );
+              if (currentUserReference != null) {
+                await currentUserReference!.delete();
+              }
+              if (!context.mounted) return;
+              await authManager.deleteUser(context);
+              if (!context.mounted) return;
+              GoRouter.of(context).prepareAuthEvent();
+              await authManager.signOut();
+              if (!context.mounted) return;
+              GoRouter.of(context).clearRedirectLocation();
+              context.goNamedAuth(
+                PhoneNumberLoginWidget.routeName,
+                context.mounted,
+              );
+            } catch (e) {
+              if (!context.mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Failed to delete account: $e'),
+                  backgroundColor: const Color(0xFFDC2626),
+                ),
+              );
+            }
+          }
+        },
+        borderRadius: BorderRadius.circular(18.0),
+        child: Container(
+          width: double.infinity,
+          height: 48.0,
+          decoration: BoxDecoration(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(18.0),
+            border: Border.all(
+              color: const Color(0xFFE5E7EB),
+              width: 1.0,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.delete_outline_rounded,
+                color: Color(0xFF9CA3AF),
+                size: 18.0,
+              ),
+              const SizedBox(width: 8.0),
+              Text(
+                'Delete Account',
+                style: GoogleFonts.inter(
+                  fontSize: 14.0,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF6B7280),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ).animate().fade(delay: 750.ms, duration: 500.ms).slideY(begin: 0.08, end: 0, curve: Curves.easeOutCubic);
   }
 
   // ==========================================

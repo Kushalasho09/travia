@@ -650,7 +650,6 @@ class _MarketPlaceCustomerWidgetState extends State<MarketPlaceCustomerWidget>
                                                         .bodyMedium
                                                         .copyWith(fontSize: 14),
                                                     debounceTime: 600,
-                                                    countries: ["in"],
                                                     isLatLngRequired: false,
                                                     itemClick: (prediction) {
                                                       _model
@@ -768,7 +767,6 @@ class _MarketPlaceCustomerWidgetState extends State<MarketPlaceCustomerWidget>
                                                         .bodyMedium
                                                         .copyWith(fontSize: 14),
                                                     debounceTime: 600,
-                                                    countries: ["in"],
                                                     isLatLngRequired: false,
                                                     itemClick: (prediction) {
                                                       _model
@@ -1100,7 +1098,7 @@ class _MarketPlaceCustomerWidgetState extends State<MarketPlaceCustomerWidget>
                                                                           final startDate = DateTime(
                                                                               now.year,
                                                                               now.month,
-                                                                              1);
+                                                                              now.day);
                                                                           final endDate = DateTime(
                                                                               now.year,
                                                                               now.month + 2,
@@ -1268,13 +1266,16 @@ class _MarketPlaceCustomerWidgetState extends State<MarketPlaceCustomerWidget>
                                                                               .where('arivalDate', isLessThan: endOfDay),
                                                                         );
                                                                       } else {
-                                                                        // ✅ DEFAULT: Show ALL active marketplace items
+                                                                        // ✅ DEFAULT: Show active marketplace items from today onwards
+                                                                        final now = DateTime.now();
+                                                                        final today = DateTime(now.year, now.month, now.day);
                                                                         print(
-                                                                            '📱 DEFAULT: Showing all active items');
+                                                                            '📱 DEFAULT: Showing all active items from today onwards');
                                                                         return queryMarketPlaceRecord(
-                                                                          queryBuilder: (marketPlaceRecord) => marketPlaceRecord.where(
-                                                                              'status',
-                                                                              isEqualTo: 'Active'),
+                                                                          queryBuilder: (marketPlaceRecord) => marketPlaceRecord
+                                                                              .where('status', isEqualTo: 'Active')
+                                                                              .where('arivalDate', isGreaterThanOrEqualTo: today)
+                                                                              .orderBy('arivalDate', descending: false),
                                                                         );
                                                                       }
                                                                     }(),
@@ -1328,6 +1329,14 @@ class _MarketPlaceCustomerWidgetState extends State<MarketPlaceCustomerWidget>
                                                                           listViewMarketPlaceRecordList =
                                                                           snapshot
                                                                               .data!;
+
+                                                                      // Filter out past bookings (before today)
+                                                                      final nowFilter = DateTime.now();
+                                                                      final todayFilter = DateTime(nowFilter.year, nowFilter.month, nowFilter.day);
+                                                                      listViewMarketPlaceRecordList = listViewMarketPlaceRecordList.where((item) {
+                                                                        if (item.arivalDate == null) return false;
+                                                                        return !item.arivalDate!.isBefore(todayFilter);
+                                                                      }).toList();
 
                                                                       // Show "no results" message if search is active but no results found
                                                                       if (listViewMarketPlaceRecordList

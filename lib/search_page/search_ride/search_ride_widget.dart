@@ -54,6 +54,114 @@ class _SearchRideWidgetState extends State<SearchRideWidget> {
     super.dispose();
   }
 
+  bool _locationsMatch(String routeLoc, String queryLoc) {
+    final r = routeLoc.trim().toLowerCase();
+    final q = queryLoc.trim().toLowerCase();
+    if (r.isEmpty || q.isEmpty) return false;
+
+    // 1. Direct contains in either direction
+    // e.g. "bulandshahr, uttar pradesh, india".contains("bulandshahr") -> true
+    // or "bulandshahr".contains("bulandshahr") -> true
+    if (r.contains(q) || q.contains(r)) return true;
+
+    // 2. Primary place/city name (first segment before comma)
+    final rCity = r.split(',').first.trim();
+    final qCity = q.split(',').first.trim();
+    if (rCity.isNotEmpty && qCity.isNotEmpty) {
+      if (rCity.contains(qCity) || qCity.contains(rCity)) return true;
+    }
+
+    // 3. Significant word token matching (min 3 chars, ignores commas/spaces)
+    final rTokens = r
+        .split(RegExp(r'[\s,.-]+'))
+        .map((w) => w.trim())
+        .where((w) => w.length >= 3)
+        .toSet();
+    final qTokens = q
+        .split(RegExp(r'[\s,.-]+'))
+        .map((w) => w.trim())
+        .where((w) => w.length >= 3)
+        .toSet();
+    if (rTokens.intersection(qTokens).isNotEmpty) return true;
+
+    return false;
+  }
+
+  double _calculateSegmentPrice(RidesNewRecord ride) {
+    final startQuery = (widget.query1 ?? '').trim();
+    final endQuery = (widget.query2 ?? '').trim();
+    if (startQuery.isEmpty || endQuery.isEmpty) return ride.rideCost;
+
+    final route = [
+      ride.rideStartLocation ?? '',
+      if (ride.googleStartAddress != null && ride.googleStartAddress!.isNotEmpty) ride.googleStartAddress!,
+      ...ride.stoppages,
+      ride.rideEndLocation ?? '',
+      if (ride.googleEndAddress != null && ride.googleEndAddress!.isNotEmpty) ride.googleEndAddress!,
+    ];
+
+    int sIdx = -1;
+    for (int i = 0; i < route.length; i++) {
+      if (_locationsMatch(route[i], startQuery)) {
+        sIdx = i;
+        break;
+      }
+    }
+    int eIdx = -1;
+    for (int i = route.length - 1; i >= 0; i--) {
+      if (_locationsMatch(route[i], endQuery)) {
+        eIdx = i;
+        break;
+      }
+    }
+
+    if (sIdx != -1 && eIdx != -1 && sIdx < eIdx) {
+      int totalSegments = route.length - 1;
+      if (totalSegments <= 0) return ride.rideCost;
+      double fraction = (eIdx - sIdx) / totalSegments;
+      return (ride.rideCost * fraction).clamp(1.0, ride.rideCost).roundToDouble();
+    }
+    return ride.rideCost;
+  }
+
+  double _calculateSegmentDeliveryCost(RidesNewRecord ride) {
+    final startQuery = (widget.query1 ?? '').trim();
+    final endQuery = (widget.query2 ?? '').trim();
+    final baseCost = double.tryParse(ride.totalDeliveryCost) ?? 0.0;
+    if (startQuery.isEmpty || endQuery.isEmpty) return baseCost;
+
+    final route = [
+      ride.rideStartLocation ?? '',
+      if (ride.googleStartAddress != null && ride.googleStartAddress!.isNotEmpty) ride.googleStartAddress!,
+      ...ride.stoppages,
+      ride.rideEndLocation ?? '',
+      if (ride.googleEndAddress != null && ride.googleEndAddress!.isNotEmpty) ride.googleEndAddress!,
+    ];
+
+    int sIdx = -1;
+    for (int i = 0; i < route.length; i++) {
+      if (_locationsMatch(route[i], startQuery)) {
+        sIdx = i;
+        break;
+      }
+    }
+    int eIdx = -1;
+    for (int i = route.length - 1; i >= 0; i--) {
+      if (_locationsMatch(route[i], endQuery)) {
+        eIdx = i;
+        break;
+      }
+    }
+
+    if (sIdx != -1 && eIdx != -1 && sIdx < eIdx) {
+      int totalSegments = route.length - 1;
+      if (totalSegments <= 0) return baseCost;
+      double fraction = (eIdx - sIdx) / totalSegments;
+      return (baseCost * fraction).clamp(1.0, baseCost).roundToDouble();
+    }
+    return baseCost;
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -173,25 +281,15 @@ class _SearchRideWidgetState extends State<SearchRideWidget> {
                     padding: EdgeInsetsDirectional.fromSTEB(0.0, 25.0, 0.0, 0.0),
                     child: StreamBuilder<List<RidesNewRecord>>(
                       stream: queryRidesNewRecord(
-                        queryBuilder: (ridesNewRecord) =>
-                            ridesNewRecord.where(Filter.and(
-                              Filter(
-                                'RideStartLocation',
-                                isEqualTo: widget.query1,
-                              ),
-                              Filter(
-                                'RideEndLocation',
-                                isEqualTo: widget.query2,
-                              ),
-                            )),
+                        queryBuilder: (ridesNewRecord) => ridesNewRecord
+                            .where(
+                              'pickupTime',
+                              isGreaterThanOrEqualTo: DateTime.now().subtract(const Duration(hours: 2)),
+                            )
+                            .orderBy('pickupTime'),
                       ),
                       builder: (context, snapshot) {
-                        // ✅ DEBUG PRINT 1: Query parameters
-                        print("🔍 SEARCH QUERY1: '${widget.query1}'");
-                        print("🔍 SEARCH QUERY2: '${widget.query2}'");
-
                         if (!snapshot.hasData) {
-                          print("⏳ LOADING...");
                           return Center(
                             child: SizedBox(
                               width: 50.0,
@@ -204,8 +302,56 @@ class _SearchRideWidgetState extends State<SearchRideWidget> {
                           );
                         }
 
-                        final list = snapshot.data!;
-                        print("📊 TOTAL RIDES FOUND: ${list.length}");
+                        final allRides = snapshot.data!;
+                        final startSearch = (widget.query1 ?? '').trim();
+                        final endSearch = (widget.query2 ?? '').trim();
+
+                        final list = allRides.where((ride) {
+                          if (startSearch.isEmpty && endSearch.isEmpty) return true;
+
+                          final startAddr = ride.rideStartLocation ?? '';
+                          final googleStart = ride.googleStartAddress ?? '';
+                          final endAddr = ride.rideEndLocation ?? '';
+                          final googleEnd = ride.googleEndAddress ?? '';
+
+                          final routeSequence = [
+                            startAddr,
+                            if (googleStart.isNotEmpty) googleStart,
+                            ...ride.stoppages,
+                            endAddr,
+                            if (googleEnd.isNotEmpty) googleEnd,
+                          ];
+
+                          int startIndex = -1;
+                          if (startSearch.isNotEmpty) {
+                            for (int i = 0; i < routeSequence.length; i++) {
+                              if (_locationsMatch(routeSequence[i], startSearch)) {
+                                startIndex = i;
+                                break;
+                              }
+                            }
+                            if (startIndex == -1) return false;
+                          } else {
+                            startIndex = 0;
+                          }
+
+                          int endIndex = -1;
+                          if (endSearch.isNotEmpty) {
+                            for (int i = routeSequence.length - 1; i >= 0; i--) {
+                              if (_locationsMatch(routeSequence[i], endSearch)) {
+                                endIndex = i;
+                                break;
+                              }
+                            }
+                            if (endIndex == -1) return false;
+                          } else {
+                            endIndex = routeSequence.length - 1;
+                          }
+
+                          return startIndex < endIndex;
+                        }).toList();
+
+                        print("🔍 SEARCH QUERY1: '${widget.query1}' -> MATCHED: ${list.length}");
 
                         // ✅ DEBUG PRINT 2: Show ALL ride data
                         for (int i = 0; i < list.length; i++) {
@@ -953,7 +1099,7 @@ class _SearchRideWidgetState extends State<SearchRideWidget> {
                                             padding: EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 4.0),
                                             child: AutoSizeText(
                                               '₹${formatNumber(
-                                                ride.rideCost,
+                                                _calculateSegmentPrice(ride),
                                                 formatType: FormatType.custom,
                                                 format: '',
                                                 locale: '',
@@ -1028,7 +1174,7 @@ class _SearchRideWidgetState extends State<SearchRideWidget> {
                                                   ),
                                                 ),
                                                 AutoSizeText(
-                                                  '₹${ride.totalDeliveryCost}',
+                                                  '₹${_calculateSegmentDeliveryCost(ride).toInt()}',
                                                   textAlign: TextAlign.center,
                                                   style: FlutterFlowTheme
                                                       .of(context)

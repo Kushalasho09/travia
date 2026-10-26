@@ -114,6 +114,100 @@ class _SidebarMenuWidgetState extends State<SidebarMenuWidget> {
     }
   }
 
+  Future<void> _handleDeleteAccount() async {
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8.0),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEE2E2),
+                borderRadius: BorderRadius.circular(10.0),
+              ),
+              child: const Icon(Icons.warning_amber_rounded, color: Color(0xFFDC2626), size: 22.0),
+            ),
+            const SizedBox(width: 12.0),
+            Expanded(
+              child: Text(
+                'Delete Account',
+                style: GoogleFonts.interTight(
+                  fontSize: 18.0,
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF0F172A),
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          'Are you sure you want to delete your account? All your personal profile data, listings, and bookings will be permanently removed. This action cannot be undone (DPDP Act).',
+          style: GoogleFonts.inter(
+            fontSize: 13.5,
+            color: const Color(0xFF475569),
+            height: 1.45,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(
+              'Cancel',
+              style: GoogleFonts.inter(
+                color: const Color(0xFF64748B),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFDC2626),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+            ),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(
+              'Permanently Delete',
+              style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldDelete == true && mounted) {
+      try {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Deleting your account and data...')),
+        );
+        // 1. Delete user document from Firestore
+        if (currentUserReference != null) {
+          await currentUserReference!.delete();
+        }
+        // 2. Delete Firebase Auth user
+        await authManager.deleteUser(context);
+        // 3. Sign out & route to Login
+        GoRouter.of(context).prepareAuthEvent();
+        await authManager.signOut();
+        if (!mounted) return;
+        GoRouter.of(context).clearRedirectLocation();
+        context.goNamedAuth(PhoneNumberLoginWidget.routeName, context.mounted);
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to delete account: $e'),
+            backgroundColor: const Color(0xFFDC2626),
+          ),
+        );
+      }
+    }
+  }
+
   Widget _buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.only(left: 4.0, bottom: 8.0, top: 4.0),
@@ -718,6 +812,36 @@ class _SidebarMenuWidgetState extends State<SidebarMenuWidget> {
                           context.pushNamed(SupportPageWidget.routeName);
                         },
                       ),
+                      _buildDivider(),
+                      _buildMenuItem(
+                        iconWidget: const Icon(Icons.privacy_tip_outlined, color: Color(0xFF10B981), size: 22.0),
+                        iconBgColor: const Color(0xFFEEF7F2),
+                        title: 'Privacy Policy',
+                        subtitle: 'Read how your personal data is protected',
+                        onTap: () {
+                          context.pushNamed(
+                            TCPagesWidget.routeName,
+                            queryParameters: {
+                              'categoryRef': serializeParam('Privacy Policy', ParamType.String),
+                            }.withoutNulls,
+                          );
+                        },
+                      ),
+                      _buildDivider(),
+                      _buildMenuItem(
+                        iconWidget: const Icon(Icons.description_outlined, color: Color(0xFF6366F1), size: 22.0),
+                        iconBgColor: const Color(0xFFEEF2FF),
+                        title: 'Terms & Conditions',
+                        subtitle: 'Terms of service and user guidelines',
+                        onTap: () {
+                          context.pushNamed(
+                            TCPagesWidget.routeName,
+                            queryParameters: {
+                              'categoryRef': serializeParam('Terms & Conditions', ParamType.String),
+                            }.withoutNulls,
+                          );
+                        },
+                      ),
                     ],
                   ),
                   const SizedBox(height: 24.0),
@@ -749,6 +873,42 @@ class _SidebarMenuWidgetState extends State<SidebarMenuWidget> {
                               fontSize: 15.0,
                               fontWeight: FontWeight.w700,
                               color: const Color(0xFFE11D48),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 12.0),
+
+                  // --- DELETE ACCOUNT BUTTON (DPDP Act Compliance) ---
+                  InkWell(
+                    onTap: _handleDeleteAccount,
+                    borderRadius: BorderRadius.circular(14.0),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 12.0),
+                      decoration: BoxDecoration(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(14.0),
+                        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.0),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.delete_outline_rounded,
+                            size: 18.0,
+                            color: Color(0xFF94A3B8),
+                          ),
+                          const SizedBox(width: 8.0),
+                          Text(
+                            'Delete Account',
+                            style: GoogleFonts.interTight(
+                              fontSize: 14.0,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF64748B),
                             ),
                           ),
                         ],

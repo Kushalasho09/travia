@@ -76,6 +76,82 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
     return '$joined...';
   }
 
+  bool _locationsMatch(String routeLoc, String queryLoc) {
+    final r = routeLoc.trim().toLowerCase();
+    final q = queryLoc.trim().toLowerCase();
+    if (r.isEmpty || q.isEmpty) return false;
+
+    // 1. Direct contains in either direction
+    // e.g. "bulandshahr, uttar pradesh, india".contains("bulandshahr") -> true
+    // or "bulandshahr".contains("bulandshahr") -> true
+    if (r.contains(q) || q.contains(r)) return true;
+
+    // 2. Primary place/city name (first segment before comma)
+    final rCity = r.split(',').first.trim();
+    final qCity = q.split(',').first.trim();
+    if (rCity.isNotEmpty && qCity.isNotEmpty) {
+      if (rCity.contains(qCity) || qCity.contains(rCity)) return true;
+    }
+
+    // 3. Significant word token matching (min 3 chars, ignores commas/spaces)
+    final rTokens = r
+        .split(RegExp(r'[\s,.-]+'))
+        .map((w) => w.trim())
+        .where((w) => w.length >= 3)
+        .toSet();
+    final qTokens = q
+        .split(RegExp(r'[\s,.-]+'))
+        .map((w) => w.trim())
+        .where((w) => w.length >= 3)
+        .toSet();
+    if (rTokens.intersection(qTokens).isNotEmpty) return true;
+
+    return false;
+  }
+
+  double _calculateHomeSegmentPrice(RidesNewRecord ride) {
+    if (!_model.isSearchActive ||
+        _model.searchStartLocation == null ||
+        _model.searchEndLocation == null) {
+      return ride.pricePerPassengers.toDouble();
+    }
+    final startQuery = _model.searchStartLocation!.trim();
+    final endQuery = _model.searchEndLocation!.trim();
+    if (startQuery.isEmpty || endQuery.isEmpty) return ride.pricePerPassengers.toDouble();
+
+    final route = [
+      ride.rideStartLocation ?? '',
+      if (ride.googleStartAddress != null && ride.googleStartAddress!.isNotEmpty) ride.googleStartAddress!,
+      ...ride.stoppages,
+      ride.rideEndLocation ?? '',
+      if (ride.googleEndAddress != null && ride.googleEndAddress!.isNotEmpty) ride.googleEndAddress!,
+    ];
+
+    int sIdx = -1;
+    for (int i = 0; i < route.length; i++) {
+      if (_locationsMatch(route[i], startQuery)) {
+        sIdx = i;
+        break;
+      }
+    }
+    int eIdx = -1;
+    for (int i = route.length - 1; i >= 0; i--) {
+      if (_locationsMatch(route[i], endQuery)) {
+        eIdx = i;
+        break;
+      }
+    }
+
+    if (sIdx != -1 && eIdx != -1 && sIdx < eIdx) {
+      int totalSegments = route.length - 1;
+      if (totalSegments <= 0) return ride.pricePerPassengers.toDouble();
+      double fraction = (eIdx - sIdx) / totalSegments;
+      final fullPrice = ride.pricePerPassengers.toDouble();
+      return (fullPrice * fraction).clamp(1.0, fullPrice).roundToDouble();
+    }
+    return ride.pricePerPassengers.toDouble();
+  }
+
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
   final animationsMap = <String, AnimationInfo>{};
@@ -2115,7 +2191,6 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                                                     ),
                                                     textStyle: FlutterFlowTheme.of(context).bodyMedium.copyWith(fontSize: 14),
                                                     debounceTime: 600,
-                                                    countries: ["in"],
                                                     isLatLngRequired: false,
                                                     itemClick: (prediction) {
                                                       _model.startLocationTextController.text = prediction.description ?? "";
@@ -2198,7 +2273,6 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                                                 ),
                                                 textStyle: FlutterFlowTheme.of(context).bodyMedium.copyWith(fontSize: 14),
                                                 debounceTime: 600,
-                                                countries: ["in"],
                                                 isLatLngRequired: false,
                                                 itemClick: (prediction) {
                                                   _model.endLocationTextController.text = prediction.description ?? "";
@@ -2581,7 +2655,7 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                                                         }
 
                                                         final now = DateTime.now();
-                                                        final startDate = DateTime(now.year, now.month, 1);
+                                                        final startDate = DateTime(now.year, now.month, now.day);
                                                         final endDate = DateTime(now.year, now.month + 2, 0);
                                                         final totalDays = endDate.difference(startDate).inDays + 1;
 
@@ -2710,6 +2784,24 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
 
                                                           List<RidesNewRecord> listViewRidesNewRecordList = snapshot.data!;
 
+                                                          // Filter out past rides (< today)
+                                                          final nowFilter = DateTime.now();
+                                                          final todayFilter = DateTime(nowFilter.year, nowFilter.month, nowFilter.day);
+                                                          listViewRidesNewRecordList = listViewRidesNewRecordList.where((ride) {
+                                                            if (ride.pickupTime == null) return false;
+                                                            return !ride.pickupTime!.isBefore(todayFilter);
+                                                          }).toList();
+
+                                                          // If a specific date is selected in calendar, filter by that date
+                                                          if (!_model.isSearchActive && _model.pageState != null) {
+                                                            final startOfDay = DateTime(_model.pageState!.year, _model.pageState!.month, _model.pageState!.day);
+                                                            final endOfDay = startOfDay.add(const Duration(days: 1));
+                                                            listViewRidesNewRecordList = listViewRidesNewRecordList.where((ride) {
+                                                              if (ride.pickupTime == null) return false;
+                                                              return !ride.pickupTime!.isBefore(startOfDay) && ride.pickupTime!.isBefore(endOfDay);
+                                                            }).toList();
+                                                          }
+
                                                           if (listViewRidesNewRecordList.isEmpty) {
                                                             return NoRideToShowUserWidget(
                                                               onDateChanged: (DateTime newDate) {
@@ -2721,50 +2813,40 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
 
                                                           // Client-side filter: if search is active, filter by start/end location including stoppages
                                                           if (_model.isSearchActive && _model.searchStartLocation != null && _model.searchEndLocation != null) {
-                                                            final startSearch = _model.searchStartLocation!.trim().toLowerCase();
-                                                            final endSearch = _model.searchEndLocation!.trim().toLowerCase();
+                                                            final startSearch = _model.searchStartLocation!.trim();
+                                                            final endSearch = _model.searchEndLocation!.trim();
 
                                                             listViewRidesNewRecordList = listViewRidesNewRecordList.where((ride) {
-                                                              final startAddress = (ride.rideStartLocation ?? '').toLowerCase();
-                                                              final googleStart = (ride.googleStartAddress ?? '').toLowerCase();
-                                                              final matchStart = startAddress.contains(startSearch) ||
-                                                                  googleStart.contains(startSearch) ||
-                                                                  ride.stoppages.any((stop) => stop.toLowerCase().contains(startSearch));
+                                                              final startAddress = ride.rideStartLocation ?? '';
+                                                              final googleStart = ride.googleStartAddress ?? '';
+                                                              final endAddress = ride.rideEndLocation ?? '';
+                                                              final googleEnd = ride.googleEndAddress ?? '';
 
-                                                              final endAddress = (ride.rideEndLocation ?? '').toLowerCase();
-                                                              final googleEnd = (ride.googleEndAddress ?? '').toLowerCase();
-                                                              final matchEnd = endAddress.contains(endSearch) ||
-                                                                  googleEnd.contains(endSearch) ||
-                                                                  ride.stoppages.any((stop) => stop.toLowerCase().contains(endSearch));
+                                                              final routeSequence = [
+                                                                startAddress,
+                                                                if (googleStart.isNotEmpty) googleStart,
+                                                                ...ride.stoppages,
+                                                                endAddress,
+                                                                if (googleEnd.isNotEmpty) googleEnd,
+                                                              ];
 
-                                                              if (matchStart && matchEnd) {
-                                                                final routeSequence = [
-                                                                  startAddress,
-                                                                  if (ride.googleStartAddress != null && ride.googleStartAddress!.isNotEmpty) ride.googleStartAddress!.toLowerCase(),
-                                                                  ...ride.stoppages.map((s) => s.toLowerCase()),
-                                                                  endAddress,
-                                                                  if (ride.googleEndAddress != null && ride.googleEndAddress!.isNotEmpty) ride.googleEndAddress!.toLowerCase(),
-                                                                ];
-
-                                                                int startIndex = -1;
-                                                                for (int i = 0; i < routeSequence.length; i++) {
-                                                                  if (routeSequence[i].contains(startSearch)) {
-                                                                    startIndex = i;
-                                                                    break;
-                                                                  }
+                                                              int startIndex = -1;
+                                                              for (int i = 0; i < routeSequence.length; i++) {
+                                                                if (_locationsMatch(routeSequence[i], startSearch)) {
+                                                                  startIndex = i;
+                                                                  break;
                                                                 }
-
-                                                                int endIndex = -1;
-                                                                for (int i = routeSequence.length - 1; i >= 0; i--) {
-                                                                  if (routeSequence[i].contains(endSearch)) {
-                                                                    endIndex = i;
-                                                                    break;
-                                                                  }
-                                                                }
-
-                                                                return startIndex != -1 && endIndex != -1 && startIndex < endIndex;
                                                               }
-                                                              return false;
+
+                                                              int endIndex = -1;
+                                                              for (int i = routeSequence.length - 1; i >= 0; i--) {
+                                                                if (_locationsMatch(routeSequence[i], endSearch)) {
+                                                                  endIndex = i;
+                                                                  break;
+                                                                }
+                                                              }
+
+                                                              return startIndex != -1 && endIndex != -1 && startIndex < endIndex;
                                                             }).toList();
                                                           }
 
@@ -3055,7 +3137,7 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
                                                                                   ),
                                                                                   const SizedBox(height: 1.0),
                                                                                   AutoSizeText(
-                                                                                    '₹${formatNumber(listViewRidesNewRecord.pricePerPassengers, formatType: FormatType.custom, format: '', locale: '')}',
+                                                                                    '₹${formatNumber(_calculateHomeSegmentPrice(listViewRidesNewRecord), formatType: FormatType.custom, format: '', locale: '')}',
                                                                                     style: GoogleFonts.inter(
                                                                                       fontSize: 18.0,
                                                                                       fontWeight: FontWeight.w700,
@@ -3165,7 +3247,7 @@ class _HomeWidgetState extends State<HomeWidget> with TickerProviderStateMixin {
 //                                                               }
 //
 //                                                               final now = DateTime.now();
-//                                                               final startDate = DateTime(now.year, now.month, 1);
+//                                                               final startDate = DateTime(now.year, now.month, now.day);
 //                                                               final endDate = DateTime(now.year, now.month + 2, 0);
 //                                                               final totalDays = endDate.difference(startDate).inDays + 1;
 //

@@ -52,3 +52,5 @@ flutter_*.png
 *.csv
 *secret*
 rzp-key.csv
+*.jks
+*.keystore

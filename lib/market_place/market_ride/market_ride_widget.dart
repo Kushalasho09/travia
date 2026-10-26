@@ -376,7 +376,6 @@ class _MarketRideWidgetState extends State<MarketRideWidget> {
                                       ),
                                       textStyle: GoogleFonts.inter(fontSize: 13.5, color: const Color(0xFF1E293B)),
                                       debounceTime: 500,
-                                      countries: const ["in"],
                                       isLatLngRequired: false,
                                       itemClick: (prediction) {
                                         _model.originTextController.text = prediction.description ?? "";
@@ -435,7 +434,6 @@ class _MarketRideWidgetState extends State<MarketRideWidget> {
                                       ),
                                       textStyle: GoogleFonts.inter(fontSize: 13.5, color: const Color(0xFF1E293B)),
                                       debounceTime: 500,
-                                      countries: const ["in"],
                                       isLatLngRequired: false,
                                       itemClick: (prediction) {
                                         _model.destinationTextController.text = prediction.description ?? "";

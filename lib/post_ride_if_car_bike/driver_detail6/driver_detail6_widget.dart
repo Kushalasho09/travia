@@ -94,7 +94,7 @@ class _DriverDetail6WidgetState extends State<DriverDetail6Widget> {
     FFAppState().vehicleNumber = _model.vehicleNumberTextController.text.trim();
     safeSetState(() {});
 
-    context.pushNamed(RideRules7Widget.routeName);
+    context.pushNamed(Stoppage7Widget.routeName);
   }
 
   @override
@@ -153,7 +153,7 @@ class _DriverDetail6WidgetState extends State<DriverDetail6Widget> {
                         currentStep: 6,
                         totalSteps: 8,
                         title: 'Driver & Vehicle Details',
-                        subtitle: 'Confirm your phone number and registered vehicle registration plate.',
+                        subtitle: 'Confirm your phone number and vehicle details.',
                         badgeText: 'STEP 6 OF 8',
                       ),
 
@@ -232,7 +232,7 @@ class _DriverDetail6WidgetState extends State<DriverDetail6Widget> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  'Vehicle Registration Number',
+                                  'Vehicle Name or Detail',
                                   style: GoogleFonts.inter(
                                     fontSize: 13.5,
                                     fontWeight: FontWeight.w700,
@@ -259,11 +259,11 @@ class _DriverDetail6WidgetState extends State<DriverDetail6Widget> {
                               child: TextField(
                                 controller: _model.vehicleNumberTextController,
                                 focusNode: _model.vehicleNumberFocusNode,
-                                textCapitalization: TextCapitalization.characters,
+                                textCapitalization: TextCapitalization.words,
                                 style: GoogleFonts.inter(
                                   fontSize: 15.0,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 1.0,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 0.0,
                                   color: const Color(0xFF111827),
                                 ),
                                 decoration: InputDecoration(
@@ -272,7 +272,7 @@ class _DriverDetail6WidgetState extends State<DriverDetail6Widget> {
                                     color: Color(0xFF6B7280),
                                     size: 20.0,
                                   ),
-                                  hintText: 'e.g. DL 01 AB 1234',
+                                  hintText: 'E.g. Hyundai Aura 2023',
                                   hintStyle: GoogleFonts.inter(
                                     color: const Color(0xFF9CA3AF),
                                     fontSize: 14.0,

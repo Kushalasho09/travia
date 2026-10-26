@@ -246,7 +246,6 @@ class _RideEditPageWidgetState extends State<RideEditPageWidget> {
                                                 ),
                                                 textStyle: FlutterFlowTheme.of(context).bodyMedium.copyWith(fontSize: 14),
                                                 debounceTime: 600,
-                                                countries: const ["in"],
                                                 isLatLngRequired: false,
                                                 itemClick: (prediction) {
                                                   final desc = prediction.description ?? "";
@@ -317,7 +316,6 @@ class _RideEditPageWidgetState extends State<RideEditPageWidget> {
                                                 ),
                                                 textStyle: FlutterFlowTheme.of(context).bodyMedium.copyWith(fontSize: 14),
                                                 debounceTime: 600,
-                                                countries: const ["in"],
                                                 isLatLngRequired: false,
                                                 itemClick: (prediction) {
                                                   final desc = prediction.description ?? "";
@@ -3602,7 +3600,7 @@ class _RideEditPageWidgetState extends State<RideEditPageWidget> {
                                               mainAxisSize: MainAxisSize.max,
                                               children: [
                                                 Text(
-                                                  'Vehicle Number (Optional)',
+                                                  'Vehicle Name or Detail (Optional)',
                                                   style: FlutterFlowTheme.of(context).titleMedium.override(
                                                         font: GoogleFonts.interTight(
                                                           fontWeight: FontWeight.w600,
@@ -3626,11 +3624,11 @@ class _RideEditPageWidgetState extends State<RideEditPageWidget> {
                                                           ),
                                                           focusNode: _model.vehicleNumberFocusNode,
                                                           autofocus: false,
-                                                          textCapitalization: TextCapitalization.characters,
+                                                          textCapitalization: TextCapitalization.words,
                                                           obscureText: false,
                                                           decoration: InputDecoration(
-                                                            labelText: 'Enter your vehicle number',
-                                                            hintText: 'UP 65 ET XXXX',
+                                                            labelText: 'Vehicle Name or Detail',
+                                                            hintText: 'E.g. Hyundai Aura 2023',
                                                             hintStyle: FlutterFlowTheme.of(context).bodyMedium.override(
                                                                   font: GoogleFonts.inter(
                                                                     fontWeight: FlutterFlowTheme.of(context).bodyMedium.fontWeight,

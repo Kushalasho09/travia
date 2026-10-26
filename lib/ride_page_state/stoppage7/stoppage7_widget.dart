@@ -2,7 +2,9 @@ import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
+import 'dart:convert';
 import 'dart:ui';
+import 'package:http/http.dart' as http;
 import '/index.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
@@ -28,6 +30,8 @@ class _Stoppage7WidgetState extends State<Stoppage7Widget> {
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
+  bool _isAutoDetecting = false;
+
   @override
   void initState() {
     super.initState();
@@ -35,6 +39,127 @@ class _Stoppage7WidgetState extends State<Stoppage7Widget> {
 
     _model.stoppagesTextController ??= TextEditingController();
     _model.stoppagesFocusNode ??= FocusNode();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_model.stoppages.isEmpty) {
+        _autoDetectStoppages();
+      }
+    });
+  }
+
+  List<LatLng> _decodePolyline(String encoded) {
+    List<LatLng> points = [];
+    int index = 0, len = encoded.length;
+    int lat = 0, lng = 0;
+
+    while (index < len) {
+      int b, shift = 0, result = 0;
+      do {
+        b = encoded.codeUnitAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+      int dlat = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+      lat += dlat;
+
+      shift = 0;
+      result = 0;
+      do {
+        b = encoded.codeUnitAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+      int dlng = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+      lng += dlng;
+
+      points.add(LatLng(lat / 1E5, lng / 1E5));
+    }
+    return points;
+  }
+
+  Future<void> _autoDetectStoppages() async {
+    String start = FFAppState().RideStartLocaction.isNotEmpty
+        ? FFAppState().RideStartLocaction
+        : FFAppState().GoogleStartAddress;
+    String end = FFAppState().RideEndLocaction.isNotEmpty
+        ? FFAppState().RideEndLocaction
+        : FFAppState().GoogleEndAddress;
+
+    if (start.trim().isEmpty || end.trim().isEmpty) return;
+
+    safeSetState(() => _isAutoDetecting = true);
+
+    try {
+      const String apiKey = 'AIzaSyDZkxRpoy0BOIAPwMaMIvAd5xpCe-6ZYvs';
+      final directionsUrl = Uri.parse(
+        'https://maps.googleapis.com/maps/api/directions/json?'
+        'origin=${Uri.encodeComponent(start)}&'
+        'destination=${Uri.encodeComponent(end)}&'
+        'alternatives=true&'
+        'key=$apiKey',
+      );
+
+      final resp = await http.get(directionsUrl);
+      if (resp.statusCode == 200) {
+        final data = json.decode(resp.body);
+        if (data['status'] == 'OK' && (data['routes'] as List).isNotEmpty) {
+          final polylineStr = data['routes'][0]['overview_polyline']?['points'] ?? '';
+          if (polylineStr.isNotEmpty) {
+            final points = _decodePolyline(polylineStr);
+            if (points.isNotEmpty) {
+              // Sample 4 intermediate points (20%, 40%, 60%, 80%) along route
+              final fractions = [0.20, 0.40, 0.60, 0.80];
+              final sampleIndices = fractions.map((f) => (points.length * f).toInt()).toList();
+
+              final detected = <String>[];
+              final startName = start.split(',').first.trim().toLowerCase();
+              final endName = end.split(',').first.trim().toLowerCase();
+
+              for (final idx in sampleIndices) {
+                if (idx < points.length) {
+                  final pt = points[idx];
+                  final nearbyUrl = Uri.parse(
+                    'https://maps.googleapis.com/maps/api/place/nearbysearch/json?'
+                    'location=${pt.latitude},${pt.longitude}&'
+                    'radius=25000&'
+                    'type=locality&'
+                    'key=$apiKey',
+                  );
+
+                  final nResp = await http.get(nearbyUrl);
+                  if (nResp.statusCode == 200) {
+                    final nData = json.decode(nResp.body);
+                    if (nData['results'] != null && (nData['results'] as List).isNotEmpty) {
+                      final name = nData['results'][0]['name']?.toString() ?? '';
+                      final lower = name.toLowerCase();
+                      if (name.isNotEmpty &&
+                          !detected.contains(name) &&
+                          !_model.stoppages.contains(name) &&
+                          !lower.contains(startName) &&
+                          !lower.contains(endName) &&
+                          !startName.contains(lower) &&
+                          !endName.contains(lower)) {
+                        detected.add(name);
+                      }
+                    }
+                  }
+                }
+              }
+
+              for (final stop in detected) {
+                _model.addToStoppages(stop);
+              }
+            }
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error auto-detecting stoppages: $e');
+    } finally {
+      if (mounted) {
+        safeSetState(() => _isAutoDetecting = false);
+      }
+    }
   }
 
   @override
@@ -110,7 +235,7 @@ class _Stoppage7WidgetState extends State<Stoppage7Widget> {
                           EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 25.0, 0.0),
                       child: FFButtonWidget(
                         onPressed: () async {
-                          context.pushNamed(RuleRide8Widget.routeName);
+                          context.pushNamed(RideRules7Widget.routeName);
                         },
                         text: 'Skip',
                         options: FFButtonOptions(
@@ -152,7 +277,7 @@ class _Stoppage7WidgetState extends State<Stoppage7Widget> {
                     padding:
                         EdgeInsetsDirectional.fromSTEB(0.0, 0.0, 0.0, 16.0),
                     child: Text(
-                      'Please fill minimum 2 items',
+                      'Add or auto-detect cities along your route',
                       style: FlutterFlowTheme.of(context).titleMedium.override(
                             font: GoogleFonts.interTight(
                               fontWeight: FlutterFlowTheme.of(context)
@@ -230,50 +355,43 @@ class _Stoppage7WidgetState extends State<Stoppage7Widget> {
                               final itemsListItem = itemsList[itemsListIndex];
                               return Container(
                                 decoration: BoxDecoration(
-                                  color: Color(0xFFF4F4F4),
+                                  color: const Color(0xFFF1F5F9),
                                   borderRadius: BorderRadius.circular(20.0),
                                   border: Border.all(
-                                    color: Color(0xFF4DABF7),
+                                    color: const Color(0xFF93C5FD),
                                   ),
                                 ),
                                 child: Padding(
-                                  padding: EdgeInsetsDirectional.fromSTEB(
-                                      16.0, 8.0, 16.0, 8.0),
-                                  child: InkWell(
-                                    splashColor: Colors.transparent,
-                                    focusColor: Colors.transparent,
-                                    hoverColor: Colors.transparent,
-                                    highlightColor: Colors.transparent,
-                                    onTap: () async {
-                                      safeSetState(() {});
-                                    },
-                                    child: Text(
-                                      itemsListItem,
-                                      style: FlutterFlowTheme.of(context)
-                                          .bodyMedium
-                                          .override(
-                                            font: GoogleFonts.inter(
-                                              fontWeight:
-                                                  FlutterFlowTheme.of(context)
-                                                      .bodyMedium
-                                                      .fontWeight,
-                                              fontStyle:
-                                                  FlutterFlowTheme.of(context)
-                                                      .bodyMedium
-                                                      .fontStyle,
+                                  padding: const EdgeInsetsDirectional.fromSTEB(
+                                      14.0, 6.0, 10.0, 6.0),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        itemsListItem,
+                                        style: FlutterFlowTheme.of(context)
+                                            .bodyMedium
+                                            .override(
+                                              font: GoogleFonts.inter(
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                              color: const Color(0xFF1E293B),
+                                              fontSize: 13.5,
                                             ),
-                                            color: Color(0xFF333333),
-                                            letterSpacing: 0.0,
-                                            fontWeight:
-                                                FlutterFlowTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontWeight,
-                                            fontStyle:
-                                                FlutterFlowTheme.of(context)
-                                                    .bodyMedium
-                                                    .fontStyle,
-                                          ),
-                                    ),
+                                      ),
+                                      const SizedBox(width: 6.0),
+                                      InkWell(
+                                        onTap: () {
+                                          _model.removeFromStoppages(itemsListItem);
+                                          safeSetState(() {});
+                                        },
+                                        child: const Icon(
+                                          Icons.cancel_rounded,
+                                          size: 18.0,
+                                          color: Color(0xFF94A3B8),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               );
@@ -283,6 +401,56 @@ class _Stoppage7WidgetState extends State<Stoppage7Widget> {
                       ),
                     ),
                   ),
+
+                  // Auto-Detect Route Stoppages Button
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                    child: InkWell(
+                      onTap: _isAutoDetecting ? null : _autoDetectStoppages,
+                      borderRadius: BorderRadius.circular(12.0),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 11.0, horizontal: 16.0),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEFF6FF),
+                          borderRadius: BorderRadius.circular(12.0),
+                          border: Border.all(color: const Color(0xFF93C5FD), width: 1.2),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            if (_isAutoDetecting)
+                              const SizedBox(
+                                width: 16.0,
+                                height: 16.0,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.0,
+                                  color: Color(0xFF2563EB),
+                                ),
+                              )
+                            else
+                              const Icon(
+                                Icons.auto_awesome,
+                                color: Color(0xFF2563EB),
+                                size: 18.0,
+                              ),
+                            const SizedBox(width: 8.0),
+                            Text(
+                              _isAutoDetecting
+                                  ? 'Auto-detecting route cities...'
+                                  : 'Auto-Detect Route Cities',
+                              style: GoogleFonts.inter(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF2563EB),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 6.0),
+
                   Row(
                     mainAxisSize: MainAxisSize.max,
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -366,7 +534,6 @@ class _Stoppage7WidgetState extends State<Stoppage7Widget> {
                                         .fontStyle,
                                   ),
                           debounceTime: 600,
-                          countries: ["in"],
                           isLatLngRequired: false,
                           getPlaceDetailWithLatLng: (prediction) {},
                           itemClick: (prediction) {
@@ -441,60 +608,33 @@ class _Stoppage7WidgetState extends State<Stoppage7Widget> {
                       ),
                     ],
                   ),
-                  if (_model.stoppages.length > 0)
-                    Padding(
-                      padding: EdgeInsetsDirectional.fromSTEB(
-                          16.0, 16.0, 16.0, 16.0),
-                      child: FFButtonWidget(
-                        onPressed: () async {
-                          if (_model.stoppages.length > 0) {
-                            FFAppState().stoppageNormalParcaleRide =
-                                _model.stoppages.toList().cast<String>();
-                            safeSetState(() {});
-                            safeSetState(() {
-                              _model.stoppagesTextController?.clear();
-                            });
+                  Padding(
+                    padding: EdgeInsetsDirectional.fromSTEB(
+                        16.0, 16.0, 16.0, 16.0),
+                    child: FFButtonWidget(
+                      onPressed: () async {
+                        FFAppState().stoppageNormalParcaleRide =
+                            _model.stoppages.toList().cast<String>();
+                        safeSetState(() {});
+                        safeSetState(() {
+                          _model.stoppagesTextController?.clear();
+                        });
 
-                            context.pushNamed(RuleRide8Widget.routeName);
-                          } else {
-                            await showDialog(
-                              context: context,
-                              builder: (alertDialogContext) {
-                                return AlertDialog(
-                                  title: Text('Attention Required '),
-                                  content: Text('Please Stoppages of ride'),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () =>
-                                          Navigator.pop(alertDialogContext),
-                                      child: Text('Ok'),
-                                    ),
-                                  ],
-                                );
-                              },
-                            );
-                          }
-                        },
-                        text: 'Submit',
-                        options: FFButtonOptions(
-                          width: double.infinity,
-                          height: 50.0,
-                          padding: EdgeInsets.all(8.0),
-                          iconPadding: EdgeInsetsDirectional.fromSTEB(
-                              0.0, 0.0, 0.0, 0.0),
-                          color: Color(0xFFF67E4A),
-                          textStyle:
-                              FlutterFlowTheme.of(context).titleSmall.override(
-                                    font: GoogleFonts.interTight(
-                                      fontWeight: FlutterFlowTheme.of(context)
-                                          .titleSmall
-                                          .fontWeight,
-                                      fontStyle: FlutterFlowTheme.of(context)
-                                          .titleSmall
-                                          .fontStyle,
-                                    ),
-                                    color: FlutterFlowTheme.of(context).info,
-                                    letterSpacing: 0.0,
+                        context.pushNamed(RideRules7Widget.routeName);
+                      },
+                      text: _model.stoppages.isNotEmpty
+                          ? 'Continue with ${_model.stoppages.length} Stop${_model.stoppages.length > 1 ? 's' : ''}'
+                          : 'Continue to Ride Rules',
+                      options: FFButtonOptions(
+                        width: double.infinity,
+                        height: 50.0,
+                        padding: EdgeInsets.all(8.0),
+                        iconPadding: EdgeInsetsDirectional.fromSTEB(
+                            0.0, 0.0, 0.0, 0.0),
+                        color: Color(0xFFF67E4A),
+                        textStyle:
+                            FlutterFlowTheme.of(context).titleSmall.override(
+                                  font: GoogleFonts.interTight(
                                     fontWeight: FlutterFlowTheme.of(context)
                                         .titleSmall
                                         .fontWeight,
@@ -502,15 +642,18 @@ class _Stoppage7WidgetState extends State<Stoppage7Widget> {
                                         .titleSmall
                                         .fontStyle,
                                   ),
-                          elevation: 2.0,
-                          borderSide: BorderSide(
-                            color: Colors.transparent,
-                            width: 1.0,
-                          ),
-                          borderRadius: BorderRadius.circular(8.0),
+                                  color: FlutterFlowTheme.of(context).info,
+                                  letterSpacing: 0.0,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                        elevation: 2.0,
+                        borderSide: BorderSide(
+                          color: Colors.transparent,
+                          width: 1.0,
                         ),
                       ),
                     ),
+                  ),
                 ].divide(SizedBox(height: 12.0)),
               ),
             ),

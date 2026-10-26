@@ -293,7 +293,7 @@ class _DriverDetail10WidgetState extends State<DriverDetail10Widget> {
                       mainAxisSize: MainAxisSize.max,
                       children: [
                         Text(
-                          'Vehicle Information (Optional)',
+                          'Vehicle Name or Detail (Optional)',
                           style:
                               FlutterFlowTheme.of(context).titleMedium.override(
                                     font: GoogleFonts.interTight(
@@ -322,11 +322,11 @@ class _DriverDetail10WidgetState extends State<DriverDetail10Widget> {
                                   focusNode: _model.vehicleNumberFocusNode,
                                   autofocus: false,
                                   textCapitalization:
-                                      TextCapitalization.characters,
+                                      TextCapitalization.words,
                                   obscureText: false,
                                   decoration: InputDecoration(
-                                    labelText: 'Enter your vehicle number',
-                                    hintText: 'Enter vehicle if available',
+                                    labelText: 'Vehicle Name or Detail',
+                                    hintText: 'E.g. Hyundai Aura 2023',
                                     hintStyle: FlutterFlowTheme.of(context)
                                         .bodyMedium
                                         .override(

@@ -345,7 +345,6 @@ class _RideLocation1WidgetState extends State<RideLocation1Widget> {
                                             fontWeight: FontWeight.w500,
                                           ),
                                           debounceTime: 500,
-                                          countries: const ['in'],
                                           isLatLngRequired: true,
                                           getPlaceDetailWithLatLng: (prediction) {
                                             if (prediction.lat != null && prediction.lng != null) {
@@ -450,7 +449,6 @@ class _RideLocation1WidgetState extends State<RideLocation1Widget> {
                                             fontWeight: FontWeight.w500,
                                           ),
                                           debounceTime: 500,
-                                          countries: const ['in'],
                                           isLatLngRequired: true,
                                           getPlaceDetailWithLatLng: (prediction) {
                                             if (prediction.lat != null && prediction.lng != null) {
