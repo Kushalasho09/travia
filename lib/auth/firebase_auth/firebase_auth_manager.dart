@@ -302,10 +302,15 @@ class FirebaseAuthManager extends AuthManager
     }
 
     // 2. Sign in or create account in Firebase Auth to establish the user session
-    final cleanPhone = ApitxtService.instance.clean10DigitPhone;
+    final isIndia = ApitxtService.instance.isIndianNumber;
+    final cleanPhone = isIndia
+        ? ApitxtService.instance.clean10DigitPhone
+        : ApitxtService.instance.cleanPhoneDigits;
     final syntheticEmail = 'phone_$cleanPhone@travia.internal';
     final syntheticPassword = 'TraviaAuth_${cleanPhone}_#Secure2026!';
-    final actualPhone = phoneAuthManager.phoneNumber ?? '+91$cleanPhone';
+    final actualPhone = phoneAuthManager.phoneNumber ??
+        (ApitxtService.instance.currentPhoneNumber ??
+            (isIndia ? '+91$cleanPhone' : '+$cleanPhone'));
 
     final user = await _signInOrCreateAccount(
       context,

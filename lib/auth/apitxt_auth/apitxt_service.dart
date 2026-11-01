@@ -18,7 +18,7 @@ class ApitxtService {
   String? get currentPhoneNumber => _currentPhoneNumber;
   String? get currentOtp => _currentOtp;
 
-  /// Returns 10-digit clean phone number (e.g. 9876543210)
+  /// Returns 10-digit clean phone number (e.g. 9876543210) for Indian numbers
   String get clean10DigitPhone {
     if (_currentPhoneNumber == null) return '';
     final digits = _currentPhoneNumber!.replaceAll(RegExp(r'\D'), '');
@@ -28,15 +28,27 @@ class ApitxtService {
     return digits;
   }
 
-  /// Formats any mobile string into the 12-digit Indian format required by APITxT (e.g., 919876543210)
+  /// Returns clean phone number digits without plus (e.g. 919876543210, 14155552671)
+  String get cleanPhoneDigits {
+    if (_currentPhoneNumber == null) return '';
+    return _currentPhoneNumber!.replaceAll(RegExp(r'\D'), '');
+  }
+
+  /// Whether current phone is an Indian (+91) number
+  bool get isIndianNumber {
+    final digits = cleanPhoneDigits;
+    return digits.startsWith('91') && digits.length == 12;
+  }
+
+  /// Formats any mobile string into the international digits format required by APITxT (e.g., 919876543210, 14155552671)
   String formatForApitxt(String rawPhone) {
-    final digits = rawPhone.replaceAll(RegExp(r'\D'), '');
+    final trimmed = rawPhone.trim();
+    if (trimmed.startsWith('+')) {
+      return trimmed.substring(1).replaceAll(RegExp(r'\D'), '');
+    }
+    final digits = trimmed.replaceAll(RegExp(r'\D'), '');
     if (digits.length == 10) {
       return '91$digits';
-    } else if (digits.length == 12 && digits.startsWith('91')) {
-      return digits;
-    } else if (digits.length > 10) {
-      return '91${digits.substring(digits.length - 10)}';
     }
     return digits;
   }
@@ -52,10 +64,10 @@ class ApitxtService {
   Future<Map<String, dynamic>> sendOtp(String rawPhone) async {
     try {
       final formattedMobile = formatForApitxt(rawPhone);
-      if (formattedMobile.length != 12) {
+      if (formattedMobile.length < 7 || formattedMobile.length > 15) {
         return {
           'success': false,
-          'message': 'Please enter a valid 10-digit mobile number.',
+          'message': 'Please enter a valid phone number with country code.',
         };
       }
 
@@ -89,9 +101,8 @@ class ApitxtService {
         final message = responseData is Map ? responseData['message']?.toString() : response.body;
 
         if (status == 'success' || (message != null && message.toLowerCase().contains('success'))) {
-          // Normalize stored phone representation to standard E.164 (+91XXXXXXXXXX)
-          final tenDigit = formattedMobile.substring(2);
-          _currentPhoneNumber = '+91$tenDigit';
+          // Normalize stored phone representation to standard E.164 (+<country_code><number>)
+          _currentPhoneNumber = '+$formattedMobile';
           _currentOtp = generatedOtp;
           _otpTimestamp = DateTime.now();
 

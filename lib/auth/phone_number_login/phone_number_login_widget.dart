@@ -1,12 +1,13 @@
 import '/auth/firebase_auth/auth_util.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/index.dart';
+import 'package:country_picker/country_picker.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import 'phone_number_login_model.dart';
 export 'phone_number_login_model.dart';
 
@@ -23,6 +24,7 @@ class PhoneNumberLoginWidget extends StatefulWidget {
 class _PhoneNumberLoginWidgetState extends State<PhoneNumberLoginWidget> {
   late PhoneNumberLoginModel _model;
   bool _isLoading = false;
+  Country _selectedCountry = CountryParser.parseCountryCode('IN');
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -33,10 +35,14 @@ class _PhoneNumberLoginWidgetState extends State<PhoneNumberLoginWidget> {
 
     _model.phoneNumberTextController ??= TextEditingController();
     _model.phoneNumberFocusNode ??= FocusNode();
+    _model.phoneNumberFocusNode?.addListener(_onFocusChange);
 
-    _model.phoneNumberMask = MaskTextInputFormatter(mask: '+91##########');
     authManager.handlePhoneAuthStateChanges(context);
     authManager.phoneAuthManager.addListener(_onPhoneAuthStateChanged);
+  }
+
+  void _onFocusChange() {
+    if (mounted) setState(() {});
   }
 
   void _onPhoneAuthStateChanged() {
@@ -47,8 +53,58 @@ class _PhoneNumberLoginWidgetState extends State<PhoneNumberLoginWidget> {
     }
   }
 
+  void _openCountryPicker() {
+    showCountryPicker(
+      context: context,
+      showPhoneCode: true,
+      favorite: <String>['IN', 'US', 'GB', 'AE', 'CA', 'AU', 'SA', 'SG'],
+      countryListTheme: CountryListThemeData(
+        bottomSheetHeight: MediaQuery.of(context).size.height * 0.75,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(24.0),
+          topRight: Radius.circular(24.0),
+        ),
+        backgroundColor: Colors.white,
+        inputDecoration: InputDecoration(
+          labelText: 'Search country or code',
+          hintText: 'Type country name or code...',
+          prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFFEE7B4D)),
+          filled: true,
+          fillColor: const Color(0xFFF9FAFB),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14.0),
+            borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14.0),
+            borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14.0),
+            borderSide: const BorderSide(color: Color(0xFFEE7B4D), width: 1.5),
+          ),
+        ),
+        searchTextStyle: GoogleFonts.inter(
+          fontSize: 15.0,
+          color: const Color(0xFF111827),
+        ),
+        textStyle: GoogleFonts.inter(
+          fontSize: 15.0,
+          color: const Color(0xFF111827),
+        ),
+      ),
+      onSelect: (Country country) {
+        setState(() {
+          _selectedCountry = country;
+        });
+      },
+    );
+  }
+
   @override
   void dispose() {
+    _model.phoneNumberFocusNode?.removeListener(_onFocusChange);
     authManager.phoneAuthManager.removeListener(_onPhoneAuthStateChanged);
     _model.dispose();
 
@@ -276,7 +332,7 @@ class _PhoneNumberLoginWidgetState extends State<PhoneNumberLoginWidget> {
                       ),
                       const SizedBox(height: 24.0),
 
-                      // Phone Input Field
+                      // Phone Input Field Label
                       Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
@@ -289,53 +345,119 @@ class _PhoneNumberLoginWidgetState extends State<PhoneNumberLoginWidget> {
                         ),
                       ),
                       const SizedBox(height: 6.0),
-                      TextFormField(
-                        controller: _model.phoneNumberTextController,
-                        focusNode: _model.phoneNumberFocusNode,
-                        onFieldSubmitted: (_) async {
-                          _model.phoneNumber = int.tryParse(
-                              _model.phoneNumberTextController.text);
-                          safeSetState(() {});
-                        },
-                        autofocus: true,
-                        obscureText: false,
-                        keyboardType: TextInputType.phone,
-                        cursorColor: const Color(0xFFEE7B4D),
-                        inputFormatters: [_model.phoneNumberMask],
-                        style: GoogleFonts.inter(
-                          fontSize: 16.0,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF111827),
+
+                      // Global Phone Input with Country Code Selector
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12.0),
+                          border: Border.all(
+                            color: (_model.phoneNumberFocusNode?.hasFocus ?? false)
+                                ? const Color(0xFFEE7B4D)
+                                : const Color(0xFFD1D5DB),
+                            width: (_model.phoneNumberFocusNode?.hasFocus ?? false)
+                                ? 1.5
+                                : 1.0,
+                          ),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x05000000),
+                              blurRadius: 4.0,
+                              offset: Offset(0, 1),
+                            ),
+                          ],
                         ),
-                        decoration: InputDecoration(
-                          hintText: 'Enter your phone number (+91...)',
-                          hintStyle: GoogleFonts.inter(
-                            fontSize: 14.0,
-                            color: const Color(0xFF9CA3AF),
-                          ),
-                          filled: true,
-                          fillColor: Colors.white,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16.0,
-                            vertical: 16.0,
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: const BorderSide(
-                              color: Color(0xFFD1D5DB),
+                        child: Row(
+                          children: [
+                            // Country Code Dropdown Trigger
+                            InkWell(
+                              onTap: _openCountryPicker,
+                              borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(12.0),
+                                bottomLeft: Radius.circular(12.0),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12.0,
+                                  vertical: 14.0,
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      _selectedCountry.flagEmoji,
+                                      style: const TextStyle(fontSize: 20.0),
+                                    ),
+                                    const SizedBox(width: 6.0),
+                                    Text(
+                                      '+${_selectedCountry.phoneCode}',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 15.0,
+                                        fontWeight: FontWeight.w600,
+                                        color: const Color(0xFF111827),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4.0),
+                                    const Icon(
+                                      Icons.keyboard_arrow_down_rounded,
+                                      color: Color(0xFF6B7280),
+                                      size: 18.0,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+
+                            // Divider
+                            Container(
+                              height: 28.0,
                               width: 1.0,
+                              color: const Color(0xFFE5E7EB),
                             ),
-                            borderRadius: BorderRadius.circular(12.0),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderSide: const BorderSide(
-                              color: Color(0xFFEE7B4D),
-                              width: 1.5,
+
+                            // Number Input Field
+                            Expanded(
+                              child: TextFormField(
+                                controller: _model.phoneNumberTextController,
+                                focusNode: _model.phoneNumberFocusNode,
+                                onFieldSubmitted: (_) async {
+                                  _model.phoneNumber = int.tryParse(
+                                      _model.phoneNumberTextController.text);
+                                  safeSetState(() {});
+                                },
+                                autofocus: true,
+                                obscureText: false,
+                                keyboardType: TextInputType.phone,
+                                cursorColor: const Color(0xFFEE7B4D),
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.digitsOnly,
+                                  LengthLimitingTextInputFormatter(15),
+                                ],
+                                style: GoogleFonts.inter(
+                                  fontSize: 16.0,
+                                  fontWeight: FontWeight.w600,
+                                  color: const Color(0xFF111827),
+                                ),
+                                decoration: InputDecoration(
+                                  hintText: 'Enter phone number',
+                                  hintStyle: GoogleFonts.inter(
+                                    fontSize: 14.0,
+                                    color: const Color(0xFF9CA3AF),
+                                  ),
+                                  filled: false,
+                                  isDense: true,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 14.0,
+                                    vertical: 16.0,
+                                  ),
+                                  border: InputBorder.none,
+                                  enabledBorder: InputBorder.none,
+                                  focusedBorder: InputBorder.none,
+                                ),
+                              ),
                             ),
-                            borderRadius: BorderRadius.circular(12.0),
-                          ),
+                          ],
                         ),
-                        validator: _model.phoneNumberTextControllerValidator
-                            .asValidator(context),
                       ),
 
                       const SizedBox(height: 24.0),
@@ -359,24 +481,30 @@ class _PhoneNumberLoginWidgetState extends State<PhoneNumberLoginWidget> {
                                     return;
                                   }
 
-                                  // Sanitize phone number into valid E.164 format (+91XXXXXXXXXX)
-                                  String cleanDigits = rawPhone.replaceAll(RegExp(r'[^0-9+]'), '');
-                                  String formattedPhone;
-                                  if (cleanDigits.startsWith('+')) {
-                                    formattedPhone = cleanDigits;
-                                  } else if (cleanDigits.startsWith('91') && cleanDigits.length == 12) {
-                                    formattedPhone = '+$cleanDigits';
-                                  } else {
-                                    formattedPhone = '+91$cleanDigits';
-                                  }
+                                  // Clean digits
+                                  String digits = rawPhone.replaceAll(RegExp(r'\D'), '');
+                                  // Strip leading zeros if entered (e.g. 09876543210 -> 9876543210)
+                                  digits = digits.replaceFirst(RegExp(r'^0+'), '');
 
-                                  if (formattedPhone.length < 12) {
+                                  if (digits.length < 6 || digits.length > 15) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
-                                        content: Text('Please enter a valid 10-digit mobile number.'),
+                                        content: Text('Please enter a valid phone number.'),
                                       ),
                                     );
                                     return;
+                                  }
+
+                                  // Construct standard E.164 phone number
+                                  String formattedPhone;
+                                  if (rawPhone.startsWith('+')) {
+                                    formattedPhone = '+$digits';
+                                  } else if (_selectedCountry.phoneCode == '91' &&
+                                      digits.startsWith('91') &&
+                                      digits.length == 12) {
+                                    formattedPhone = '+$digits';
+                                  } else {
+                                    formattedPhone = '+${_selectedCountry.phoneCode}$digits';
                                   }
 
                                   setState(() {
