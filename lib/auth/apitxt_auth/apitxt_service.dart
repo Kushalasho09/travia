@@ -120,7 +120,7 @@ class ApitxtService {
       } else {
         return {
           'success': false,
-          'message': 'Server error (${response.statusCode}) while sending OTP.',
+          'message': 'Temporary server issue (${response.statusCode}). Please tap Retry Again.',
         };
       }
     } catch (e) {
@@ -129,7 +129,7 @@ class ApitxtService {
       }
       return {
         'success': false,
-        'message': 'Network error while sending OTP. Please check your connection.',
+        'message': 'Network connection issue while sending OTP. Please check your internet and tap Retry Again.',
       };
     }
   }

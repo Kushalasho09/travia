@@ -99,8 +99,35 @@ class _VerifyOTPWidgetState extends State<VerifyOTPWidget> {
       );
       if (success != false) {
         _startResendCountdown();
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: const Color(0xFFDC2626),
+            content: const Text('Temporary server error while resending verification code.'),
+            action: SnackBarAction(
+              label: 'Retry Again',
+              textColor: const Color(0xFFFDE047),
+              onPressed: _handleResendOTP,
+            ),
+          ),
+        );
       }
     } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: const Color(0xFFDC2626),
+            content: const Text('Connection issue. Please check your network and retry.'),
+            action: SnackBarAction(
+              label: 'Retry Again',
+              textColor: const Color(0xFFFDE047),
+              onPressed: _handleResendOTP,
+            ),
+          ),
+        );
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -150,43 +177,84 @@ class _VerifyOTPWidgetState extends State<VerifyOTPWidget> {
     }
   }
 
+  void _navigateToLogin() {
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.goNamed(PhoneNumberLoginWidget.routeName);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        FocusScope.of(context).unfocus();
-        FocusManager.instance.primaryFocus?.unfocus();
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _navigateToLogin();
       },
-      child: Scaffold(
-        key: scaffoldKey,
-        backgroundColor: Colors.white,
-        body: SafeArea(
-          top: true,
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Top Header / Travia Logo
-                Padding(
-                  padding: const EdgeInsets.only(top: 8.0, bottom: 20.0),
-                  child: Image.asset(
-                    'assets/images/logoTraviaJi.png',
-                    height: 52.0,
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Text(
-                        'Travia',
-                        style: GoogleFonts.outfit(
-                          fontSize: 32.0,
-                          fontWeight: FontWeight.bold,
-                          color: const Color(0xFF2C3550),
+      child: GestureDetector(
+        onTap: () {
+          FocusScope.of(context).unfocus();
+          FocusManager.instance.primaryFocus?.unfocus();
+        },
+        child: Scaffold(
+          key: scaffoldKey,
+          backgroundColor: Colors.white,
+          body: SafeArea(
+            top: true,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Top Header / Back Button + Travia Logo
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4.0, bottom: 20.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        InkWell(
+                          onTap: _navigateToLogin,
+                          borderRadius: BorderRadius.circular(12.0),
+                          child: Container(
+                            width: 42.0,
+                            height: 42.0,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF3F4F6),
+                              borderRadius: BorderRadius.circular(12.0),
+                              border: Border.all(
+                                color: const Color(0xFFE5E7EB),
+                                width: 1.0,
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.arrow_back_ios_new_rounded,
+                              color: Color(0xFF1F2937),
+                              size: 18.0,
+                            ),
+                          ),
                         ),
-                      );
-                    },
-                  ),
-                ).animate().fade(duration: 400.ms).slideY(begin: -0.1, end: 0),
-                const SizedBox(height: 10.0),
+                        Image.asset(
+                          'assets/images/logoTraviaJi.png',
+                          height: 48.0,
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Text(
+                              'Travia',
+                              style: GoogleFonts.outfit(
+                                fontSize: 28.0,
+                                fontWeight: FontWeight.bold,
+                                color: const Color(0xFF2C3550),
+                              ),
+                            );
+                          },
+                        ),
+                        const SizedBox(width: 42.0),
+                      ],
+                    ),
+                  ).animate().fade(duration: 400.ms).slideY(begin: -0.1, end: 0),
+                  const SizedBox(height: 10.0),
 
                 // Top Hero Section (Banner & Illustration)
                 Stack(
@@ -360,19 +428,66 @@ class _VerifyOTPWidgetState extends State<VerifyOTPWidget> {
                       ),
                       const SizedBox(height: 8.0),
                       Text(
-                        authManager.phoneAuthManager.phoneNumber != null &&
-                                authManager.phoneAuthManager.phoneNumber!.isNotEmpty
-                            ? 'We\'ve sent a 6-digit verification code to\n${authManager.phoneAuthManager.phoneNumber}'
-                            : 'We\'ve sent a 6-digit verification code to your phone number',
+                        'We\'ve sent a 6-digit verification code to',
                         textAlign: TextAlign.center,
                         style: GoogleFonts.inter(
                           fontSize: 13.0,
                           fontWeight: FontWeight.w400,
                           color: const Color(0xFF6B7280),
-                          height: 1.4,
                         ),
                       ),
-                      const SizedBox(height: 24.0),
+                      const SizedBox(height: 6.0),
+                      InkWell(
+                        onTap: _navigateToLogin,
+                        borderRadius: BorderRadius.circular(8.0),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                authManager.phoneAuthManager.phoneNumber != null &&
+                                        authManager.phoneAuthManager.phoneNumber!.isNotEmpty
+                                    ? authManager.phoneAuthManager.phoneNumber!
+                                    : 'your phone number',
+                                style: GoogleFonts.inter(
+                                  fontSize: 15.0,
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFF111827),
+                                ),
+                              ),
+                              const SizedBox(width: 6.0),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 3.0),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFFF0E9),
+                                  borderRadius: BorderRadius.circular(6.0),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      Icons.edit_outlined,
+                                      size: 13.0,
+                                      color: Color(0xFFEE7B4D),
+                                    ),
+                                    const SizedBox(width: 3.0),
+                                    Text(
+                                      'Edit',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 11.0,
+                                        fontWeight: FontWeight.bold,
+                                        color: const Color(0xFFEE7B4D),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20.0),
 
                       // PIN Code TextField
                       PinCodeTextField(
@@ -555,8 +670,9 @@ class _VerifyOTPWidgetState extends State<VerifyOTPWidget> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   /*
   // PREVIOUS BUILD IMPLEMENTATION (COMMENTED FOR REFERENCE)

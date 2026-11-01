@@ -37,7 +37,6 @@ class _PhoneNumberLoginWidgetState extends State<PhoneNumberLoginWidget> {
     _model.phoneNumberFocusNode ??= FocusNode();
     _model.phoneNumberFocusNode?.addListener(_onFocusChange);
 
-    authManager.handlePhoneAuthStateChanges(context);
     authManager.phoneAuthManager.addListener(_onPhoneAuthStateChanged);
   }
 
@@ -47,9 +46,12 @@ class _PhoneNumberLoginWidgetState extends State<PhoneNumberLoginWidget> {
 
   void _onPhoneAuthStateChanged() {
     if (authManager.phoneAuthManager.phoneAuthError != null && mounted) {
+      final err = authManager.phoneAuthManager.phoneAuthError.toString();
+      authManager.phoneAuthManager.update(() => authManager.phoneAuthManager.phoneAuthError = null);
       setState(() {
         _isLoading = false;
       });
+      _showErrorWithRetry(err);
     }
   }
 
@@ -99,6 +101,117 @@ class _PhoneNumberLoginWidgetState extends State<PhoneNumberLoginWidget> {
           _selectedCountry = country;
         });
       },
+    );
+  }
+
+  Future<void> _handleSendOtp() async {
+    final rawPhone = _model.phoneNumberTextController?.text.trim() ?? '';
+    if (rawPhone.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter your phone number.'),
+        ),
+      );
+      return;
+    }
+
+    // Clean digits
+    String digits = rawPhone.replaceAll(RegExp(r'\D'), '');
+    // Strip leading zeros if entered (e.g. 09876543210 -> 9876543210)
+    digits = digits.replaceFirst(RegExp(r'^0+'), '');
+
+    if (digits.length < 6 || digits.length > 15) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a valid phone number.'),
+        ),
+      );
+      return;
+    }
+
+    // Construct standard E.164 phone number
+    String formattedPhone;
+    if (rawPhone.startsWith('+')) {
+      formattedPhone = '+$digits';
+    } else if (_selectedCountry.phoneCode == '91' &&
+        digits.startsWith('91') &&
+        digits.length == 12) {
+      formattedPhone = '+$digits';
+    } else {
+      formattedPhone = '+${_selectedCountry.phoneCode}$digits';
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final success = await authManager.beginPhoneAuth(
+        context: context,
+        phoneNumber: formattedPhone,
+        onCodeSent: (context) async {
+          if (mounted) {
+            setState(() {
+              _isLoading = false;
+            });
+          }
+          // Push to VerifyOTPWidget so user can edit phone number or press Back without app closing
+          context.pushNamed(VerifyOTPWidget.routeName);
+        },
+      );
+
+      if (success == false && mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        final rawError = authManager.phoneAuthManager.phoneAuthError?.toString() ?? '';
+        _showErrorWithRetry(rawError);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        _showErrorWithRetry(e.toString());
+      }
+    }
+  }
+
+  void _showErrorWithRetry(String error) {
+    if (!mounted) return;
+    String displayMsg = 'Temporary server error while sending verification code.';
+    if (error.contains('Network') || error.contains('connection') || error.contains('timeout')) {
+      displayMsg = 'Connection issue while sending code. Please check your internet.';
+    } else if (error.isNotEmpty && !error.contains('Exception') && !error.contains('Instance of')) {
+      displayMsg = error;
+    }
+
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: const Color(0xFFDC2626),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+        duration: const Duration(seconds: 8),
+        content: Row(
+          children: [
+            const Icon(Icons.error_outline_rounded, color: Colors.white, size: 20.0),
+            const SizedBox(width: 8.0),
+            Expanded(
+              child: Text(
+                displayMsg,
+                style: GoogleFonts.inter(fontSize: 13.0, color: Colors.white),
+              ),
+            ),
+          ],
+        ),
+        action: SnackBarAction(
+          label: 'Retry Again',
+          textColor: const Color(0xFFFDE047),
+          onPressed: _handleSendOtp,
+        ),
+      ),
     );
   }
 
@@ -467,79 +580,7 @@ class _PhoneNumberLoginWidgetState extends State<PhoneNumberLoginWidget> {
                         width: double.infinity,
                         height: 52.0,
                         child: ElevatedButton(
-                          onPressed: _isLoading
-                              ? null
-                              : () async {
-                                  final rawPhone =
-                                      _model.phoneNumberTextController.text.trim();
-                                  if (rawPhone.isEmpty) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Please enter your phone number.'),
-                                      ),
-                                    );
-                                    return;
-                                  }
-
-                                  // Clean digits
-                                  String digits = rawPhone.replaceAll(RegExp(r'\D'), '');
-                                  // Strip leading zeros if entered (e.g. 09876543210 -> 9876543210)
-                                  digits = digits.replaceFirst(RegExp(r'^0+'), '');
-
-                                  if (digits.length < 6 || digits.length > 15) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Please enter a valid phone number.'),
-                                      ),
-                                    );
-                                    return;
-                                  }
-
-                                  // Construct standard E.164 phone number
-                                  String formattedPhone;
-                                  if (rawPhone.startsWith('+')) {
-                                    formattedPhone = '+$digits';
-                                  } else if (_selectedCountry.phoneCode == '91' &&
-                                      digits.startsWith('91') &&
-                                      digits.length == 12) {
-                                    formattedPhone = '+$digits';
-                                  } else {
-                                    formattedPhone = '+${_selectedCountry.phoneCode}$digits';
-                                  }
-
-                                  setState(() {
-                                    _isLoading = true;
-                                  });
-                                  try {
-                                    final success = await authManager.beginPhoneAuth(
-                                      context: context,
-                                      phoneNumber: formattedPhone,
-                                      onCodeSent: (context) async {
-                                        if (mounted) {
-                                          setState(() {
-                                            _isLoading = false;
-                                          });
-                                        }
-                                        context.goNamedAuth(
-                                          VerifyOTPWidget.routeName,
-                                          context.mounted,
-                                          ignoreRedirect: true,
-                                        );
-                                      },
-                                    );
-                                    if (success == false && mounted) {
-                                      setState(() {
-                                        _isLoading = false;
-                                      });
-                                    }
-                                  } catch (e) {
-                                    if (mounted) {
-                                      setState(() {
-                                        _isLoading = false;
-                                      });
-                                    }
-                                  }
-                                },
+                          onPressed: _isLoading ? null : _handleSendOtp,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFFEE7B4D),
                             disabledBackgroundColor: const Color(0xB2EE7B4D),

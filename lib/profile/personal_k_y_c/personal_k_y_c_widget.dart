@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '/index.dart';
 import 'personal_k_y_c_model.dart';
 export 'personal_k_y_c_model.dart';
 
@@ -478,7 +479,7 @@ class _PersonalKYCWidgetState extends State<PersonalKYCWidget> {
                                                           }
                                                         },
                                                         child: Text(
-                                                          'Tap To Upload Front Side',
+                                                          'Tap To Upload (Front Side)',
                                                           style: FlutterFlowTheme
                                                                   .of(context)
                                                               .bodySmall
@@ -724,7 +725,7 @@ class _PersonalKYCWidgetState extends State<PersonalKYCWidget> {
                                                           }
                                                         },
                                                         child: Text(
-                                                          'Tap To Upload Front Side',
+                                                          'Tap To Upload (Back Side)',
                                                           style: FlutterFlowTheme
                                                                   .of(context)
                                                               .bodySmall
@@ -870,15 +871,67 @@ class _PersonalKYCWidgetState extends State<PersonalKYCWidget> {
                               ));
                               await showDialog(
                                 context: context,
+                                barrierDismissible: false,
                                 builder: (alertDialogContext) {
                                   return AlertDialog(
-                                    title: Text('Updated'),
-                                    content: Text('Successfully details added'),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16.0),
+                                    ),
+                                    title: Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.check_circle_rounded,
+                                          color: Color(0xFF10B981),
+                                          size: 26.0,
+                                        ),
+                                        const SizedBox(width: 8.0),
+                                        Text(
+                                          'Documents Uploaded',
+                                          style: GoogleFonts.inter(
+                                            fontSize: 18.0,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    content: Text(
+                                      'Your Aadhaar card documents have been uploaded successfully and submitted for verification.',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 14.0,
+                                        color: const Color(0xFF4B5563),
+                                        height: 1.4,
+                                      ),
+                                    ),
+                                    actionsPadding: const EdgeInsets.only(right: 16.0, bottom: 16.0),
                                     actions: [
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.pop(alertDialogContext),
-                                        child: Text('Ok'),
+                                      ElevatedButton(
+                                        onPressed: () {
+                                          Navigator.pop(alertDialogContext);
+                                          if (context.mounted) {
+                                            if (context.canPop()) {
+                                              context.pop();
+                                            } else {
+                                              context.goNamed(DriveProfileWidget.routeName);
+                                            }
+                                          }
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: const Color(0xFFF57C3B),
+                                          foregroundColor: Colors.white,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(10.0),
+                                          ),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 18.0,
+                                            vertical: 10.0,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          'Go to Profile',
+                                          style: GoogleFonts.inter(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
                                       ),
                                     ],
                                   );
